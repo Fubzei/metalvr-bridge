@@ -1,0 +1,4 @@
+_vk_icdGetInstanceProcAddr
+_vk_icdGetPhysicalDeviceProcAddr
+_vk_icdNegotiateLoaderICDInterfaceVersion
+_vkGetDeviceProcAddr
