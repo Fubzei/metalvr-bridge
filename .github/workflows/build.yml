@@ -1,0 +1,123 @@
+name: Build & Test
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build-icd:
+    name: Build ICD (macOS)
+    runs-on: macos-14  # Apple Silicon runner with Metal support
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Install dependencies
+      run: |
+        brew install cmake vulkan-headers
+
+    - name: Configure
+      run: |
+        mkdir build
+        cd build
+        cmake .. -DCMAKE_BUILD_TYPE=Release
+
+    - name: Build
+      run: |
+        cd build
+        make -j$(sysctl -n hw.ncpu) 2>&1 | tee build_log.txt
+        
+    - name: Check build output
+      run: |
+        if [ -f build/libMetalVRBridge.dylib ]; then
+          echo "✅ ICD dylib built successfully"
+          ls -lh build/libMetalVRBridge.dylib
+        else
+          echo "❌ ICD dylib not found"
+          exit 1
+        fi
+
+    - name: Upload build log
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: build-log
+        path: build/build_log.txt
+
+    - name: Upload ICD
+      if: success()
+      uses: actions/upload-artifact@v4
+      with:
+        name: metalvr-bridge-icd
+        path: |
+          build/libMetalVRBridge.dylib
+          vulkan_icd.json
+
+  build-launcher:
+    name: Build Launcher App (macOS)
+    runs-on: macos-14
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Build launcher
+      run: |
+        cd launcher
+        swiftc \
+          -o MetalVRBridge \
+          -framework SwiftUI \
+          -framework Metal \
+          -framework AppKit \
+          -framework CoreGraphics \
+          -target arm64-apple-macos13.0 \
+          -O \
+          MetalVRBridgeApp.swift \
+          ContentView.swift \
+          BridgeViewModel.swift \
+          2>&1 | tee launcher_build_log.txt
+
+    - name: Create app bundle
+      if: success()
+      run: |
+        cd launcher
+        APP="MetalVR Bridge.app"
+        mkdir -p "$APP/Contents/MacOS"
+        mkdir -p "$APP/Contents/Resources"
+        mkdir -p "$APP/Contents/Frameworks"
+        mv MetalVRBridge "$APP/Contents/MacOS/"
+        # Write Info.plist inline
+        cat > "$APP/Contents/Info.plist" << 'EOF'
+        <?xml version="1.0" encoding="UTF-8"?>
+        <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+        <plist version="1.0">
+        <dict>
+            <key>CFBundleName</key><string>MetalVR Bridge</string>
+            <key>CFBundleIdentifier</key><string>com.metalvr.bridge</string>
+            <key>CFBundleVersion</key><string>1.0.0</string>
+            <key>CFBundleShortVersionString</key><string>1.0</string>
+            <key>CFBundlePackageType</key><string>APPL</string>
+            <key>CFBundleExecutable</key><string>MetalVRBridge</string>
+            <key>LSMinimumSystemVersion</key><string>13.0</string>
+            <key>NSHighResolutionCapable</key><true/>
+        </dict>
+        </plist>
+        EOF
+        echo "✅ Launcher app bundle created"
+
+    - name: Upload launcher
+      if: success()
+      uses: actions/upload-artifact@v4
+      with:
+        name: metalvr-launcher
+        path: launcher/MetalVR Bridge.app
+
+    - name: Upload build log
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: launcher-build-log
+        path: launcher/launcher_build_log.txt
