@@ -88,7 +88,7 @@ jobs:
         mkdir -p "$APP/Contents/MacOS"
         mkdir -p "$APP/Contents/Resources"
         mkdir -p "$APP/Contents/Frameworks"
-        mv MetalVRBridge "$APP/Contents/MacOS/"
+        cp MetalVRBridge "MetalVR Bridge.app/Contents/MacOS/""
         # Write Info.plist inline
         cat > "$APP/Contents/Info.plist" << 'EOF'
         <?xml version="1.0" encoding="UTF-8"?>

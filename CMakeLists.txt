@@ -128,9 +128,13 @@ endforeach()
 
 if(MVRVB_BUILD_TESTS)
   enable_testing()
+  if(EXISTS "${CMAKE_SOURCE_DIR}/tests/CMakeLists.txt")
   add_subdirectory(tests)
+endif()
 endif()
 
 if(MVRVB_BUILD_TOOLS)
+  if(EXISTS "${CMAKE_SOURCE_DIR}/tools/CMakeLists.txt")
   add_subdirectory(tools)
+endif()
 endif()
