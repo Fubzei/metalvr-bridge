@@ -277,7 +277,7 @@ class BridgeViewModel: ObservableObject {
 
         let library: MTLLibrary
         do {
-            library = try device.makeLibrary(source: shaderSource, options: nil)
+            library = try await device.makeLibrary(source: shaderSource, options: nil)
             log(.pass, "[4/8] Shaders compiled successfully")
         } catch {
             log(.fail, "[4/8] Shader compilation failed: \(error.localizedDescription)")
@@ -352,7 +352,7 @@ class BridgeViewModel: ObservableObject {
 
         let pipelineState: MTLRenderPipelineState
         do {
-            pipelineState = try device.makeRenderPipelineState(descriptor: pipelineDesc)
+            pipelineState = try await device.makeRenderPipelineState(descriptor: pipelineDesc)
             log(.pass, "[6/8] Render pipeline created")
         } catch {
             log(.fail, "[6/8] Pipeline creation failed: \(error.localizedDescription)")
@@ -582,19 +582,22 @@ class BridgeViewModel: ObservableObject {
         let bitmapInfo = CGBitmapInfo(rawValue: CGImageAlphaInfo.premultipliedFirst.rawValue)
             .union(.byteOrder32Little) // BGRA
 
-        guard let context = CGContext(
-            data: UnsafeMutablePointer(mutating: pixels),
-            width: width,
-            height: height,
-            bitsPerComponent: 8,
-            bytesPerRow: width * 4,
-            space: colorSpace,
-            bitmapInfo: bitmapInfo.rawValue
-        ) else { return nil }
+        var mutablePixels = pixels
+        return mutablePixels.withUnsafeMutableBytes { rawBuffer in
+            guard let baseAddress = rawBuffer.baseAddress,
+                  let context = CGContext(
+                    data: baseAddress,
+                    width: width,
+                    height: height,
+                    bitsPerComponent: 8,
+                    bytesPerRow: width * 4,
+                    space: colorSpace,
+                    bitmapInfo: bitmapInfo.rawValue
+                  ),
+                  let cgImage = context.makeImage() else { return nil }
 
-        guard let cgImage = context.makeImage() else { return nil }
-
-        let rep = NSBitmapImageRep(cgImage: cgImage)
-        return rep.representation(using: .png, properties: [:])
+            let rep = NSBitmapImageRep(cgImage: cgImage)
+            return rep.representation(using: .png, properties: [:])
+        }
     }
 }
