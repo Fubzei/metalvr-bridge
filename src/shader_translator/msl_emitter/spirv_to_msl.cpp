@@ -925,11 +925,11 @@ TranslateResult translateToMSL(const SPIRVModule& module, const MSLOptions& opti
             if (tv.var->name == tb.name) { idExpr[tv.var->id] = tb.name; break; }
         }
     }
-    smpIdx = 0;
     for (auto& sp : samplers) {
-        std::string vname = sp.var->name.empty() ? ("smp_" + std::to_string(smpIdx)) : sp.var->name;
+        std::string vname = sp.var->name.empty()
+            ? ("smp_" + std::to_string(varToSamplerSlot[sp.var->id]))
+            : sp.var->name;
         idExpr[sp.var->id] = vname;
-        smpIdx++;
     }
     // Seed constants
     for (auto& [id, c] : module.constants) {
