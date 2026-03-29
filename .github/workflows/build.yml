@@ -4,12 +4,16 @@ on:
     branches: [main]
   pull_request:
     branches: [main]
+permissions:
+  contents: read
 jobs:
   build-icd:
     name: Build ICD (macOS)
     runs-on: macos-14
     steps:
     - uses: actions/checkout@v4
+      with:
+        persist-credentials: false
     - name: Install deps
       run: brew install cmake vulkan-headers
     - name: Configure
@@ -23,6 +27,8 @@ jobs:
     runs-on: macos-14
     steps:
     - uses: actions/checkout@v4
+      with:
+        persist-credentials: false
     - name: Build launcher
       run: |
         cd launcher
