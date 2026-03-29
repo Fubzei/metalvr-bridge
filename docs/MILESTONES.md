@@ -1,61 +1,52 @@
 # Milestone Tracker
 
-## Phase 2: Windows Games on Mac (Current)
+This file is the canonical repository status document for milestone progress and
+runtime validation.
 
-### ✅ Milestone 0: Format Table
-- **Files:** `src/vulkan_layer/format_table/format_table.cpp`, `format_table.h`
-- O(1) flat array lookup, 120+ format mappings
-- D24_UNORM_S8_UINT remapped for Apple Silicon
-- Vertex format table included
+## Phase 2: Windows Games on Mac
 
-### ✅ Milestone 1: SPIR-V → MSL Shader Translator
-- **Files:** `src/shader_translator/spirv/`, `msl_emitter/`, `cache/`
-- 1A: SPIR-V binary parser with full IR
-- 1B: MSL 2.4+ emitter with all stage types
-- 1C: Thread-safe LRU shader cache with disk persistence
+| # | Milestone | Repo Status | Canonical Paths | Notes |
+|---|-----------|-------------|-----------------|-------|
+| 0 | Format table | DONE | `src/vulkan_layer/format_table/` | In active build |
+| 1 | SPIR-V to MSL | DONE | `src/shader_translator/spirv/`, `msl_emitter/`, `cache/` | In active build |
+| 2 | Resources | DONE | `src/vulkan_layer/resources/` | In active build |
+| 3 | Memory | DONE | `src/vulkan_layer/memory/` | In active build |
+| 4 | Commands | DONE | `src/vulkan_layer/commands/` | Deferred recording and replay |
+| 5 | Pipelines | DONE | `src/vulkan_layer/pipeline/` | Graphics and compute pipelines |
+| 6 | Descriptors | DONE | `src/vulkan_layer/descriptors/` | In active build |
+| 7 | Sync | DONE | `src/vulkan_layer/sync/` | In active build |
+| 8 | Swapchain | DONE | `src/vulkan_layer/swapchain/` | CAMetalLayer path in repo |
+| 9 | Transfers | DONE | `src/vulkan_layer/commands/vk_commands.mm` | Integrated into command replay |
+| 10 | Wine + DXVK integration | NOT STARTED | no dedicated module yet | Some surface hooks exist, full flow not implemented |
+| 11 | Utilities | PARTIAL | `src/common/` | Logging, threading, and memory-pool header exist |
+| 12 | Game testing | NOT STARTED | no checked-in `tests/` directory | Runtime validation is next |
 
-### ✅ Milestone 2: Resource Creation
-- **Files:** `src/vulkan_layer/resources/vk_resources.h`, `vk_resources.mm`
-- 33 entry points, all Metal object wrappers
+## Runtime Validation
 
-### ✅ Milestone 3: Memory Management
-- **Files:** `src/vulkan_layer/memory/vk_memory.h`, `vk_memory.mm`
-- 2 memory types (Shared + Private)
+| Target | Status | Notes |
+|--------|--------|-------|
+| macOS ICD CI build | PASSING | Compile and link checks are green |
+| macOS launcher CI build | PASSING | Swift launcher compiles |
+| `vulkaninfo` | NOT TESTED | First real ICD runtime target |
+| `vkcube` | NOT TESTED | First real rendering target |
+| Launcher triangle test | IMPLEMENTED, NOT VERIFIED ON MAC YET | Implemented in `launcher/BridgeViewModel.swift` |
+| Native Vulkan triangle app | NOT IN REPO | Do not document one unless it is added |
+| Wine game launch | NOT TESTED | Depends on runtime validation first |
 
-### ✅ Milestone 4: Command Buffers
-- **Files:** `src/vulkan_layer/commands/vk_commands.h`, `vk_commands.mm`
-- Deferred encoding, 1715 lines, ~40 command types
+## Deferred or Inactive Tree
 
-### ✅ Milestone 5: Pipeline State
-- **Files:** `src/vulkan_layer/pipeline/vk_pipeline.h`, `vk_pipeline.mm`
-- Graphics + compute pipelines, shader cache integration
+These areas exist in the repository but are not part of the active root build:
 
-### ✅ Milestone 6: Descriptor Sets
-- **Files:** `src/vulkan_layer/descriptors/vk_descriptors.h`, `vk_descriptors.mm`
-- Direct binding approach, per-bind-point state tracking
+- `src/vr_runtime/`
 
-### ✅ Milestone 7: Synchronization
-- **Files:** `src/vulkan_layer/sync/vk_sync.h`, `vk_sync.mm`
-- Fences, binary semaphores, timeline semaphores, barriers
+Treat them as checked-in but not currently integrated unless the root `CMakeLists.txt`
+changes to include them.
 
-### ✅ Milestone 8: Swapchain & Presentation
-- **Files:** `src/vulkan_layer/swapchain/vk_swapchain.h`, `vk_swapchain.mm`
-- 14 functions, CAMetalLayer, Wine surface support
+## Update Rules
 
-### ✅ Milestone 9: Transfer Operations
-- **Files:** `src/vulkan_layer/transfers/` (integrated in vk_commands.mm)
-- All transfer commands, blit scaling, compute-based fill
+Update this file when:
 
-### 🔲 Milestone 10: Wine + DXVK Integration
-- DLL overrides, surface creation from Wine HWND
-- IOSurface zero-copy bridge
-
-### 🔲 Milestone 11: Common Utilities
-- Logging, threading pools, memory pools, profiler
-
-### 🔲 Milestone 12: Game Testing
-- vkcube → DOTA 2 → AAA titles
-
-## Phase 3: VR Support (Deferred)
-- OpenVR shim, async timewarp, Vision Pro backend, Quest streaming
-- Code exists from Phase 1 but is not wired into game path
+- a milestone changes state
+- runtime-validation status changes
+- a deferred area becomes part of the active build
+- a new checked-in test or tool directory is added

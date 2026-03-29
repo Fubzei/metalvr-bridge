@@ -1,112 +1,118 @@
 # MetalVR Bridge
 
-**Run Windows Steam games on Mac by translating Vulkan/DirectX to Apple Metal.**
+MetalVR Bridge is a Vulkan Installable Client Driver (ICD) that translates
+Vulkan API calls to Apple Metal so Vulkan-based rendering can run on macOS.
+For DirectX titles, the intended stack is DXVK -> Vulkan -> MetalVR Bridge.
 
-MetalVR Bridge is a Vulkan Installable Client Driver (ICD) that intercepts Vulkan API calls and translates them to Apple Metal equivalents. Combined with Wine and DXVK, it enables Windows games to run on macOS.
+## Quick Start
 
+```text
+Windows game
+  -> Wine or CrossOver
+  -> DXVK for DirectX titles
+  -> Vulkan
+  -> MetalVR Bridge
+  -> Apple Metal
 ```
-Windows Game (.exe)
-    → Wine/CrossOver (Win32 → macOS)
-    → DXVK (DirectX → Vulkan)
-    → MetalVR Bridge ICD (Vulkan → Metal)  ← this project
-    → Apple Metal GPU → Screen
-```
 
-## Project Status
+## Current Repo Reality
 
-| Milestone | Module | Status |
-|-----------|--------|--------|
-| 0 | Format Table (VkFormat ↔ MTLPixelFormat) | ✅ Complete |
-| 1 | SPIR-V → MSL Shader Translator | ✅ Complete |
-| 2 | Resource Creation (Buffers, Textures, Samplers) | ✅ Complete |
-| 3 | Memory Management | ✅ Complete |
-| 4 | Command Buffers & Draw Calls | ✅ Complete |
-| 5 | Pipeline State | ✅ Complete |
-| 6 | Descriptor Sets | ✅ Complete |
-| 7 | Synchronization (Fences, Semaphores) | ✅ Complete |
-| 8 | Swapchain & Presentation | ✅ Complete |
-| 9 | Transfer Operations | ✅ Complete |
-| 10 | Wine + DXVK Integration | 🔲 Not started |
-| 11 | Common Utilities | 🔲 Not started |
-| 12 | Game Testing | 🔲 Not started |
+- The active build currently includes:
+  - `src/common`
+  - `src/shader_translator`
+  - `src/vulkan_layer`
+- `src/vr_runtime` exists in the repository, but it is not part of the active root
+  build today.
+- There is currently no checked-in `tests/` or `tools/` directory.
+- The launcher includes an in-app triangle test and diagnostic log export.
+- The project now has protected `main` branch rules, security reporting, Dependabot,
+  secret scanning, and CodeQL default setup.
 
-**Current goal:** First successful compile on macOS → vkcube rendering → real game
+## Source of Truth
+
+The repository is the canonical source of truth for project structure and current
+status. Use these files first:
+
+- `docs/REPO_MAP.md`
+  - Actual checked-in layout and which modules are in the active build
+- `docs/MILESTONES.md`
+  - Current milestone status and runtime-validation status
+- `CONTRIBUTING.md`
+  - Workflow, conventions, and doc-update expectations
+- `SECURITY.md`
+  - Security reporting and scope
+
+The GitHub Wiki is supplementary onboarding material. If the wiki and repository
+disagree, follow the repository.
 
 ## Requirements
 
-- macOS 13+ (Sonoma recommended)
-- Apple Silicon Mac (M1/M2/M3/M4) or Intel Mac with Metal support
-- Xcode Command Line Tools (`xcode-select --install`)
-- CMake 3.20+
+- macOS 13 or newer
+- Apple Silicon preferred
+- Xcode Command Line Tools
+- CMake 3.25 or newer
+- Homebrew packages:
+  - `cmake`
+  - `vulkan-headers`
+- Optional local test package:
+  - `vulkan-tools`
 
-## Building
+## Build the ICD
 
 ```bash
-# Clone
-git clone https://github.com/YOUR_USERNAME/metalvr-bridge.git
+git clone https://github.com/Fubzei/metalvr-bridge.git
 cd metalvr-bridge
-
-# Build the ICD
 mkdir build && cd build
-cmake ..
+cmake .. -DCMAKE_BUILD_TYPE=Release
 make -j$(sysctl -n hw.ncpu)
-
-# The output is libMetalVRBridge.dylib + vulkan_icd.json
 ```
 
-## Running the Launcher App
+Output:
 
-The launcher provides a GUI for testing and launching games.
+- `build/libMetalVRBridge.dylib`
+- `vulkan_icd.json`
+
+## Build the Launcher
 
 ```bash
 cd launcher
 bash setup.sh
-# Creates "MetalVR Bridge.app" — drag to /Applications
 ```
 
-## Running Games
+Output:
+
+- `MetalVR Bridge.app`
+- `MetalVR-Bridge-Installer.zip`
+
+## First Runtime Targets
 
 ```bash
-# Set the Vulkan ICD
-export VK_ICD_FILENAMES=/path/to/vulkan_icd.json
-
-# Vulkan games through Wine
-wine Game.exe
-
-# DirectX games through Wine + DXVK
-# (install DXVK into Wine prefix first)
-export WINEDLLOVERRIDES="d3d11=n;dxgi=n"
-wine Game.exe
+export VK_ICD_FILENAMES=/full/path/to/vulkan_icd.json
+vulkaninfo
+vkcube
 ```
 
-## Architecture
+## Project Layout
 
-```
+```text
 src/
-├── shader_translator/     # SPIR-V → MSL compilation
-│   ├── spirv/             # SPIR-V binary parser
-│   ├── msl_emitter/       # MSL code generator
-│   ├── cache/             # Shader compilation cache
-│   └── geometry_emu/      # Geometry shader emulation (compute-based)
-├── vulkan_layer/          # Vulkan ICD implementation
-│   ├── icd/               # Dispatch table (200+ entry points)
-│   ├── format_table/      # VkFormat ↔ MTLPixelFormat mapping
-│   ├── device/            # Physical/logical device
-│   ├── resources/         # Buffers, images, samplers, views
-│   ├── memory/            # Memory allocation and binding
-│   ├── commands/          # Deferred command recording + Metal replay
-│   ├── pipeline/          # Graphics/compute pipeline state
-│   ├── descriptors/       # Descriptor set management
-│   ├── sync/              # Fences, semaphores, barriers
-│   ├── swapchain/         # CAMetalLayer presentation
-│   └── transfers/         # Copy, blit, fill operations
-└── vr_runtime/            # VR support (deferred, not active)
+  common/              Shared logging and threading utilities
+  shader_translator/   SPIR-V parsing, MSL emission, shader cache
+  vulkan_layer/        Active Vulkan ICD implementation
+  vr_runtime/          Deferred VR-related code, not in active root build
+launcher/              SwiftUI macOS launcher app
+shaders/               Metal shader sources
+docs/                  Repository source-of-truth docs
 ```
 
-## Contributing
+## Related Docs
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) for development guidelines.
+- `docs/REPO_MAP.md`
+- `docs/MILESTONES.md`
+- `CONTRIBUTING.md`
+- `SECURITY.md`
+- `launcher/README.md`
 
 ## License
 
-MIT License — see [LICENSE](LICENSE)
+MIT License. See `LICENSE`.

@@ -1,0 +1,19 @@
+# Default owner
+* @Fubzei
+
+# Core docs and workflow
+/.github/ @Fubzei
+/docs/ @Fubzei
+/README.md @Fubzei
+/CONTRIBUTING.md @Fubzei
+/SECURITY.md @Fubzei
+
+# Active build surface
+/src/common/ @Fubzei
+/src/shader_translator/ @Fubzei
+/src/vulkan_layer/ @Fubzei
+/launcher/ @Fubzei
+/shaders/ @Fubzei
+
+# Deferred tree
+/src/vr_runtime/ @Fubzei
