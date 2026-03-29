@@ -443,16 +443,14 @@ VkResult mvb_CreateGraphicsPipelines(VkDevice device,
                 const auto& rs = *info.pRasterizationState;
                 pipe->cullMode         = rs.cullMode;
                 pipe->frontFace        = rs.frontFace;
+                pipe->fillMode         = (rs.polygonMode == VK_POLYGON_MODE_LINE)
+                    ? MTLTriangleFillModeLines
+                    : MTLTriangleFillModeFill;
                 pipe->depthClampEnable = rs.depthClampEnable;
                 pipe->depthBiasEnable  = rs.depthBiasEnable;
                 pipe->depthBiasConst   = rs.depthBiasConstantFactor;
                 pipe->depthBiasSlope   = rs.depthBiasSlopeFactor;
                 pipe->depthBiasClamp   = rs.depthBiasClamp;
-
-                desc.triangleFillMode =
-                    (rs.polygonMode == VK_POLYGON_MODE_LINE)
-                        ? MTLTriangleFillModeLines
-                        : MTLTriangleFillModeFill;
             }
 
             // ── Input assembly ───────────────────────────────────────────

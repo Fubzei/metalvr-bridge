@@ -1667,11 +1667,12 @@ struct ReplayState {
                 [renderEnc setDepthStencilState:(__bridge id<MTLDepthStencilState>)p->depthStencilState];
             [renderEnc setCullMode:(MTLCullMode)p->cullMode];
             [renderEnc setFrontFacingWinding:p->frontFace == VK_FRONT_FACE_COUNTER_CLOCKWISE
-                                              ? MTLWindingCounterClockwise : MTLWindingClockwise];
+                                           ? MTLWindingCounterClockwise : MTLWindingClockwise];
+            [renderEnc setTriangleFillMode:(MTLTriangleFillMode)p->fillMode];
             if (p->depthBiasEnable && !p->hasDynamicDepthBias) {
                 [renderEnc setDepthBias:p->depthBiasConst
                              slopeScale:p->depthBiasSlope
-                                   clamp:p->depthBiasClamp];
+                                  clamp:p->depthBiasClamp];
             }
         }
 

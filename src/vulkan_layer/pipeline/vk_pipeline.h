@@ -83,6 +83,7 @@ struct MvPipeline {
     uint32_t topology{3};      ///< VkPrimitiveTopology -> MTLPrimitiveType at draw
     uint32_t cullMode{0};      ///< VkCullModeFlags
     uint32_t frontFace{0};     ///< VkFrontFace
+    uint32_t fillMode{0};      ///< MTLTriangleFillMode
     bool     depthClampEnable{false};
     float    depthBiasConst{0}, depthBiasSlope{0}, depthBiasClamp{0};
     bool     depthBiasEnable{false};
