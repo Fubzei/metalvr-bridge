@@ -19,6 +19,7 @@
 #include "../../common/logging.h"
 #include <algorithm>
 #include <cstring>
+#include <functional>
 
 namespace mvrvb::spirv {
 
