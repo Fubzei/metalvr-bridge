@@ -163,8 +163,6 @@ using namespace mvrvb;
 
 extern "C" {
 
-#if 0  // Duplicated shader-module entry points kept only as historical reference.
-
 // ── Shader module (kept with vk prefix for backward compatibility) ────────────
 
 VkResult vkCreateShaderModule(VkDevice device,
@@ -203,7 +201,6 @@ void vkDestroyShaderModule(VkDevice, VkShaderModule module, const VkAllocationCa
 //  mvb_CreatePipelineLayout / mvb_DestroyPipelineLayout
 // ─────────────────────────────────────────────────────────────────────────────
 
-#endif
 VkResult mvb_CreatePipelineLayout(VkDevice,
                                    const VkPipelineLayoutCreateInfo* pCI,
                                    const VkAllocationCallbacks*,
