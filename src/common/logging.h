@@ -86,21 +86,21 @@ std::string format(const char* fmt, Args&&... args) {
 } // namespace mvrvb
 
 // ── Convenience macros ───────────────────────────────────────────────────────
-#define MVRVB_LOG(level, fmt, ...)                                              \
-    do {                                                                         \
-        auto& _lg = ::mvrvb::Logger::instance();                                 \
-        if (static_cast<int>(level) >= static_cast<int>(_lg.level())) {         \
-            _lg.log(level, __FILE__, __LINE__, __func__,                         \
-                    ::mvrvb::detail::format(fmt, ##__VA_ARGS__));                \
-        }                                                                         \
+#define MVRVB_LOG(log_level, fmt, ...)                                          \
+    do {                                                                        \
+        auto& _lg = ::mvrvb::Logger::instance();                                \
+        if (static_cast<int>(log_level) >= static_cast<int>(_lg.level())) {     \
+            _lg.log(log_level, __FILE__, __LINE__, __func__,                    \
+                    ::mvrvb::detail::format(fmt __VA_OPT__(,) __VA_ARGS__));    \
+        }                                                                       \
     } while(0)
 
-#define MVRVB_LOG_TRACE(fmt, ...) MVRVB_LOG(::mvrvb::LogLevel::Trace, fmt, ##__VA_ARGS__)
-#define MVRVB_LOG_DEBUG(fmt, ...) MVRVB_LOG(::mvrvb::LogLevel::Debug, fmt, ##__VA_ARGS__)
-#define MVRVB_LOG_INFO(fmt, ...)  MVRVB_LOG(::mvrvb::LogLevel::Info,  fmt, ##__VA_ARGS__)
-#define MVRVB_LOG_WARN(fmt, ...)  MVRVB_LOG(::mvrvb::LogLevel::Warn,  fmt, ##__VA_ARGS__)
-#define MVRVB_LOG_ERROR(fmt, ...) MVRVB_LOG(::mvrvb::LogLevel::Error, fmt, ##__VA_ARGS__)
-#define MVRVB_LOG_FATAL(fmt, ...) MVRVB_LOG(::mvrvb::LogLevel::Fatal, fmt, ##__VA_ARGS__)
+#define MVRVB_LOG_TRACE(fmt, ...) MVRVB_LOG(::mvrvb::LogLevel::Trace, fmt __VA_OPT__(,) __VA_ARGS__)
+#define MVRVB_LOG_DEBUG(fmt, ...) MVRVB_LOG(::mvrvb::LogLevel::Debug, fmt __VA_OPT__(,) __VA_ARGS__)
+#define MVRVB_LOG_INFO(fmt, ...)  MVRVB_LOG(::mvrvb::LogLevel::Info,  fmt __VA_OPT__(,) __VA_ARGS__)
+#define MVRVB_LOG_WARN(fmt, ...)  MVRVB_LOG(::mvrvb::LogLevel::Warn,  fmt __VA_OPT__(,) __VA_ARGS__)
+#define MVRVB_LOG_ERROR(fmt, ...) MVRVB_LOG(::mvrvb::LogLevel::Error, fmt __VA_OPT__(,) __VA_ARGS__)
+#define MVRVB_LOG_FATAL(fmt, ...) MVRVB_LOG(::mvrvb::LogLevel::Fatal, fmt __VA_OPT__(,) __VA_ARGS__)
 
 /// Assert with logging and abort.
 #define MVRVB_ASSERT(cond, fmt, ...)                                             \
