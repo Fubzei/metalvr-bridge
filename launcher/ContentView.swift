@@ -187,7 +187,11 @@ struct ContentView: View {
                     RoundedRectangle(cornerRadius: 8)
                         .fill(
                             vm.testRunning
-                                ? Color(hex: "374151")
+                                ? LinearGradient(
+                                    colors: [Color(hex: "374151"), Color(hex: "374151")],
+                                    startPoint: .leading,
+                                    endPoint: .trailing
+                                  )
                                 : LinearGradient(
                                     colors: [Color(hex: "6366f1"), Color(hex: "7c3aed")],
                                     startPoint: .leading,

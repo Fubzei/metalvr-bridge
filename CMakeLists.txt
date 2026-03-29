@@ -65,6 +65,9 @@ FetchContent_Declare(
   GIT_SHALLOW    TRUE
 )
 FetchContent_MakeAvailable(vulkan_headers)
+add_subdirectory(src/common)
+add_subdirectory(src/shader_translator)
+add_subdirectory(src/vulkan_layer)
 
 # ── Third-party: GoogleTest ───────────────────────────────────────────────────
 if(MVRVB_BUILD_TESTS)

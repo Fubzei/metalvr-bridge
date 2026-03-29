@@ -41,7 +41,7 @@ add_library(MetalVRBridge_ICD SHARED
 
 set_target_properties(MetalVRBridge_ICD PROPERTIES
     OUTPUT_NAME        "MetalVRBridge"
-    LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib"
+    LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
     # The Vulkan loader requires the ICD dylib to have a specific install name
     # that matches the path in the JSON manifest.
     BUILD_WITH_INSTALL_RPATH YES
