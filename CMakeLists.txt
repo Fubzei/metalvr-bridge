@@ -68,73 +68,14 @@ FetchContent_MakeAvailable(vulkan_headers)
 
 # ── Third-party: GoogleTest ───────────────────────────────────────────────────
 if(MVRVB_BUILD_TESTS)
-  FetchContent_Declare(
-    googletest
-    GIT_REPOSITORY https://github.com/google/googletest.git
-    GIT_TAG        main
-    GIT_SHALLOW    TRUE
-  )
-  FetchContent_MakeAvailable(googletest)
-endif()
-
-# ── Metal shader compilation ──────────────────────────────────────────────────
-# Compile all .metal files in the shaders/ directory into a single metallib
-# that is embedded in the application bundle as default.metallib.
-file(GLOB METAL_SOURCES "${CMAKE_SOURCE_DIR}/shaders/*.metal")
-if(METAL_SOURCES)
-  set(METALLIB_OUTPUT "${CMAKE_BINARY_DIR}/default.metallib")
-  set(METAL_INTERMEDIATE_DIR "${CMAKE_BINARY_DIR}/metal_ir")
-  file(MAKE_DIRECTORY "${METAL_INTERMEDIATE_DIR}")
-
-  set(METAL_AIR_FILES)
-  foreach(METAL_SRC ${METAL_SOURCES})
-    get_filename_component(METAL_NAME "${METAL_SRC}" NAME_WE)
-    set(AIR_FILE "${METAL_INTERMEDIATE_DIR}/${METAL_NAME}.air")
-    add_custom_command(
-      OUTPUT "${AIR_FILE}"
-      COMMAND xcrun -sdk macosx metal
-              -std=metal2.4
-              -O2
-              -target air64-apple-macos14.0
-              -c "${METAL_SRC}"
-              -o "${AIR_FILE}"
-      DEPENDS "${METAL_SRC}"
-      COMMENT "Compiling ${METAL_NAME}.metal"
-    )
-    list(APPEND METAL_AIR_FILES "${AIR_FILE}")
-  endforeach()
-
-  add_custom_command(
-    OUTPUT "${METALLIB_OUTPUT}"
-    COMMAND xcrun -sdk macosx metallib ${METAL_AIR_FILES} -o "${METALLIB_OUTPUT}"
-    DEPENDS ${METAL_AIR_FILES}
-    COMMENT "Linking default.metallib"
-  )
-  add_custom_target(MetalShaders ALL DEPENDS "${METALLIB_OUTPUT}")
-endif()
-
-# ── Subdirectories ───────────────────────────────────────────────────────────
-add_subdirectory(src/common)
-add_subdirectory(src/shader_translator)
-add_subdirectory(src/vulkan_layer)
-add_subdirectory(src/vr_runtime)
-
-# Optional subdirectories (wine_bridge, tools, tests may not exist yet)
-foreach(_subdir src/wine_bridge)
-  if(EXISTS "${CMAKE_SOURCE_DIR}/${_subdir}/CMakeLists.txt")
-    add_subdirectory(${_subdir})
-  endif()
-endforeach()
-
-if(MVRVB_BUILD_TESTS)
   enable_testing()
   if(EXISTS "${CMAKE_SOURCE_DIR}/tests/CMakeLists.txt")
-  add_subdirectory(tests)
-endif()
+    add_subdirectory(tests)
+  endif()
 endif()
 
 if(MVRVB_BUILD_TOOLS)
   if(EXISTS "${CMAKE_SOURCE_DIR}/tools/CMakeLists.txt")
-  add_subdirectory(tools)
-endif()
+    add_subdirectory(tools)
+  endif()
 endif()
