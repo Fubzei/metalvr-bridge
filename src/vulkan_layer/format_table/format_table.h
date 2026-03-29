@@ -16,14 +16,16 @@
  *   - getFallbackFormat() — returns closest supported Metal format
  */
 
-#include <vulkan/vulkan.h>
 #include <cstdint>
 #include <cstddef>
 
 #ifdef __OBJC__
+#include <vulkan/vulkan.h>
 #import <Metal/Metal.h>
 #else
-// Pure C++ translation units avoid a hard Metal.framework dependency.
+// Pure C++ translation units avoid hard Vulkan/Metal framework dependencies.
+using VkFormat        = uint32_t;
+using VkIndexType     = uint32_t;
 using MTLPixelFormat  = uint64_t; // NSUInteger on Apple
 using MTLVertexFormat = uint64_t;
 using MTLIndexType    = uint32_t;
