@@ -32,14 +32,14 @@ jobs:
     - uses: actions/checkout@v5
       with:
         persist-credentials: false
+    - name: Install C/C++ dependencies
+      if: matrix.language == 'c-cpp'
+      run: brew install cmake vulkan-headers
     - name: Initialize CodeQL
       uses: github/codeql-action/init@v4
       with:
         languages: ${{ matrix.language }}
         build-mode: ${{ matrix.build-mode }}
-    - name: Install C/C++ dependencies
-      if: matrix.language == 'c-cpp'
-      run: brew install cmake vulkan-headers
     - name: Build ICD for CodeQL
       if: matrix.language == 'c-cpp'
       run: |
