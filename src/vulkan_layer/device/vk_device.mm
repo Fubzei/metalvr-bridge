@@ -20,6 +20,7 @@
 #include "vk_device.h"
 #include "../../common/logging.h"
 #include "../../shader_translator/cache/shader_cache.h"
+#include "../format_table/format_table.h"
 #include "../memory/vk_memory.h"
 
 #import <Metal/Metal.h>
@@ -31,7 +32,7 @@ namespace mvrvb {
 
 // ── MvPhysicalDevice ──────────────────────────────────────────────────────────
 void MvPhysicalDevice::populateFromMTLDevice() {
-    id<MTLDevice> d = (__bridge id<MTLDevice>)mtlDevice;
+    id<MTLDevice> d = mtlDevice;
 
     // ── Properties ───────────────────────────────────────────────────────────
     properties.apiVersion     = VK_API_VERSION_1_2;
@@ -198,7 +199,7 @@ void MvPhysicalDevice::populateFromMTLDevice() {
 }
 
 void MvPhysicalDevice::populateMemoryTypes() {
-    id<MTLDevice> d = (__bridge id<MTLDevice>)mtlDevice;
+    id<MTLDevice> d = mtlDevice;
 
     memProperties = {};
 
@@ -243,7 +244,7 @@ MvInstance::MvInstance() {
         NSArray<id<MTLDevice>>* devices = MTLCopyAllDevices();
         for (id<MTLDevice> d in devices) {
             auto* phys = new MvPhysicalDevice();
-            phys->mtlDevice = (__bridge_retained void*)d;
+            phys->mtlDevice = d;
             phys->populateFromMTLDevice();
             phys->populateMemoryTypes();
             physicalDevices.push_back(phys);
@@ -464,27 +465,27 @@ VkResult vkCreateDevice(VkPhysicalDevice physDev,
                          VkDevice* pDevice) {
     @autoreleasepool {
         auto* phys = toMv(physDev);
-        id<MTLDevice> mtlDev = (__bridge id<MTLDevice>)phys->mtlDevice;
+        id<MTLDevice> mtlDev = phys->mtlDevice;
 
         auto* dev = new MvDevice();
-        dev->mtlDevice    = (__bridge_retained void*)mtlDev;
-        dev->commandQueue = (__bridge_retained void*)[mtlDev newCommandQueue];
-        dev->blitQueue    = (__bridge_retained void*)[mtlDev newCommandQueue];
-        dev->computeQueue = (__bridge_retained void*)[mtlDev newCommandQueue];
+        dev->mtlDevice    = mtlDev;
+        dev->commandQueue = [mtlDev newCommandQueue];
+        dev->blitQueue    = [mtlDev newCommandQueue];
+        dev->computeQueue = [mtlDev newCommandQueue];
         dev->hasUnifiedMemory = [mtlDev hasUnifiedMemory];
         dev->maxBufferLength  = (uint64_t)[mtlDev maxBufferLength];
         dev->supportsBC       = [mtlDev supportsFamily:MTLGPUFamilyMac1];
 
-        [[(__bridge id<MTLCommandQueue>)dev->commandQueue setLabel:@"MetalVR-Graphics"]];
-        [[(__bridge id<MTLCommandQueue>)dev->blitQueue    setLabel:@"MetalVR-Transfer"]];
-        [[(__bridge id<MTLCommandQueue>)dev->computeQueue setLabel:@"MetalVR-Compute"]];
+        [dev->commandQueue setLabel:@"MetalVR-Graphics"];
+        [dev->blitQueue    setLabel:@"MetalVR-Transfer"];
+        [dev->computeQueue setLabel:@"MetalVR-Compute"];
 
         // Create queues for each requested queue family.
         for (uint32_t i = 0; i < pCI->queueCreateInfoCount; ++i) {
             const auto& qci = pCI->pQueueCreateInfos[i];
             for (uint32_t j = 0; j < qci.queueCount; ++j) {
                 auto* q = new MvQueue();
-                q->queue       = (__bridge_retained void*)[mtlDev newCommandQueue];
+                q->queue       = [mtlDev newCommandQueue];
                 q->familyIndex = qci.queueFamilyIndex;
                 q->queueIndex  = j;
                 dev->queues.push_back(q);

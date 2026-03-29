@@ -43,7 +43,7 @@ struct LoaderDispatch { void* loaderTable{nullptr}; };
 // ── VkQueue wrapper ───────────────────────────────────────────────────────────
 struct MvQueue : LoaderDispatch {
 #ifdef __OBJC__
-    id<MTLCommandQueue> queue{nil};
+    id<MTLCommandQueue> queue{nullptr};
 #else
     void* queue{nullptr};
 #endif
@@ -54,10 +54,10 @@ struct MvQueue : LoaderDispatch {
 // ── VkDevice wrapper ──────────────────────────────────────────────────────────
 struct MvDevice : LoaderDispatch {
 #ifdef __OBJC__
-    id<MTLDevice>       mtlDevice{nil};
-    id<MTLCommandQueue> commandQueue{nil};
-    id<MTLCommandQueue> blitQueue{nil};
-    id<MTLCommandQueue> computeQueue{nil};
+    id<MTLDevice>       mtlDevice{nullptr};
+    id<MTLCommandQueue> commandQueue{nullptr};
+    id<MTLCommandQueue> blitQueue{nullptr};
+    id<MTLCommandQueue> computeQueue{nullptr};
 #else
     void* mtlDevice{nullptr};
     void* commandQueue{nullptr};
@@ -81,7 +81,7 @@ struct MvDevice : LoaderDispatch {
 // ── VkPhysicalDevice wrapper ──────────────────────────────────────────────────
 struct MvPhysicalDevice : LoaderDispatch {
 #ifdef __OBJC__
-    id<MTLDevice> mtlDevice{nil};
+    id<MTLDevice> mtlDevice{nullptr};
 #else
     void* mtlDevice{nullptr};
 #endif

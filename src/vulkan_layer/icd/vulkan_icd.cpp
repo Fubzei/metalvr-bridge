@@ -233,8 +233,8 @@ void     vkDestroyDebugUtilsMessengerEXT(VkInstance, VkDebugUtilsMessengerEXT, c
 void     vkCmdBeginDebugUtilsLabelEXT(VkCommandBuffer, const VkDebugUtilsLabelEXT*);
 void     vkCmdEndDebugUtilsLabelEXT(VkCommandBuffer);
 void     vkCmdInsertDebugUtilsLabelEXT(VkCommandBuffer, const VkDebugUtilsLabelEXT*);
-void     vkSetDebugUtilsObjectNameEXT(VkDevice, const VkDebugUtilsObjectNameInfoEXT*);
-void     vkSetDebugUtilsObjectTagEXT(VkDevice, const VkDebugUtilsObjectTagInfoEXT*);
+VkResult vkSetDebugUtilsObjectNameEXT(VkDevice, const VkDebugUtilsObjectNameInfoEXT*);
+VkResult vkSetDebugUtilsObjectTagEXT(VkDevice, const VkDebugUtilsObjectTagInfoEXT*);
 void     vkQueueBeginDebugUtilsLabelEXT(VkQueue, const VkDebugUtilsLabelEXT*);
 void     vkQueueEndDebugUtilsLabelEXT(VkQueue);
 void     vkQueueInsertDebugUtilsLabelEXT(VkQueue, const VkDebugUtilsLabelEXT*);
@@ -314,8 +314,8 @@ VkResult vkCreateDebugUtilsMessengerEXT(VkInstance, const VkDebugUtilsMessengerC
 }
 void vkDestroyDebugUtilsMessengerEXT(VkInstance, VkDebugUtilsMessengerEXT h, const VkAllocationCallbacks*) { delete[] reinterpret_cast<char*>(h); }
 // NOTE: vkCmdInsertDebugUtilsLabelEXT → vk_commands.mm
-void vkSetDebugUtilsObjectNameEXT(VkDevice, const VkDebugUtilsObjectNameInfoEXT*) {}
-void vkSetDebugUtilsObjectTagEXT(VkDevice, const VkDebugUtilsObjectTagInfoEXT*) {}
+VkResult vkSetDebugUtilsObjectNameEXT(VkDevice, const VkDebugUtilsObjectNameInfoEXT*) { return VK_SUCCESS; }
+VkResult vkSetDebugUtilsObjectTagEXT(VkDevice, const VkDebugUtilsObjectTagInfoEXT*) { return VK_SUCCESS; }
 void vkQueueBeginDebugUtilsLabelEXT(VkQueue, const VkDebugUtilsLabelEXT*) {}
 void vkQueueEndDebugUtilsLabelEXT(VkQueue) {}
 void vkQueueInsertDebugUtilsLabelEXT(VkQueue, const VkDebugUtilsLabelEXT*) {}
@@ -671,4 +671,11 @@ MVVK_EXPORT PFN_vkVoidFunction vk_icdGetPhysicalDeviceProcAddr(VkInstance /*inst
  * vkGetDeviceProcAddr
  *
  * Device-level proc addr lookup (called by the application directly or via
- * the loader).  Same table — device-level 
+ * the loader). Same table is used for device-level dispatch.
+ */
+MVVK_EXPORT PFN_vkVoidFunction vkGetDeviceProcAddr(VkDevice /*device*/,
+                                                   const char* pName) {
+    return mvrvb::getICDProcAddr(pName);
+}
+
+} // extern "C"
