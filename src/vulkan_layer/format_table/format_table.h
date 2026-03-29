@@ -16,16 +16,18 @@
  *   - getFallbackFormat() — returns closest supported Metal format
  */
 
+#include <vulkan/vulkan.h>
 #include <cstdint>
 #include <cstddef>
 
-// Forward declarations — avoid pulling in vulkan.h / Metal.h.
-// Actual Metal-side code casts to the real enum at point of use.
-using VkFormat        = uint32_t;
+#ifdef __OBJC__
+#import <Metal/Metal.h>
+#else
+// Pure C++ translation units avoid a hard Metal.framework dependency.
 using MTLPixelFormat  = uint64_t; // NSUInteger on Apple
 using MTLVertexFormat = uint64_t;
 using MTLIndexType    = uint32_t;
-using VkIndexType     = uint32_t;
+#endif
 
 // Opaque Metal device handle for capability queries.
 // Callers that include Metal.h can pass id<MTLDevice> directly;
