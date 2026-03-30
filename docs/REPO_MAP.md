@@ -77,7 +77,7 @@ Do not describe that directory as present unless it is added in the same change.
 - device, memory, resources
 - commands, pipelines, descriptors
 - sync and swapchain
-- first-smoke-test observability across instance, device, pipeline, submit, and present boundaries
+- first-smoke-test observability across instance, device, pipeline, submit, present, and command-replay boundaries
 
 ### `launcher`
 

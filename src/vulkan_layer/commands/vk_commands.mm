@@ -72,6 +72,14 @@ static MTLPrimitiveType toMTLPrimitive(VkPrimitiveTopology topo) {
     }
 }
 
+static const char* bindPointName(VkPipelineBindPoint bindPoint) {
+    switch (bindPoint) {
+        case VK_PIPELINE_BIND_POINT_GRAPHICS: return "graphics";
+        case VK_PIPELINE_BIND_POINT_COMPUTE:  return "compute";
+        default:                              return "other";
+    }
+}
+
 static MTLIndexType toMTLIndex(VkIndexType t) {
     return (t == VK_INDEX_TYPE_UINT32) ? MTLIndexTypeUInt32 : MTLIndexTypeUInt16;
 }
@@ -1871,6 +1879,10 @@ static void replayCommand(const DeferredCmd& cmd, ReplayState& rs) {
 
     // ── Render pass (legacy) ────────────────────────────────────────────
     case CmdTag::BeginRenderPass: {
+        MVRVB_LOG_DEBUG("Replay BeginRenderPass: renderArea=%ux%u clearValues=%u",
+                        cmd.beginRenderPass.renderArea.extent.width,
+                        cmd.beginRenderPass.renderArea.extent.height,
+                        cmd.beginRenderPass.clearValueCount);
         rs.endActiveEncoder();
         @autoreleasepool {
             MTLRenderPassDescriptor* desc = buildRenderPassDescFromLegacy(cmd);
@@ -1878,11 +1890,14 @@ static void replayCommand(const DeferredCmd& cmd, ReplayState& rs) {
                 rs.renderEnc = [rs.mtlCB renderCommandEncoderWithDescriptor:desc];
                 rs.activeEncoder = EncoderType::Render;
                 rs.markRenderEncoderStateDirty();
+            } else {
+                MVRVB_LOG_WARN("Replay BeginRenderPass skipped: descriptor build failed");
             }
         }
         break;
     }
     case CmdTag::EndRenderPass: {
+        MVRVB_LOG_DEBUG("Replay EndRenderPass");
         rs.endActiveEncoder();
         break;
     }
@@ -1895,6 +1910,12 @@ static void replayCommand(const DeferredCmd& cmd, ReplayState& rs) {
 
     // ── Render pass (dynamic rendering) ─────────────────────────────────
     case CmdTag::BeginRendering: {
+        MVRVB_LOG_DEBUG("Replay BeginRendering: renderArea=%ux%u colorAttachments=%u depth=%s stencil=%s",
+                        cmd.beginRendering.renderArea.extent.width,
+                        cmd.beginRendering.renderArea.extent.height,
+                        cmd.beginRendering.colorAttachmentCount,
+                        cmd.beginRendering.hasDepth ? "yes" : "no",
+                        cmd.beginRendering.hasStencil ? "yes" : "no");
         rs.endActiveEncoder();
         @autoreleasepool {
             MTLRenderPassDescriptor* desc = buildRenderPassDescFromDynamic(cmd);
@@ -1902,11 +1923,14 @@ static void replayCommand(const DeferredCmd& cmd, ReplayState& rs) {
                 rs.renderEnc = [rs.mtlCB renderCommandEncoderWithDescriptor:desc];
                 rs.activeEncoder = EncoderType::Render;
                 rs.markRenderEncoderStateDirty();
+            } else {
+                MVRVB_LOG_WARN("Replay BeginRendering skipped: descriptor build failed");
             }
         }
         break;
     }
     case CmdTag::EndRendering: {
+        MVRVB_LOG_DEBUG("Replay EndRendering");
         rs.endActiveEncoder();
         break;
     }
@@ -1914,6 +1938,9 @@ static void replayCommand(const DeferredCmd& cmd, ReplayState& rs) {
     // ── Pipeline / state binding ────────────────────────────────────────
     case CmdTag::BindPipeline: {
         auto* pipe = reinterpret_cast<MvPipeline*>(cmd.bindPipeline.pipeline);
+        MVRVB_LOG_DEBUG("Replay BindPipeline: bindPoint=%s pipeline=%p",
+                        bindPointName(cmd.bindPipeline.bindPoint),
+                        (void*)pipe);
         if (cmd.bindPipeline.bindPoint == VK_PIPELINE_BIND_POINT_COMPUTE) {
             rs.boundComputePipeline = pipe;
         } else {
@@ -2028,11 +2055,19 @@ static void replayCommand(const DeferredCmd& cmd, ReplayState& rs) {
 
     // ── Draw commands ───────────────────────────────────────────────────
     case CmdTag::Draw: {
-        if (rs.activeEncoder != EncoderType::Render || !rs.renderEnc) break;
+        if (rs.activeEncoder != EncoderType::Render || !rs.renderEnc) {
+            MVRVB_LOG_WARN("Replay Draw skipped: render encoder unavailable");
+            break;
+        }
         rs.flushRenderState();
         MTLPrimitiveType prim = MTLPrimitiveTypeTriangle;
         if (rs.boundGraphicsPipeline)
             prim = toMTLPrimitive((VkPrimitiveTopology)rs.boundGraphicsPipeline->topology);
+        MVRVB_LOG_DEBUG("Replay Draw: vertices=%u instances=%u firstVertex=%u firstInstance=%u",
+                        cmd.draw.vertexCount,
+                        cmd.draw.instanceCount,
+                        cmd.draw.firstVertex,
+                        cmd.draw.firstInstance);
         [rs.renderEnc drawPrimitives:prim
                          vertexStart:cmd.draw.firstVertex
                          vertexCount:cmd.draw.vertexCount
@@ -2041,15 +2076,27 @@ static void replayCommand(const DeferredCmd& cmd, ReplayState& rs) {
         break;
     }
     case CmdTag::DrawIndexed: {
-        if (rs.activeEncoder != EncoderType::Render || !rs.renderEnc) break;
+        if (rs.activeEncoder != EncoderType::Render || !rs.renderEnc) {
+            MVRVB_LOG_WARN("Replay DrawIndexed skipped: render encoder unavailable");
+            break;
+        }
         rs.flushRenderState();
         auto* ib = reinterpret_cast<MvBuffer*>(rs.indexBuffer);
-        if (!ib || !ib->mtlBuffer) break;
+        if (!ib || !ib->mtlBuffer) {
+            MVRVB_LOG_WARN("Replay DrawIndexed skipped: index buffer unavailable");
+            break;
+        }
         MTLPrimitiveType prim = MTLPrimitiveTypeTriangle;
         if (rs.boundGraphicsPipeline)
             prim = toMTLPrimitive((VkPrimitiveTopology)rs.boundGraphicsPipeline->topology);
         MTLIndexType mtlIdxType = toMTLIndex(rs.indexType);
         uint32_t idxSize = (rs.indexType == VK_INDEX_TYPE_UINT32) ? 4 : 2;
+        MVRVB_LOG_DEBUG("Replay DrawIndexed: indices=%u instances=%u firstIndex=%u vertexOffset=%d firstInstance=%u",
+                        cmd.drawIndexed.indexCount,
+                        cmd.drawIndexed.instanceCount,
+                        cmd.drawIndexed.firstIndex,
+                        cmd.drawIndexed.vertexOffset,
+                        cmd.drawIndexed.firstInstance);
         [rs.renderEnc drawIndexedPrimitives:prim
                                  indexCount:cmd.drawIndexed.indexCount
                                   indexType:mtlIdxType
@@ -2133,7 +2180,10 @@ static void replayCommand(const DeferredCmd& cmd, ReplayState& rs) {
     case CmdTag::Dispatch: {
         rs.ensureComputeEncoder();
         rs.flushComputeState();
-        if (!rs.boundComputePipeline || !rs.computeEnc) break;
+        if (!rs.boundComputePipeline || !rs.computeEnc) {
+            MVRVB_LOG_WARN("Replay Dispatch skipped: compute pipeline or encoder unavailable");
+            break;
+        }
         // TODO: query threadExecutionWidth for optimal group size
         MTLSize threadsPerGroup = MTLSizeMake(
             std::min(cmd.dispatch.x, 64u),
@@ -2143,6 +2193,13 @@ static void replayCommand(const DeferredCmd& cmd, ReplayState& rs) {
             (cmd.dispatch.x + threadsPerGroup.width - 1) / threadsPerGroup.width,
             (cmd.dispatch.y + threadsPerGroup.height - 1) / threadsPerGroup.height,
             (cmd.dispatch.z + threadsPerGroup.depth - 1) / threadsPerGroup.depth);
+        MVRVB_LOG_DEBUG("Replay Dispatch: groups=%ux%ux%u threadsPerGroup=%ux%ux%u",
+                        cmd.dispatch.x,
+                        cmd.dispatch.y,
+                        cmd.dispatch.z,
+                        (uint32_t)threadsPerGroup.width,
+                        (uint32_t)threadsPerGroup.height,
+                        (uint32_t)threadsPerGroup.depth);
         [rs.computeEnc dispatchThreadgroups:threadgroups
                       threadsPerThreadgroup:threadsPerGroup];
         break;
@@ -2538,10 +2595,17 @@ void replayCommandBufferOnMTL(MvCommandBuffer* cb, id<MTLCommandBuffer> mtlCB) {
     rs.sourceCommandBuffer = cb;
     rs.mtlCB = mtlCB;
 
+    MVRVB_LOG_DEBUG("ReplayCommandBufferOnMTL: commands=%zu oneTime=%s simultaneous=%s renderPassContinue=%s",
+                    cb->commands.size(),
+                    cb->oneTimeSubmit ? "yes" : "no",
+                    cb->simultaneousUse ? "yes" : "no",
+                    cb->renderPassContinue ? "yes" : "no");
+
     replayCommandList(cb, rs);
 
     // End any active encoder left open
     rs.endActiveEncoder();
+    MVRVB_LOG_DEBUG("ReplayCommandBufferOnMTL complete: commands=%zu", cb->commands.size());
 }
 
 } // namespace mvrvb
