@@ -29,6 +29,7 @@ runtime validation.
 | macOS launcher CI build | PASSING | Swift launcher compiles |
 | Host-side unit tests | PASSING | Parser, emitter, format-table, and ICD contract coverage run in CI |
 | Runtime observability | IN PLACE | Instance, device, pipeline, swapchain, submit, and present logs are checked in |
+| Mac runtime runbook | IN PLACE | `docs/MAC_RUNTIME_SMOKE_TEST.md` defines the first hardware validation pass |
 | `vulkaninfo` | NOT TESTED | First real ICD runtime target |
 | `vkcube` | NOT TESTED | First real rendering target |
 | Launcher triangle test | IMPLEMENTED, NOT VERIFIED ON MAC YET | Implemented in `launcher/BridgeViewModel.swift` |

@@ -43,6 +43,8 @@ status. Use these files first:
   - Current milestone status and runtime-validation status
 - `docs/EXECUTION_PLAN.md`
   - Current two-week execution plan while Mac runtime testing is pending
+- `docs/MAC_RUNTIME_SMOKE_TEST.md`
+  - Canonical first-Mac smoke-test runbook and log-collection checklist
 - `CONTRIBUTING.md`
   - Workflow, conventions, and doc-update expectations
 - `SECURITY.md`
@@ -117,6 +119,7 @@ tests/                 Host-side unit tests for Apple-free modules
 - `docs/REPO_MAP.md`
 - `docs/MILESTONES.md`
 - `docs/EXECUTION_PLAN.md`
+- `docs/MAC_RUNTIME_SMOKE_TEST.md`
 - `CONTRIBUTING.md`
 - `SECURITY.md`
 - `launcher/README.md`

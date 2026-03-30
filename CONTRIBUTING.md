@@ -18,6 +18,8 @@ Use and maintain these files as the canonical references:
   - Milestone and runtime-validation status
 - `docs/EXECUTION_PLAN.md`
   - The current short-term execution plan and ordering
+- `docs/MAC_RUNTIME_SMOKE_TEST.md`
+  - The canonical Mac smoke-test procedure and reporting bundle
 - `SECURITY.md`
   - Security policy and reporting
 - `launcher/README.md`
@@ -65,6 +67,7 @@ Update docs when the matching area changes:
 - Update `docs/REPO_MAP.md` when directories, active targets, or ownership boundaries change.
 - Update `docs/MILESTONES.md` when milestone status or runtime-validation status changes.
 - Update `docs/EXECUTION_PLAN.md` when the near-term execution order changes.
+- Update `docs/MAC_RUNTIME_SMOKE_TEST.md` when the Mac validation procedure or required logs change.
 - Update `SECURITY.md` when reporting or security posture changes.
 - Update `launcher/README.md` when the launcher packaging flow changes.
 

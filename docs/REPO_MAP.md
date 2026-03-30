@@ -86,6 +86,11 @@ Do not describe that directory as present unless it is added in the same change.
 - runtime checks, triangle test, and log export
 - packaging script
 
+### `docs`
+
+- source-of-truth repo status and execution docs
+- Mac runtime smoke-test runbook
+
 ### `shaders`
 
 - Metal shader sources used by the project

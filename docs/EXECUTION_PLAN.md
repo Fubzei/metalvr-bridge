@@ -36,6 +36,11 @@ These items are now checked in and verified in CI:
    - graphics and compute pipeline creation
    - swapchain create, acquire, and present
    - queue submit and idle boundaries
+5. Mac runtime execution kit.
+   Scope:
+   - exact launcher, `vulkaninfo`, and `vkcube` order
+   - log environment variables and output locations
+   - failure triage checklist and report bundle
 
 ## Next Focus
 
@@ -44,11 +49,10 @@ These items are now checked in and verified in CI:
    - command-buffer replay and state-application breadcrumbs
    - concise failure summaries around the first broken runtime boundary
 2. Separate more Apple-free logic into host-testable units where practical.
-3. Prepare the Mac runtime execution kit.
+3. Tighten the Mac smoke-test handoff where useful.
    Scope:
-   - exact `vulkaninfo` and `vkcube` runbook
-   - log collection instructions
-   - failure triage checklist
+   - reduce ambiguity in tester instructions
+   - keep the runbook aligned with the launcher and logging surfaces
 
 ## Exit Criteria
 
