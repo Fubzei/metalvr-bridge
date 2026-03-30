@@ -1,6 +1,6 @@
 #!/bin/bash
 # =============================================================================
-# MetalVR Bridge — One-Command Build
+# MetalVR Bridge - One-Command Build
 # =============================================================================
 #
 # WHAT THIS DOES:
@@ -23,10 +23,10 @@
 set -e
 
 echo ""
-echo "  ╔══════════════════════════════════════════╗"
-echo "  ║        MetalVR Bridge — Builder          ║"
-echo "  ║   Building your app... sit tight.        ║"
-echo "  ╚══════════════════════════════════════════╝"
+echo "  ============================================"
+echo "          MetalVR Bridge - Builder"
+echo "     Building your app... sit tight."
+echo "  ============================================"
 echo ""
 
 # Check for Xcode tools
@@ -40,7 +40,7 @@ fi
 MISSING=0
 for f in MetalVRBridgeApp.swift ContentView.swift BridgeViewModel.swift; do
     if [ ! -f "$f" ]; then
-        echo "ERROR: Missing $f — make sure all .swift files are in this folder."
+        echo "ERROR: Missing $f - make sure all .swift files are in this folder."
         MISSING=1
     fi
 done
@@ -180,24 +180,23 @@ SIZE=$(du -sh "$ZIP_NAME" | cut -f1)
 APP_SIZE=$(du -sh "$APP" | cut -f1)
 
 echo ""
-echo "  ╔══════════════════════════════════════════╗"
-echo "  ║            BUILD COMPLETE!               ║"
-echo "  ╚══════════════════════════════════════════╝"
+echo "  ============================================"
+echo "             BUILD COMPLETE!"
+echo "  ============================================"
 echo ""
 echo "  App:  $APP ($APP_SIZE)"
 echo "  Zip:  $ZIP_NAME ($SIZE)"
 echo ""
-echo "  ┌─────────────────────────────────────────┐"
-echo "  │  SEND THIS TO YOUR BUDDY:               │"
-echo "  │                                          │"
-echo "  │  $ZIP_NAME"
-echo "  │                                          │"
-echo "  │  THEIR STEPS:                            │"
-echo "  │  1. Unzip the file                       │"
-echo "  │  2. Drag 'MetalVR Bridge' to             │"
-echo "  │     Applications                         │"
-echo "  │  3. Right-click -> Open (first time)     │"
-echo "  │  4. Click 'Run Triangle Test'            │"
-echo "  │  5. Click 'Launch Steam' to play games   │"
-echo "  └─────────────────────────────────────────┘"
+echo "  --------------------------------------------"
+echo "    SEND THIS TO YOUR BUDDY:"
+echo ""
+echo "    $ZIP_NAME"
+echo ""
+echo "    THEIR STEPS:"
+echo "    1. Unzip the file"
+echo "    2. Drag 'MetalVR Bridge' to Applications"
+echo "    3. Right-click -> Open (first time)"
+echo "    4. Click 'Run Triangle Test'"
+echo "    5. Click 'Launch Steam' to play games"
+echo "  --------------------------------------------"
 echo ""
