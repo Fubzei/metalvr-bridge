@@ -57,6 +57,11 @@ These items are now checked in and verified in CI:
    Scope:
    - reduce ambiguity in tester instructions
    - keep the runbook aligned with the launcher and logging surfaces
+   Progress:
+   - a runnable `scripts/mac_runtime_smoke_test.sh` entry point now builds,
+     captures logs, prompts for manual launcher/vkcube outcomes, and packages
+     the first-hardware report bundle
+   - GitHub now has a dedicated Mac smoke-test issue template for reporting
 
 ## Exit Criteria
 

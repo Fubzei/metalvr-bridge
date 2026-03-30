@@ -9,6 +9,7 @@ build surface.
 .github/
 docs/
 launcher/
+scripts/
 shaders/
 src/
 tests/
@@ -94,6 +95,11 @@ Do not describe that directory as present unless it is added in the same change.
 
 - source-of-truth repo status and execution docs
 - Mac runtime smoke-test runbook
+
+### `scripts`
+
+- Mac smoke-test automation and bundle collection
+- intended to reduce ambiguity for the first dedicated hardware run
 
 ### `shaders`
 

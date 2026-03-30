@@ -3,6 +3,28 @@
 This is the canonical day-one runbook for the first real Mac validation pass.
 Run the steps in order and do not skip ahead.
 
+## Fastest Path
+
+If you want the least ambiguous first pass, run the automation script from the
+repo root:
+
+```bash
+bash scripts/mac_runtime_smoke_test.sh
+```
+
+The script:
+
+- captures commit, env, and system info
+- builds the ICD, tests, and launcher
+- opens the launcher for the manual triangle step
+- runs `vulkaninfo`
+- runs `vkcube`
+- writes `summary.md`
+- packages the log bundle for the GitHub issue template
+
+Use the detailed manual steps below if you need to run only part of the flow or
+debug the automation itself.
+
 ## Goal
 
 Prove the project passes these checkpoints on real Mac hardware:
@@ -54,7 +76,7 @@ Expected outputs:
 
 ## Logging Setup
 
-Create one folder for all smoke-test outputs:
+Create one folder for all smoke-test outputs if you are running the manual path:
 
 ```bash
 export LOG_DIR="$HOME/metalvr-bridge-logs"
@@ -209,6 +231,12 @@ When reporting the first Mac smoke-test result, include:
   - `vkcube.exit.txt`
   - `vkcube_failure.png` if applicable
 - launcher diagnostic export if the launcher test failed
+
+If you use `scripts/mac_runtime_smoke_test.sh`, attach:
+
+- the generated `summary.md`
+- the generated bundle directory or `.zip`
+- any extra screenshot or launcher export not already copied into the bundle
 
 ## Stop Rule
 

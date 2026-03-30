@@ -31,6 +31,8 @@ Windows game
   synchronization/unsupported-op breadcrumbs.
 - There is currently no checked-in `tools/` directory.
 - The launcher includes an in-app triangle test and diagnostic log export.
+- `scripts/mac_runtime_smoke_test.sh` now automates the first hardware smoke-test
+  bundle so Mac-side validation is easier to execute and report.
 - The project now has protected `main` branch rules, security reporting, Dependabot,
   secret scanning, and an explicit CodeQL workflow.
 
@@ -111,6 +113,7 @@ src/
   vulkan_layer/        Active Vulkan ICD implementation
   vr_runtime/          Deferred VR-related code, not in active root build
 launcher/              SwiftUI macOS launcher app
+scripts/               Mac smoke-test automation and future support scripts
 shaders/               Metal shader sources
 docs/                  Repository source-of-truth docs
 tests/                 Host-side unit tests for Apple-free modules

@@ -51,6 +51,7 @@ Examples:
 - Use `.mm` when the file talks to Metal, AppKit, CoreFoundation, or other Apple APIs.
 - Keep Swift confined to `launcher/`.
 - Keep Metal shader sources in `shaders/`.
+- Keep smoke-test and support scripts in `scripts/`.
 - Follow the current logging macros in `src/common/logging.h`:
   - `MVRVB_LOG_TRACE`
   - `MVRVB_LOG_DEBUG`
@@ -88,3 +89,5 @@ Before submitting a PR:
   with portable helper logic extracted into `src/vulkan_layer/commands/transfer_utils.*`.
 - `tests/` is now checked in and is intended for host-side unit coverage before
   Mac runtime validation.
+- `scripts/mac_runtime_smoke_test.sh` is the canonical runnable entry point for
+  the first dedicated Mac smoke-test pass.
