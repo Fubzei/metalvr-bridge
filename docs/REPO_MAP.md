@@ -78,7 +78,9 @@ Do not describe that directory as present unless it is added in the same change.
 - commands, pipelines, descriptors
 - sync and swapchain
 - first-smoke-test observability across instance, device, pipeline, submit,
-  present, command-replay boundaries, and draw/dispatch state-flush summaries
+  present, command-replay boundaries, draw/dispatch state-flush summaries,
+  transfer/secondary-command breadcrumbs, and synchronization/unsupported-op
+  breadcrumbs
 
 ### `launcher`
 

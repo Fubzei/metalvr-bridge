@@ -80,6 +80,32 @@ static const char* bindPointName(VkPipelineBindPoint bindPoint) {
     }
 }
 
+static const char* commandBufferLevelName(VkCommandBufferLevel level) {
+    switch (level) {
+        case VK_COMMAND_BUFFER_LEVEL_PRIMARY: return "primary";
+        case VK_COMMAND_BUFFER_LEVEL_SECONDARY: return "secondary";
+        default: return "unknown";
+    }
+}
+
+static const char* filterName(VkFilter filter) {
+    switch (filter) {
+        case VK_FILTER_NEAREST: return "nearest";
+        case VK_FILTER_LINEAR: return "linear";
+        default: return "other";
+    }
+}
+
+static const char* encoderTypeName(EncoderType type) {
+    switch (type) {
+        case EncoderType::None: return "none";
+        case EncoderType::Render: return "render";
+        case EncoderType::Compute: return "compute";
+        case EncoderType::Blit: return "blit";
+        default: return "unknown";
+    }
+}
+
 static MTLIndexType toMTLIndex(VkIndexType t) {
     return (t == VK_INDEX_TYPE_UINT32) ? MTLIndexTypeUInt32 : MTLIndexTypeUInt16;
 }
@@ -2349,15 +2375,23 @@ static void replayCommand(const DeferredCmd& cmd, ReplayState& rs) {
         rs.ensureBlitEncoder();
         auto* src = reinterpret_cast<MvBuffer*>(cmd.copyBuffer.srcBuffer);
         auto* dst = reinterpret_cast<MvBuffer*>(cmd.copyBuffer.dstBuffer);
-        if (!src || !dst || !src->mtlBuffer || !dst->mtlBuffer || !rs.blitEnc) break;
+        if (!src || !dst || !src->mtlBuffer || !dst->mtlBuffer || !rs.blitEnc) {
+            MVRVB_LOG_WARN("Replay CopyBuffer skipped: source, destination, or blit encoder unavailable");
+            break;
+        }
+        uint64_t totalBytes = 0;
         for (uint32_t r = 0; r < cmd.copyBuffer.regionCount; ++r) {
             const auto& region = cmd.copyBuffer.regions[r];
+            totalBytes += region.size;
             [rs.blitEnc copyFromBuffer:(__bridge id<MTLBuffer>)src->mtlBuffer
                           sourceOffset:region.srcOffset + src->mtlBufferOffset
                               toBuffer:(__bridge id<MTLBuffer>)dst->mtlBuffer
                      destinationOffset:region.dstOffset + dst->mtlBufferOffset
                                   size:region.size];
         }
+        MVRVB_LOG_DEBUG("Replay CopyBuffer: regions=%u totalBytes=%llu",
+                        cmd.copyBuffer.regionCount,
+                        static_cast<unsigned long long>(totalBytes));
         break;
     }
 
@@ -2366,14 +2400,19 @@ static void replayCommand(const DeferredCmd& cmd, ReplayState& rs) {
         rs.ensureBlitEncoder();
         auto* srcImg = reinterpret_cast<MvImage*>(cmd.copyImage.srcImage);
         auto* dstImg = reinterpret_cast<MvImage*>(cmd.copyImage.dstImage);
-        if (!srcImg || !dstImg || !srcImg->mtlTexture || !dstImg->mtlTexture || !rs.blitEnc) break;
+        if (!srcImg || !dstImg || !srcImg->mtlTexture || !dstImg->mtlTexture || !rs.blitEnc) {
+            MVRVB_LOG_WARN("Replay CopyImage skipped: source, destination, or blit encoder unavailable");
+            break;
+        }
         id<MTLTexture> srcTex = (__bridge id<MTLTexture>)srcImg->mtlTexture;
         id<MTLTexture> dstTex = (__bridge id<MTLTexture>)dstImg->mtlTexture;
+        uint32_t totalLayerCopies = 0;
         for (uint32_t r = 0; r < cmd.copyImage.regionCount; ++r) {
             const auto& region = cmd.copyImage.regions[r];
             uint32_t layerCount = region.srcSubresource.layerCount;
             if (layerCount == VK_REMAINING_ARRAY_LAYERS)
                 layerCount = srcImg->arrayLayers - region.srcSubresource.baseArrayLayer;
+            totalLayerCopies += layerCount;
             for (uint32_t layer = 0; layer < layerCount; ++layer) {
                 [rs.blitEnc copyFromTexture:srcTex
                                 sourceSlice:region.srcSubresource.baseArrayLayer + layer
@@ -2386,6 +2425,9 @@ static void replayCommand(const DeferredCmd& cmd, ReplayState& rs) {
                           destinationOrigin:MTLOriginMake(region.dstOffset.x, region.dstOffset.y, region.dstOffset.z)];
             }
         }
+        MVRVB_LOG_DEBUG("Replay CopyImage: regions=%u layerCopies=%u",
+                        cmd.copyImage.regionCount,
+                        totalLayerCopies);
         break;
     }
 
@@ -2394,9 +2436,13 @@ static void replayCommand(const DeferredCmd& cmd, ReplayState& rs) {
         rs.ensureBlitEncoder();
         auto* srcBuf = reinterpret_cast<MvBuffer*>(cmd.copyBufferToImage.srcBuffer);
         auto* dstImg = reinterpret_cast<MvImage*>(cmd.copyBufferToImage.dstImage);
-        if (!srcBuf || !dstImg || !srcBuf->mtlBuffer || !dstImg->mtlTexture || !rs.blitEnc) break;
+        if (!srcBuf || !dstImg || !srcBuf->mtlBuffer || !dstImg->mtlTexture || !rs.blitEnc) {
+            MVRVB_LOG_WARN("Replay CopyBufferToImage skipped: source, destination, or blit encoder unavailable");
+            break;
+        }
         id<MTLBuffer>  mtlBuf = (__bridge id<MTLBuffer>)srcBuf->mtlBuffer;
         id<MTLTexture> mtlTex = (__bridge id<MTLTexture>)dstImg->mtlTexture;
+        uint64_t totalBytes = 0;
         for (uint32_t r = 0; r < cmd.copyBufferToImage.regionCount; ++r) {
             const auto& region = cmd.copyBufferToImage.regions[r];
             uint32_t bpp = formatBytesPerPixel(dstImg->format);
@@ -2409,6 +2455,7 @@ static void replayCommand(const DeferredCmd& cmd, ReplayState& rs) {
             uint32_t layerCount = region.imageSubresource.layerCount;
             if (layerCount == VK_REMAINING_ARRAY_LAYERS)
                 layerCount = dstImg->arrayLayers - region.imageSubresource.baseArrayLayer;
+            totalBytes += static_cast<uint64_t>(bytesPerImage) * layerCount;
             for (uint32_t layer = 0; layer < layerCount; ++layer) {
                 [rs.blitEnc copyFromBuffer:mtlBuf
                               sourceOffset:region.bufferOffset + srcBuf->mtlBufferOffset + layer * bytesPerImage
@@ -2421,6 +2468,9 @@ static void replayCommand(const DeferredCmd& cmd, ReplayState& rs) {
                          destinationOrigin:MTLOriginMake(region.imageOffset.x, region.imageOffset.y, region.imageOffset.z)];
             }
         }
+        MVRVB_LOG_DEBUG("Replay CopyBufferToImage: regions=%u totalBytes=%llu",
+                        cmd.copyBufferToImage.regionCount,
+                        static_cast<unsigned long long>(totalBytes));
         break;
     }
 
@@ -2429,9 +2479,13 @@ static void replayCommand(const DeferredCmd& cmd, ReplayState& rs) {
         rs.ensureBlitEncoder();
         auto* srcImg = reinterpret_cast<MvImage*>(cmd.copyImageToBuffer.srcImage);
         auto* dstBuf = reinterpret_cast<MvBuffer*>(cmd.copyImageToBuffer.dstBuffer);
-        if (!srcImg || !dstBuf || !srcImg->mtlTexture || !dstBuf->mtlBuffer || !rs.blitEnc) break;
+        if (!srcImg || !dstBuf || !srcImg->mtlTexture || !dstBuf->mtlBuffer || !rs.blitEnc) {
+            MVRVB_LOG_WARN("Replay CopyImageToBuffer skipped: source, destination, or blit encoder unavailable");
+            break;
+        }
         id<MTLTexture> mtlTex = (__bridge id<MTLTexture>)srcImg->mtlTexture;
         id<MTLBuffer>  mtlBuf = (__bridge id<MTLBuffer>)dstBuf->mtlBuffer;
+        uint64_t totalBytes = 0;
         for (uint32_t r = 0; r < cmd.copyImageToBuffer.regionCount; ++r) {
             const auto& region = cmd.copyImageToBuffer.regions[r];
             uint32_t bpp = formatBytesPerPixel(srcImg->format);
@@ -2444,6 +2498,7 @@ static void replayCommand(const DeferredCmd& cmd, ReplayState& rs) {
             uint32_t layerCount = region.imageSubresource.layerCount;
             if (layerCount == VK_REMAINING_ARRAY_LAYERS)
                 layerCount = srcImg->arrayLayers - region.imageSubresource.baseArrayLayer;
+            totalBytes += static_cast<uint64_t>(bytesPerImage) * layerCount;
             for (uint32_t layer = 0; layer < layerCount; ++layer) {
                 [rs.blitEnc copyFromTexture:mtlTex
                                 sourceSlice:region.imageSubresource.baseArrayLayer + layer
@@ -2456,6 +2511,9 @@ static void replayCommand(const DeferredCmd& cmd, ReplayState& rs) {
                    destinationBytesPerImage:bytesPerImage];
             }
         }
+        MVRVB_LOG_DEBUG("Replay CopyImageToBuffer: regions=%u totalBytes=%llu",
+                        cmd.copyImageToBuffer.regionCount,
+                        static_cast<unsigned long long>(totalBytes));
         break;
     }
 
@@ -2464,36 +2522,67 @@ static void replayCommand(const DeferredCmd& cmd, ReplayState& rs) {
         rs.endActiveEncoder(); // Must end any active encoder before using our own render passes
         auto* srcImg = reinterpret_cast<MvImage*>(cmd.blitImage.srcImage);
         auto* dstImg = reinterpret_cast<MvImage*>(cmd.blitImage.dstImage);
-        if (!srcImg || !dstImg) break;
-        for (uint32_t r = 0; r < cmd.blitImage.regionCount; ++r) {
-            encodeColorBlitRegion(rs.device, rs.mtlCB, srcImg, dstImg,
-                                 cmd.blitImage.regions[r], cmd.blitImage.filter);
+        if (!srcImg || !dstImg) {
+            MVRVB_LOG_WARN("Replay BlitImage skipped: source or destination image unavailable");
+            break;
         }
+        uint32_t failedRegions = 0;
+        for (uint32_t r = 0; r < cmd.blitImage.regionCount; ++r) {
+            if (!encodeColorBlitRegion(rs.device, rs.mtlCB, srcImg, dstImg,
+                                       cmd.blitImage.regions[r], cmd.blitImage.filter)) {
+                ++failedRegions;
+                MVRVB_LOG_WARN("Replay BlitImage region %u failed to encode", r);
+            }
+        }
+        MVRVB_LOG_DEBUG("Replay BlitImage: regions=%u filter=%s failedRegions=%u",
+                        cmd.blitImage.regionCount,
+                        filterName(cmd.blitImage.filter),
+                        failedRegions);
         break;
     }
 
     // ── Transfer: FillBuffer (compute shader for 4-byte pattern) ────────
     case CmdTag::FillBuffer: {
         auto* dst = reinterpret_cast<MvBuffer*>(cmd.fillBuffer.dstBuffer);
-        if (!dst || !dst->mtlBuffer || !rs.device) break;
+        if (!dst || !dst->mtlBuffer || !rs.device) {
+            MVRVB_LOG_WARN("Replay FillBuffer skipped: destination buffer or device unavailable");
+            break;
+        }
 
         uint64_t resolvedSize = resolvedBufferRangeSize(dst, cmd.fillBuffer.dstOffset, cmd.fillBuffer.size);
-        if (resolvedSize == 0) break;
+        if (resolvedSize == 0) {
+            MVRVB_LOG_WARN("Replay FillBuffer skipped: resolved size is zero");
+            break;
+        }
 
         // If pattern is a repeated byte, use Metal's native fillBuffer
         if (isRepeatedBytePattern(cmd.fillBuffer.data)) {
             rs.ensureBlitEncoder();
+            if (!rs.blitEnc) {
+                MVRVB_LOG_WARN("Replay FillBuffer skipped: blit encoder unavailable for repeated-byte path");
+                break;
+            }
             uint8_t byteVal = static_cast<uint8_t>(cmd.fillBuffer.data & 0xFF);
             [rs.blitEnc fillBuffer:(__bridge id<MTLBuffer>)dst->mtlBuffer
                              range:NSMakeRange(cmd.fillBuffer.dstOffset + dst->mtlBufferOffset, resolvedSize)
                              value:byteVal];
+            MVRVB_LOG_DEBUG("Replay FillBuffer: mode=blit offset=%llu size=%llu pattern=0x%08x",
+                            static_cast<unsigned long long>(cmd.fillBuffer.dstOffset),
+                            static_cast<unsigned long long>(resolvedSize),
+                            cmd.fillBuffer.data);
         } else {
             // Use compute shader for 4-byte pattern fill
             rs.endActiveEncoder();
             id<MTLComputePipelineState> pipeline = ensureTransferFillBufferPipeline(rs.device);
-            if (!pipeline) break;
+            if (!pipeline) {
+                MVRVB_LOG_WARN("Replay FillBuffer skipped: fill pipeline unavailable");
+                break;
+            }
             id<MTLComputeCommandEncoder> enc = [rs.mtlCB computeCommandEncoder];
-            if (!enc) break;
+            if (!enc) {
+                MVRVB_LOG_WARN("Replay FillBuffer skipped: compute encoder unavailable");
+                break;
+            }
 
             TransferFillParams params;
             params.wordCount = static_cast<uint32_t>(resolvedSize / 4);
@@ -2508,6 +2597,11 @@ static void replayCommand(const DeferredCmd& cmd, ReplayState& rs) {
             MTLSize tgSize  = MTLSizeMake(threadWidth, 1, 1);
             [enc dispatchThreads:threads threadsPerThreadgroup:tgSize];
             [enc endEncoding];
+            MVRVB_LOG_DEBUG("Replay FillBuffer: mode=compute offset=%llu size=%llu words=%u pattern=0x%08x",
+                            static_cast<unsigned long long>(cmd.fillBuffer.dstOffset),
+                            static_cast<unsigned long long>(resolvedSize),
+                            params.wordCount,
+                            cmd.fillBuffer.data);
         }
         break;
     }
@@ -2515,22 +2609,39 @@ static void replayCommand(const DeferredCmd& cmd, ReplayState& rs) {
     // ── Transfer: UpdateBuffer (inline data → staging buffer → blit) ────
     case CmdTag::UpdateBuffer: {
         auto* dst = reinterpret_cast<MvBuffer*>(cmd.updateBuffer.dstBuffer);
-        if (!dst || !dst->mtlBuffer || !rs.device || !rs.device->mtlDevice) break;
+        if (!dst || !dst->mtlBuffer || !rs.device || !rs.device->mtlDevice) {
+            MVRVB_LOG_WARN("Replay UpdateBuffer skipped: destination buffer or Metal device unavailable");
+            break;
+        }
         const auto* blob = rs.sourceCommandBuffer->inlineData(cmd.updateBuffer.dataBlobIndex);
-        if (!blob || blob->empty()) break;
+        if (!blob || blob->empty()) {
+            MVRVB_LOG_WARN("Replay UpdateBuffer skipped: inline data blob unavailable");
+            break;
+        }
 
         rs.ensureBlitEncoder();
+        if (!rs.blitEnc) {
+            MVRVB_LOG_WARN("Replay UpdateBuffer skipped: blit encoder unavailable");
+            break;
+        }
         // Create a small staging buffer for the inline data
         id<MTLBuffer> staging = [(__bridge id<MTLDevice>)rs.device->mtlDevice
             newBufferWithBytes:blob->data()
                         length:blob->size()
                        options:MTLResourceStorageModeShared];
-        if (!staging) break;
+        if (!staging) {
+            MVRVB_LOG_WARN("Replay UpdateBuffer skipped: staging buffer allocation failed");
+            break;
+        }
         [rs.blitEnc copyFromBuffer:staging
                       sourceOffset:0
                           toBuffer:(__bridge id<MTLBuffer>)dst->mtlBuffer
                  destinationOffset:cmd.updateBuffer.dstOffset + dst->mtlBufferOffset
                               size:cmd.updateBuffer.dataSize];
+        MVRVB_LOG_DEBUG("Replay UpdateBuffer: dstOffset=%llu dataSize=%u blobBytes=%zu",
+                        static_cast<unsigned long long>(cmd.updateBuffer.dstOffset),
+                        cmd.updateBuffer.dataSize,
+                        blob->size());
         break;
     }
 
@@ -2539,11 +2650,21 @@ static void replayCommand(const DeferredCmd& cmd, ReplayState& rs) {
         rs.endActiveEncoder();
         auto* srcImg = reinterpret_cast<MvImage*>(cmd.resolveImage.srcImage);
         auto* dstImg = reinterpret_cast<MvImage*>(cmd.resolveImage.dstImage);
-        if (!srcImg || !dstImg) break;
-        for (uint32_t r = 0; r < cmd.resolveImage.regionCount; ++r) {
-            encodeColorResolveRegion(rs.device, rs.mtlCB, srcImg, dstImg,
-                                    cmd.resolveImage.regions[r]);
+        if (!srcImg || !dstImg) {
+            MVRVB_LOG_WARN("Replay ResolveImage skipped: source or destination image unavailable");
+            break;
         }
+        uint32_t failedRegions = 0;
+        for (uint32_t r = 0; r < cmd.resolveImage.regionCount; ++r) {
+            if (!encodeColorResolveRegion(rs.device, rs.mtlCB, srcImg, dstImg,
+                                          cmd.resolveImage.regions[r])) {
+                ++failedRegions;
+                MVRVB_LOG_WARN("Replay ResolveImage region %u failed to encode", r);
+            }
+        }
+        MVRVB_LOG_DEBUG("Replay ResolveImage: regions=%u failedRegions=%u",
+                        cmd.resolveImage.regionCount,
+                        failedRegions);
         break;
     }
 
@@ -2551,7 +2672,10 @@ static void replayCommand(const DeferredCmd& cmd, ReplayState& rs) {
     case CmdTag::ClearColorImage: {
         rs.endActiveEncoder();
         auto* img = reinterpret_cast<MvImage*>(cmd.clearColorImage.image);
-        if (!img || !img->mtlTexture) break;
+        if (!img || !img->mtlTexture) {
+            MVRVB_LOG_WARN("Replay ClearColorImage skipped: image or Metal texture unavailable");
+            break;
+        }
         id<MTLTexture> texture = (__bridge id<MTLTexture>)img->mtlTexture;
         MTLClearColor clearColor = toMTLClearColor(cmd.clearColorImage.color, img->format);
 
@@ -2579,6 +2703,9 @@ static void replayCommand(const DeferredCmd& cmd, ReplayState& rs) {
                 }
             }
         }
+        MVRVB_LOG_DEBUG("Replay ClearColorImage: ranges=%u format=%d",
+                        cmd.clearColorImage.rangeCount,
+                        img->format);
         break;
     }
 
@@ -2586,7 +2713,10 @@ static void replayCommand(const DeferredCmd& cmd, ReplayState& rs) {
     case CmdTag::ClearDepthStencilImage: {
         rs.endActiveEncoder();
         auto* img = reinterpret_cast<MvImage*>(cmd.clearDepthStencilImage.image);
-        if (!img || !img->mtlTexture) break;
+        if (!img || !img->mtlTexture) {
+            MVRVB_LOG_WARN("Replay ClearDepthStencilImage skipped: image or Metal texture unavailable");
+            break;
+        }
         id<MTLTexture> texture = (__bridge id<MTLTexture>)img->mtlTexture;
         MTLPixelFormat mtlFmt = vkFormatToMTL(img->format);
         bool hasDepth   = isDepthFormat(img->format);
@@ -2624,6 +2754,10 @@ static void replayCommand(const DeferredCmd& cmd, ReplayState& rs) {
                 }
             }
         }
+        MVRVB_LOG_DEBUG("Replay ClearDepthStencilImage: ranges=%u depth=%s stencil=%s",
+                        cmd.clearDepthStencilImage.rangeCount,
+                        hasDepth ? "yes" : "no",
+                        hasStencil ? "yes" : "no");
         break;
     }
 
@@ -2631,7 +2765,9 @@ static void replayCommand(const DeferredCmd& cmd, ReplayState& rs) {
     case CmdTag::ClearAttachments: {
         // TODO: implement mid-render-pass clears via setScissorRect + draw
         // For now, this is a no-op since Metal render passes clear on load
-        MVRVB_LOG_WARN("vkCmdClearAttachments: mid-render-pass clear not yet implemented");
+        MVRVB_LOG_WARN("vkCmdClearAttachments: mid-render-pass clear not yet implemented (attachments=%u rects=%u)",
+                       cmd.clearAttachments.attachmentCount,
+                       cmd.clearAttachments.rectCount);
         break;
     }
 
@@ -2639,6 +2775,8 @@ static void replayCommand(const DeferredCmd& cmd, ReplayState& rs) {
     case CmdTag::PipelineBarrier: {
         // Metal handles most hazards automatically.
         // Insert a memory barrier on the active encoder if present.
+        MVRVB_LOG_DEBUG("Replay PipelineBarrier: activeEncoder=%s",
+                        encoderTypeName(rs.activeEncoder));
         if (rs.activeEncoder == EncoderType::Render && rs.renderEnc) {
             if (@available(macOS 10.14, *)) {
                 [rs.renderEnc memoryBarrierWithScope:(MTLBarrierScopeBuffers | MTLBarrierScopeTextures)
@@ -2653,6 +2791,8 @@ static void replayCommand(const DeferredCmd& cmd, ReplayState& rs) {
     }
     case CmdTag::PipelineBarrier2: {
         // Same as PipelineBarrier — Metal handles hazards automatically
+        MVRVB_LOG_DEBUG("Replay PipelineBarrier2: activeEncoder=%s",
+                        encoderTypeName(rs.activeEncoder));
         if (rs.activeEncoder == EncoderType::Render && rs.renderEnc) {
             if (@available(macOS 10.14, *)) {
                 [rs.renderEnc memoryBarrierWithScope:(MTLBarrierScopeBuffers | MTLBarrierScopeTextures)
@@ -2666,21 +2806,35 @@ static void replayCommand(const DeferredCmd& cmd, ReplayState& rs) {
     }
     case CmdTag::SetEvent: {
         auto* ev = toMv(cmd.setEvent.event);
-        if (ev) ev->set.store(true, std::memory_order_release);
+        if (ev) {
+            ev->set.store(true, std::memory_order_release);
+            MVRVB_LOG_DEBUG("Replay SetEvent: event=%p state=set", static_cast<void*>(ev));
+        } else {
+            MVRVB_LOG_WARN("Replay SetEvent skipped: event unavailable");
+        }
         break;
     }
     case CmdTag::ResetEvent: {
         auto* ev = toMv(cmd.resetEvent.event);
-        if (ev) ev->set.store(false, std::memory_order_release);
+        if (ev) {
+            ev->set.store(false, std::memory_order_release);
+            MVRVB_LOG_DEBUG("Replay ResetEvent: event=%p state=reset", static_cast<void*>(ev));
+        } else {
+            MVRVB_LOG_WARN("Replay ResetEvent skipped: event unavailable");
+        }
         break;
     }
 
     // ── ExecuteCommands (secondary command buffers) ─────────────────────
     case CmdTag::ExecuteCommands: {
+        MVRVB_LOG_DEBUG("Replay ExecuteCommands: secondaryCount=%u",
+                        cmd.executeCommands.commandBufferCount);
         for (uint32_t i = 0; i < cmd.executeCommands.commandBufferCount; ++i) {
             auto* secondary = toMv(cmd.executeCommands.commandBuffers[i]);
             if (secondary) {
                 replayCommandList(secondary, rs);
+            } else {
+                MVRVB_LOG_WARN("Replay ExecuteCommands skipped secondary[%u]: command buffer unavailable", i);
             }
         }
         break;
@@ -2698,11 +2852,23 @@ static void replayCommand(const DeferredCmd& cmd, ReplayState& rs) {
 static void replayCommandList(const MvCommandBuffer* cb, ReplayState& rs) {
     if (!cb) return;
     const MvCommandBuffer* savedSource = rs.sourceCommandBuffer;
+    const bool isNestedSecondary =
+        (cb->level == VK_COMMAND_BUFFER_LEVEL_SECONDARY) && (savedSource != cb);
+    if (isNestedSecondary) {
+        MVRVB_LOG_DEBUG("ReplayCommandList enter: level=%s commands=%zu",
+                        commandBufferLevelName(cb->level),
+                        cb->commands.size());
+    }
     rs.sourceCommandBuffer = cb;
     for (const auto& cmd : cb->commands) {
         replayCommand(cmd, rs);
     }
     rs.sourceCommandBuffer = savedSource;
+    if (isNestedSecondary) {
+        MVRVB_LOG_DEBUG("ReplayCommandList complete: level=%s commands=%zu",
+                        commandBufferLevelName(cb->level),
+                        cb->commands.size());
+    }
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════

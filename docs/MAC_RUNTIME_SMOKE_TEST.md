@@ -142,6 +142,13 @@ Expected result:
   - `AcquireNextImageKHR OK`
   - `QueueSubmit`
   - `QueuePresentKHR`
+  - `Replay BindDescriptorSets`
+  - `Replay flushRenderState`
+  - `Replay Draw`
+  - transfer or sync markers if the app uploads resources first:
+    - `Replay CopyBuffer`
+    - `Replay CopyBufferToImage`
+    - `Replay PipelineBarrier`
 
 If this fails:
 
@@ -166,6 +173,21 @@ Use the first failing boundary:
   - likely swapchain, shader module, or pipeline creation
 - `vkcube` shows a window but renders black or corrupted output:
   - likely descriptor binding, command replay, pipeline state, or present sequencing
+
+Useful log markers when narrowing the first break:
+
+- `Replay flushRenderState`
+  - confirms graphics state was applied before draw
+- `Replay flushDescriptorsRender`
+  - confirms descriptor sets were actually flushed to Metal bindings
+- `Replay Draw` or `Replay DrawIndexed`
+  - confirms a draw call was reached
+- `Replay CopyBuffer`, `Replay CopyBufferToImage`, `Replay ResolveImage`, `Replay BlitImage`
+  - confirms transfer activity leading into the render path
+- `Replay ExecuteCommands`
+  - confirms secondary command buffers were replayed
+- `Replay PipelineBarrier` or `Replay PipelineBarrier2`
+  - confirms synchronization breadcrumbs around the failing section
 
 ## Report Bundle
 

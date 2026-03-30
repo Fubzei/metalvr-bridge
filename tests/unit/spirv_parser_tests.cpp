@@ -94,6 +94,13 @@ std::vector<uint8_t> wordsToBytes(const std::vector<uint32_t>& words) {
     return bytes;
 }
 
+uint32_t byteSwap32(uint32_t value) {
+    return ((value & 0x000000FFu) << 24u) |
+           ((value & 0x0000FF00u) << 8u) |
+           ((value & 0x00FF0000u) >> 8u) |
+           ((value & 0xFF000000u) >> 24u);
+}
+
 TEST(SpirvParser, RejectsTruncatedHeaders) {
     const std::array<uint32_t, 4> words{0u, 0u, 0u, 0u};
 
@@ -110,6 +117,25 @@ TEST(SpirvParser, RejectsInvalidMagicNumbers) {
 
     EXPECT_EQ(result.error, ParseError::InvalidMagic);
     EXPECT_EQ(result.errorMessage, "Not a SPIR-V module (bad magic number)");
+}
+
+TEST(SpirvParser, RejectsUnsupportedVersions) {
+    const std::array<uint32_t, 5> words{kSpirvMagic, 0x00010700u, 0u, 0u, 0u};
+
+    const ParseResult result = parseSPIRV(words.data(), words.size());
+
+    EXPECT_EQ(result.error, ParseError::UnsupportedVersion);
+    EXPECT_EQ(result.errorMessage, "SPIR-V version > 1.6 not supported");
+}
+
+TEST(SpirvParser, RejectsInstructionsThatRunPastTheModuleEnd) {
+    auto words = makeMinimalComputeModule();
+    words[5] = makeInstructionWord(64u, kOpCapability);
+
+    const ParseResult result = parseSPIRV(words.data(), words.size());
+
+    EXPECT_EQ(result.error, ParseError::MalformedInstruction);
+    EXPECT_EQ(result.errorMessage, "Instruction word count out of range at word 5");
 }
 
 TEST(SpirvParser, ParsesMinimalComputeModule) {
@@ -151,6 +177,20 @@ TEST(SpirvParser, ParsesAlignedByteInputAndRejectsUnalignedBytes) {
 
     EXPECT_EQ(invalidResult.error, ParseError::MalformedInstruction);
     EXPECT_EQ(invalidResult.errorMessage, "SPIR-V byte count not aligned to 4 bytes");
+}
+
+TEST(SpirvParser, ParsesByteSwappedWordInput) {
+    auto words = makeMinimalComputeModule();
+    for (auto& word : words) {
+        word = byteSwap32(word);
+    }
+
+    const ParseResult result = parseSPIRV(words.data(), words.size());
+
+    ASSERT_TRUE(result) << result.errorMessage;
+    ASSERT_EQ(result.module.entryPoints.size(), 1u);
+    EXPECT_EQ(result.module.entryPoints.front().name, "main");
+    EXPECT_EQ(result.module.entryPoints.front().localSizeX, 8u);
 }
 
 }  // namespace

@@ -212,5 +212,21 @@ TEST(SpirvToMsl, EmitsComputeStubAndReflectsResources) {
     EXPECT_NE(result.mslSource.find("return;"), std::string::npos);
 }
 
+TEST(SpirvToMsl, FallsBackToFirstSamplerWhenNoBindingMatchExists) {
+    SPIRVModule module = makeComputeModuleWithResources();
+    module.variables[13u].binding = 5u;
+
+    const TranslateResult result = translateToMSL(module);
+
+    ASSERT_TRUE(result) << result.errorMessage;
+    ASSERT_EQ(result.reflection.textures.size(), 1u);
+    ASSERT_EQ(result.reflection.samplers.size(), 1u);
+
+    EXPECT_EQ(result.reflection.samplers.front().binding, 5u);
+    EXPECT_EQ(result.reflection.samplers.front().metalSamplerSlot, 0u);
+    EXPECT_EQ(result.reflection.textures.front().binding, 0u);
+    EXPECT_EQ(result.reflection.textures.front().metalSamplerSlot, 0u);
+}
+
 }  // namespace
 }  // namespace mvrvb::msl

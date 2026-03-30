@@ -35,7 +35,8 @@ These items are now checked in and verified in CI:
    - logical-device creation
    - graphics and compute pipeline creation
    - swapchain create, acquire, and present
-   - queue submit, idle, command-replay boundaries, and draw/dispatch state-flush summaries
+   - queue submit, idle, command-replay boundaries, draw/dispatch state-flush summaries,
+     transfer/secondary-command breadcrumbs, and synchronization/unsupported-op breadcrumbs
 5. Mac runtime execution kit.
    Scope:
    - exact launcher, `vulkaninfo`, and `vkcube` order
@@ -46,7 +47,7 @@ These items are now checked in and verified in CI:
 
 1. Continue expanding runtime observability into failure triage before the first Mac smoke test.
    Scope:
-   - extend concise failure summaries into remaining transfer and secondary-command paths
+   - extend concise failure summaries into any remaining low-visibility replay paths
    - keep the first broken runtime boundary obvious in the exported log
 2. Separate more Apple-free logic into host-testable units where practical.
 3. Tighten the Mac smoke-test handoff where useful.

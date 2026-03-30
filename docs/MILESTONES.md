@@ -28,7 +28,7 @@ runtime validation.
 | macOS ICD CI build | PASSING | Compile and link checks are green |
 | macOS launcher CI build | PASSING | Swift launcher compiles |
 | Host-side unit tests | PASSING | Parser, emitter, format-table, and ICD contract coverage run in CI |
-| Runtime observability | IN PLACE | Instance, device, pipeline, swapchain, submit, present, replay-boundary, and state-flush summary logs are checked in |
+| Runtime observability | IN PLACE | Instance, device, pipeline, swapchain, submit, present, replay-boundary, state-flush summary, transfer/secondary replay, and synchronization/unsupported-op logs are checked in |
 | Mac runtime runbook | IN PLACE | `docs/MAC_RUNTIME_SMOKE_TEST.md` defines the first hardware validation pass |
 | `vulkaninfo` | NOT TESTED | First real ICD runtime target |
 | `vkcube` | NOT TESTED | First real rendering target |
