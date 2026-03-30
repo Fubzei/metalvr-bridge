@@ -6,6 +6,17 @@
 
 namespace mvrvb {
 
+struct FormatInfo;
+
+enum class TransferPipelineKind : uint8_t {
+    BlitFloat,
+    BlitUInt,
+    BlitSInt,
+    ResolveFloat,
+    ResolveUInt,
+    ResolveSInt,
+};
+
 struct TransferSliceResolution {
     uint32_t count{0};
     int32_t start{0};
@@ -58,6 +69,15 @@ uint64_t resolvedBufferRangeSize(uint64_t bufferSize,
                                  VkDeviceSize size);
 
 bool isRepeatedBytePattern(uint32_t pattern);
+
+TransferPipelineKind blitPipelineKindForFormat(const FormatInfo& info);
+
+TransferPipelineKind resolvePipelineKindForFormat(const FormatInfo& info);
+
+bool isIntegralFormat(const FormatInfo& info);
+
+bool areTransferColorClassesCompatible(const FormatInfo& srcInfo,
+                                       const FormatInfo& dstInfo);
 
 bool buildTransferRegionGeometry(const VkOffset3D srcOffsets[2],
                                  const VkOffset3D dstOffsets[2],

@@ -25,7 +25,7 @@ Windows game
   build today.
 - A checked-in `tests/` harness now covers the SPIR-V parser, MSL emitter,
   format table, ICD contract checks, and extracted transfer helpers including
-  range, slice, and region-geometry math.
+  range, slice, region-geometry, and transfer-format classification math.
 - First-pass runtime observability logs now cover instance, device, pipeline,
   swapchain, submit, present, command-replay boundaries, draw/dispatch
   state-flush summaries, transfer/secondary-command breadcrumbs, and

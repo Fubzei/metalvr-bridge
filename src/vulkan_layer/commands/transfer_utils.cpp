@@ -1,5 +1,7 @@
 #include "transfer_utils.h"
 
+#include "../format_table/format_table.h"
+
 #include <algorithm>
 
 namespace mvrvb {
@@ -69,6 +71,29 @@ uint64_t resolvedBufferRangeSize(uint64_t bufferSize,
 bool isRepeatedBytePattern(uint32_t pattern) {
     const uint8_t byteValue = static_cast<uint8_t>(pattern & 0xFF);
     return pattern == (uint32_t(byteValue) * 0x01010101u);
+}
+
+TransferPipelineKind blitPipelineKindForFormat(const FormatInfo& info) {
+    if (info.isUInt) return TransferPipelineKind::BlitUInt;
+    if (info.isSInt) return TransferPipelineKind::BlitSInt;
+    return TransferPipelineKind::BlitFloat;
+}
+
+TransferPipelineKind resolvePipelineKindForFormat(const FormatInfo& info) {
+    if (info.isUInt) return TransferPipelineKind::ResolveUInt;
+    if (info.isSInt) return TransferPipelineKind::ResolveSInt;
+    return TransferPipelineKind::ResolveFloat;
+}
+
+bool isIntegralFormat(const FormatInfo& info) {
+    return info.isUInt || info.isSInt;
+}
+
+bool areTransferColorClassesCompatible(const FormatInfo& srcInfo,
+                                       const FormatInfo& dstInfo) {
+    if (srcInfo.isUInt) return dstInfo.isUInt;
+    if (srcInfo.isSInt) return dstInfo.isSInt;
+    return !dstInfo.isUInt && !dstInfo.isSInt;
 }
 
 bool buildTransferRegionGeometry(const VkOffset3D srcOffsets[2],

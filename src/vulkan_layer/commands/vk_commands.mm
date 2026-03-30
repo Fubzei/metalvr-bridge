@@ -122,15 +122,6 @@ static bool hasStencilComponent(VkFormat fmt) {
            fmt == VK_FORMAT_D16_UNORM_S8_UINT || fmt == VK_FORMAT_S8_UINT;
 }
 
-enum class TransferPipelineKind : uint8_t {
-    BlitFloat,
-    BlitUInt,
-    BlitSInt,
-    ResolveFloat,
-    ResolveUInt,
-    ResolveSInt,
-};
-
 struct TransferRegionUniforms {
     float dstOrigin[2]{};
     float dstExtent[2]{};
@@ -313,29 +304,6 @@ static const char* transferFragmentName(TransferPipelineKind kind) {
     }
 
     return "mvb_transfer_blit_float_fs";
-}
-
-static TransferPipelineKind blitPipelineKindForFormat(const FormatInfo& info) {
-    if (info.isUInt) return TransferPipelineKind::BlitUInt;
-    if (info.isSInt) return TransferPipelineKind::BlitSInt;
-    return TransferPipelineKind::BlitFloat;
-}
-
-static TransferPipelineKind resolvePipelineKindForFormat(const FormatInfo& info) {
-    if (info.isUInt) return TransferPipelineKind::ResolveUInt;
-    if (info.isSInt) return TransferPipelineKind::ResolveSInt;
-    return TransferPipelineKind::ResolveFloat;
-}
-
-static bool isIntegralFormat(const FormatInfo& info) {
-    return info.isUInt || info.isSInt;
-}
-
-static bool areTransferColorClassesCompatible(const FormatInfo& srcInfo,
-                                              const FormatInfo& dstInfo) {
-    if (srcInfo.isUInt) return dstInfo.isUInt;
-    if (srcInfo.isSInt) return dstInfo.isSInt;
-    return !dstInfo.isUInt && !dstInfo.isSInt;
 }
 
 static id<MTLSamplerState> ensureTransferSampler(MvDevice* device, VkFilter filter) {

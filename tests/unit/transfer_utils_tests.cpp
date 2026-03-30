@@ -1,6 +1,7 @@
 #include <gtest/gtest.h>
 
 #include "commands/transfer_utils.h"
+#include "format_table/format_table.h"
 
 namespace mvrvb {
 namespace {
@@ -101,6 +102,39 @@ TEST(TransferUtils, DetectsRepeatedBytePatterns) {
     EXPECT_TRUE(isRepeatedBytePattern(0xFFFFFFFFu));
     EXPECT_TRUE(isRepeatedBytePattern(0x7A7A7A7Au));
     EXPECT_FALSE(isRepeatedBytePattern(0xAABBCCDDu));
+}
+
+TEST(TransferUtils, SelectsBlitAndResolvePipelineKindsFromFormatClass) {
+    const FormatInfo& floatInfo = getFormatInfo(VK_FORMAT_R8G8B8A8_UNORM);
+    const FormatInfo& uintInfo = getFormatInfo(VK_FORMAT_R8G8B8A8_UINT);
+    const FormatInfo& sintInfo = getFormatInfo(VK_FORMAT_R8G8B8A8_SINT);
+
+    EXPECT_EQ(blitPipelineKindForFormat(floatInfo), TransferPipelineKind::BlitFloat);
+    EXPECT_EQ(blitPipelineKindForFormat(uintInfo), TransferPipelineKind::BlitUInt);
+    EXPECT_EQ(blitPipelineKindForFormat(sintInfo), TransferPipelineKind::BlitSInt);
+
+    EXPECT_EQ(resolvePipelineKindForFormat(floatInfo), TransferPipelineKind::ResolveFloat);
+    EXPECT_EQ(resolvePipelineKindForFormat(uintInfo), TransferPipelineKind::ResolveUInt);
+    EXPECT_EQ(resolvePipelineKindForFormat(sintInfo), TransferPipelineKind::ResolveSInt);
+}
+
+TEST(TransferUtils, IdentifiesIntegralFormatsAndClassCompatibility) {
+    const FormatInfo& floatInfo = getFormatInfo(VK_FORMAT_R8G8B8A8_UNORM);
+    const FormatInfo& uintInfo = getFormatInfo(VK_FORMAT_R8G8B8A8_UINT);
+    const FormatInfo& sintInfo = getFormatInfo(VK_FORMAT_R8G8B8A8_SINT);
+    const FormatInfo& secondFloatInfo = getFormatInfo(VK_FORMAT_B8G8R8A8_UNORM);
+
+    EXPECT_FALSE(isIntegralFormat(floatInfo));
+    EXPECT_TRUE(isIntegralFormat(uintInfo));
+    EXPECT_TRUE(isIntegralFormat(sintInfo));
+
+    EXPECT_TRUE(areTransferColorClassesCompatible(floatInfo, secondFloatInfo));
+    EXPECT_TRUE(areTransferColorClassesCompatible(uintInfo, uintInfo));
+    EXPECT_TRUE(areTransferColorClassesCompatible(sintInfo, sintInfo));
+    EXPECT_FALSE(areTransferColorClassesCompatible(floatInfo, uintInfo));
+    EXPECT_FALSE(areTransferColorClassesCompatible(floatInfo, sintInfo));
+    EXPECT_FALSE(areTransferColorClassesCompatible(uintInfo, floatInfo));
+    EXPECT_FALSE(areTransferColorClassesCompatible(sintInfo, floatInfo));
 }
 
 TEST(TransferUtils, BuildsTransferRegionGeometryForPositiveDestinationExtents) {
