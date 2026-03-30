@@ -63,8 +63,11 @@ If you use CI artifacts, download:
 - `metalvr-bridge-icd`
 - `metalvr-launcher`
 
-The ICD artifact contains a manifest copy rewritten to point at the artifact-local
+The ICD artifact now ships as a tarball so the dylib permissions survive download.
+It also contains a manifest copy rewritten to point at the artifact-local
 `libMetalVRBridge.dylib`, so it can be used directly after extraction.
+
+The launcher artifact is the installer zip produced by `launcher/setup.sh`.
 
 For the most faithful first pass, local build is still recommended:
 
