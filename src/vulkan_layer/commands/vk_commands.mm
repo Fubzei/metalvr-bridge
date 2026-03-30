@@ -831,6 +831,8 @@ struct ReplayState {
     // Cached pipeline state for draw calls
     MvPipeline*                   boundGraphicsPipeline{nullptr};
     MvPipeline*                   boundComputePipeline{nullptr};
+    bool                          graphicsPipelineDirty{false};
+    bool                          computePipelineDirty{false};
 
     // Dirty state applied before each draw
     bool                          viewportDirty{false};
@@ -980,6 +982,15 @@ struct ReplayState {
         return count;
     }
 
+    static uint32_t countDirtyVertexBindings(uint32_t dirtyMask) {
+        uint32_t count = 0;
+        while (dirtyMask) {
+            count += dirtyMask & 1u;
+            dirtyMask >>= 1u;
+        }
+        return count;
+    }
+
     bool hasAnyBoundDescriptorSets(VkPipelineBindPoint bindPoint) const {
         const auto* descriptorSets = descriptorSetsForBindPoint(bindPoint);
         for (uint32_t i = 0; i < kMaxDescriptorSets; ++i) {
@@ -992,6 +1003,9 @@ struct ReplayState {
     }
 
     void markRenderEncoderStateDirty() {
+        if (boundGraphicsPipeline) {
+            graphicsPipelineDirty = true;
+        }
         if (viewport.width > 0.0f || viewport.height > 0.0f) {
             viewportDirty = true;
         }
@@ -1023,6 +1037,9 @@ struct ReplayState {
     }
 
     void markComputeEncoderStateDirty() {
+        if (boundComputePipeline) {
+            computePipelineDirty = true;
+        }
         if (pushConstSize > 0) {
             pushConstDirty = true;
         }
@@ -1292,17 +1309,32 @@ struct ReplayState {
     #endif  // Disabled superseded descriptor binding implementation.
 
     void flushDescriptorsRender(MvPipeline* pipe) {
-        if (!renderEnc || !pipe || !graphicsDescriptorsDirty) return;
+        if (!graphicsDescriptorsDirty) return;
+        if (!renderEnc) {
+            MVRVB_LOG_WARN(
+                "Replay flushDescriptorsRender skipped: dirty descriptors but render encoder unavailable");
+            return;
+        }
+        if (!pipe) {
+            MVRVB_LOG_WARN(
+                "Replay flushDescriptorsRender skipped: dirty descriptors but no bound graphics pipeline");
+            return;
+        }
 
         const auto* descriptorSets = descriptorSetsForBindPoint(VK_PIPELINE_BIND_POINT_GRAPHICS);
+        uint32_t boundSetCount = 0;
+        uint32_t visitedDescriptorCount = 0;
+        uint32_t dynamicOffsetApplyCount = 0;
 
         for (uint32_t setIndex = 0; setIndex < kMaxDescriptorSets; ++setIndex) {
             const auto& setState = descriptorSets[setIndex];
             auto* ds = toMv(setState.set);
             if (!ds) continue;
+            ++boundSetCount;
 
             uint32_t dynamicOffsetIndex = 0;
             for (const auto& descriptor : ds->bindings) {
+                ++visitedDescriptorCount;
                 switch (descriptor.descriptorType) {
                     case VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER:
                     case VK_DESCRIPTOR_TYPE_STORAGE_BUFFER:
@@ -1320,6 +1352,7 @@ struct ReplayState {
                         if (isDynamicDescriptorType(descriptor.descriptorType) &&
                             dynamicOffsetIndex < setState.dynamicOffsetCount) {
                             offset += setState.dynamicOffsets[dynamicOffsetIndex++];
+                            ++dynamicOffsetApplyCount;
                         }
 
                         id<MTLBuffer> buffer = (__bridge id<MTLBuffer>)buf->mtlBuffer;
@@ -1515,21 +1548,40 @@ struct ReplayState {
             }
         }
 
+        MVRVB_LOG_DEBUG("Replay flushDescriptorsRender: sets=%u descriptors=%u dynamicOffsets=%u",
+                        boundSetCount,
+                        visitedDescriptorCount,
+                        dynamicOffsetApplyCount);
         graphicsDescriptorsDirty = false;
     }
 
     void flushDescriptorsCompute(MvPipeline* pipe) {
-        if (!computeEnc || !pipe || !computeDescriptorsDirty) return;
+        if (!computeDescriptorsDirty) return;
+        if (!computeEnc) {
+            MVRVB_LOG_WARN(
+                "Replay flushDescriptorsCompute skipped: dirty descriptors but compute encoder unavailable");
+            return;
+        }
+        if (!pipe) {
+            MVRVB_LOG_WARN(
+                "Replay flushDescriptorsCompute skipped: dirty descriptors but no bound compute pipeline");
+            return;
+        }
 
         const auto* descriptorSets = descriptorSetsForBindPoint(VK_PIPELINE_BIND_POINT_COMPUTE);
+        uint32_t boundSetCount = 0;
+        uint32_t visitedDescriptorCount = 0;
+        uint32_t dynamicOffsetApplyCount = 0;
 
         for (uint32_t setIndex = 0; setIndex < kMaxDescriptorSets; ++setIndex) {
             const auto& setState = descriptorSets[setIndex];
             auto* ds = toMv(setState.set);
             if (!ds) continue;
+            ++boundSetCount;
 
             uint32_t dynamicOffsetIndex = 0;
             for (const auto& descriptor : ds->bindings) {
+                ++visitedDescriptorCount;
                 switch (descriptor.descriptorType) {
                     case VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER:
                     case VK_DESCRIPTOR_TYPE_STORAGE_BUFFER:
@@ -1546,6 +1598,7 @@ struct ReplayState {
                         if (isDynamicDescriptorType(descriptor.descriptorType) &&
                             dynamicOffsetIndex < setState.dynamicOffsetCount) {
                             offset += setState.dynamicOffsets[dynamicOffsetIndex++];
+                            ++dynamicOffsetApplyCount;
                         }
 
                         const uint32_t slot = slotForArrayElement(
@@ -1661,14 +1714,31 @@ struct ReplayState {
             }
         }
 
+        MVRVB_LOG_DEBUG("Replay flushDescriptorsCompute: sets=%u descriptors=%u dynamicOffsets=%u",
+                        boundSetCount,
+                        visitedDescriptorCount,
+                        dynamicOffsetApplyCount);
         computeDescriptorsDirty = false;
     }
 
     void flushRenderState() {
         if (!renderEnc) return;
+        const bool hadGraphicsPipelineDirty = graphicsPipelineDirty;
+        const bool hadGraphicsDescriptorsDirty = graphicsDescriptorsDirty;
+        const bool hadViewportDirty = viewportDirty;
+        const bool hadScissorDirty = scissorDirty;
+        const bool hadDepthBiasDirty = depthBiasDirty;
+        const bool hadBlendConstDirty = blendConstDirty;
+        const bool hadStencilRefDirty = stencilRefDirty;
+        const bool hadPushConstDirty = pushConstDirty && pushConstSize > 0;
+        const uint32_t dirtyVertexBindingCount = countDirtyVertexBindings(vertexBindingsDirty);
 
         if (boundGraphicsPipeline) {
             auto* p = boundGraphicsPipeline;
+            if (hadGraphicsPipelineDirty && !p->renderPipelineState) {
+                MVRVB_LOG_WARN(
+                    "Replay flushRenderState: bound graphics pipeline is missing MTLRenderPipelineState");
+            }
             if (p->renderPipelineState)
                 [renderEnc setRenderPipelineState:(__bridge id<MTLRenderPipelineState>)p->renderPipelineState];
             if (p->depthStencilState)
@@ -1682,6 +1752,12 @@ struct ReplayState {
                              slopeScale:p->depthBiasSlope
                                   clamp:p->depthBiasClamp];
             }
+        } else if (hadGraphicsPipelineDirty || hadGraphicsDescriptorsDirty ||
+                   hadViewportDirty || hadScissorDirty || hadDepthBiasDirty ||
+                   hadBlendConstDirty || hadStencilRefDirty || hadPushConstDirty ||
+                   dirtyVertexBindingCount > 0) {
+            MVRVB_LOG_WARN(
+                "Replay flushRenderState: state flush requested without a bound graphics pipeline");
         }
 
         flushDescriptorsRender(boundGraphicsPipeline);
@@ -1748,14 +1824,42 @@ struct ReplayState {
             }
             vertexBindingsDirty = 0;
         }
+
+        if (hadGraphicsPipelineDirty || hadGraphicsDescriptorsDirty ||
+            hadViewportDirty || hadScissorDirty || hadDepthBiasDirty ||
+            hadBlendConstDirty || hadStencilRefDirty || hadPushConstDirty ||
+            dirtyVertexBindingCount > 0) {
+            MVRVB_LOG_DEBUG(
+                "Replay flushRenderState: pipelineDirty=%s descriptorsDirty=%s viewport=%s scissor=%s depthBias=%s blend=%s stencilRef=%s pushConstBytes=%u vertexBindings=%u",
+                hadGraphicsPipelineDirty ? "yes" : "no",
+                hadGraphicsDescriptorsDirty ? "yes" : "no",
+                hadViewportDirty ? "yes" : "no",
+                hadScissorDirty ? "yes" : "no",
+                hadDepthBiasDirty ? "yes" : "no",
+                hadBlendConstDirty ? "yes" : "no",
+                hadStencilRefDirty ? "yes" : "no",
+                hadPushConstDirty ? pushConstSize : 0u,
+                dirtyVertexBindingCount);
+        }
+        graphicsPipelineDirty = false;
     }
 
     // ── Flush compute state before a dispatch ───────────────────────────
     void flushComputeState() {
         if (!computeEnc) return;
+        const bool hadComputePipelineDirty = computePipelineDirty;
+        const bool hadComputeDescriptorsDirty = computeDescriptorsDirty;
+        const bool hadPushConstDirty = pushConstDirty && pushConstSize > 0;
         if (boundComputePipeline && boundComputePipeline->computePipelineState) {
             [computeEnc setComputePipelineState:
                 (__bridge id<MTLComputePipelineState>)boundComputePipeline->computePipelineState];
+        } else if (boundComputePipeline && hadComputePipelineDirty) {
+            MVRVB_LOG_WARN(
+                "Replay flushComputeState: bound compute pipeline is missing MTLComputePipelineState");
+        } else if (!boundComputePipeline &&
+                   (hadComputePipelineDirty || hadComputeDescriptorsDirty || hadPushConstDirty)) {
+            MVRVB_LOG_WARN(
+                "Replay flushComputeState: state flush requested without a bound compute pipeline");
         }
         flushDescriptorsCompute(boundComputePipeline);
         if (pushConstDirty && pushConstSize > 0) {
@@ -1764,6 +1868,14 @@ struct ReplayState {
                          atIndex:msl::kPushConstantBufferSlot];
             pushConstDirty = false;
         }
+        if (hadComputePipelineDirty || hadComputeDescriptorsDirty || hadPushConstDirty) {
+            MVRVB_LOG_DEBUG(
+                "Replay flushComputeState: pipelineDirty=%s descriptorsDirty=%s pushConstBytes=%u",
+                hadComputePipelineDirty ? "yes" : "no",
+                hadComputeDescriptorsDirty ? "yes" : "no",
+                hadPushConstDirty ? pushConstSize : 0u);
+        }
+        computePipelineDirty = false;
     }
 };
 
@@ -1943,8 +2055,10 @@ static void replayCommand(const DeferredCmd& cmd, ReplayState& rs) {
                         (void*)pipe);
         if (cmd.bindPipeline.bindPoint == VK_PIPELINE_BIND_POINT_COMPUTE) {
             rs.boundComputePipeline = pipe;
+            rs.computePipelineDirty = true;
         } else {
             rs.boundGraphicsPipeline = pipe;
+            rs.graphicsPipelineDirty = true;
         }
         if (rs.hasAnyBoundDescriptorSets(cmd.bindPipeline.bindPoint)) {
             rs.descriptorsDirtyForBindPoint(cmd.bindPipeline.bindPoint) = true;
@@ -1976,6 +2090,11 @@ static void replayCommand(const DeferredCmd& cmd, ReplayState& rs) {
             }
             dynamicOffsetIndex += availableDynamicOffsets;
         }
+        MVRVB_LOG_DEBUG("Replay BindDescriptorSets: bindPoint=%s firstSet=%u setCount=%u dynamicOffsets=%u",
+                        bindPointName(d.bindPoint),
+                        d.firstSet,
+                        d.setCount,
+                        d.dynamicOffsetCount);
         rs.descriptorsDirtyForBindPoint(d.bindPoint) = true;
         break;
     }
@@ -2060,6 +2179,9 @@ static void replayCommand(const DeferredCmd& cmd, ReplayState& rs) {
             break;
         }
         rs.flushRenderState();
+        if (!rs.boundGraphicsPipeline || !rs.boundGraphicsPipeline->renderPipelineState) {
+            MVRVB_LOG_WARN("Replay Draw proceeding without a valid graphics pipeline state");
+        }
         MTLPrimitiveType prim = MTLPrimitiveTypeTriangle;
         if (rs.boundGraphicsPipeline)
             prim = toMTLPrimitive((VkPrimitiveTopology)rs.boundGraphicsPipeline->topology);
@@ -2081,6 +2203,9 @@ static void replayCommand(const DeferredCmd& cmd, ReplayState& rs) {
             break;
         }
         rs.flushRenderState();
+        if (!rs.boundGraphicsPipeline || !rs.boundGraphicsPipeline->renderPipelineState) {
+            MVRVB_LOG_WARN("Replay DrawIndexed proceeding without a valid graphics pipeline state");
+        }
         auto* ib = reinterpret_cast<MvBuffer*>(rs.indexBuffer);
         if (!ib || !ib->mtlBuffer) {
             MVRVB_LOG_WARN("Replay DrawIndexed skipped: index buffer unavailable");
@@ -2180,6 +2305,9 @@ static void replayCommand(const DeferredCmd& cmd, ReplayState& rs) {
     case CmdTag::Dispatch: {
         rs.ensureComputeEncoder();
         rs.flushComputeState();
+        if (rs.boundComputePipeline && !rs.boundComputePipeline->computePipelineState) {
+            MVRVB_LOG_WARN("Replay Dispatch proceeding without a valid compute pipeline state");
+        }
         if (!rs.boundComputePipeline || !rs.computeEnc) {
             MVRVB_LOG_WARN("Replay Dispatch skipped: compute pipeline or encoder unavailable");
             break;

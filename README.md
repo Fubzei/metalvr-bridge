@@ -26,7 +26,8 @@ Windows game
 - A checked-in `tests/` harness now covers the SPIR-V parser, MSL emitter,
   format table, and ICD contract checks.
 - First-pass runtime observability logs now cover instance, device, pipeline,
-  swapchain, submit, present, and command-replay boundaries.
+  swapchain, submit, present, command-replay boundaries, and draw/dispatch
+  state-flush summaries.
 - There is currently no checked-in `tools/` directory.
 - The launcher includes an in-app triangle test and diagnostic log export.
 - The project now has protected `main` branch rules, security reporting, Dependabot,
