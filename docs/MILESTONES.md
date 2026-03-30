@@ -27,7 +27,7 @@ runtime validation.
 |--------|--------|-------|
 | macOS ICD CI build | PASSING | Compile and link checks are green |
 | macOS launcher CI build | PASSING | Swift launcher compiles |
-| Host-side unit tests | PASSING | Parser, emitter, and format-table coverage run in CI |
+| Host-side unit tests | PASSING | Parser, emitter, format-table, and ICD contract coverage run in CI |
 | `vulkaninfo` | NOT TESTED | First real ICD runtime target |
 | `vkcube` | NOT TESTED | First real rendering target |
 | Launcher triangle test | IMPLEMENTED, NOT VERIFIED ON MAC YET | Implemented in `launcher/BridgeViewModel.swift` |

@@ -44,7 +44,8 @@ That subtree exists in the repo, but it is not currently added by the root
 ## Checked-In Test Surface
 
 - `tests/`
-  - GoogleTest-based unit coverage for parser, emitter, and format-table logic
+  - GoogleTest-based unit coverage for parser, emitter, format-table logic,
+    and ICD contract checks
 
 ## Directories Not Currently Checked In
 
@@ -91,7 +92,7 @@ Do not describe that directory as present unless it is added in the same change.
 ### `tests`
 
 - host-side unit tests
-- parser, emitter, and format-table regression coverage
+- parser, emitter, format-table, and ICD contract regression coverage
 - intended to run in CI before Mac runtime validation
 
 ## Ownership Model

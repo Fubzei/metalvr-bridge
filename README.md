@@ -23,8 +23,8 @@ Windows game
   - `src/vulkan_layer`
 - `src/vr_runtime` exists in the repository, but it is not part of the active root
   build today.
-- A checked-in `tests/` harness now covers the SPIR-V parser, MSL emitter, and
-  format table.
+- A checked-in `tests/` harness now covers the SPIR-V parser, MSL emitter,
+  format table, and ICD contract checks.
 - There is currently no checked-in `tools/` directory.
 - The launcher includes an in-app triangle test and diagnostic log export.
 - The project now has protected `main` branch rules, security reporting, Dependabot,

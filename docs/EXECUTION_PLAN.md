@@ -14,22 +14,23 @@ requires a real Mac for:
 - Xcode Metal frame capture
 - Wine and DXVK game testing
 
-## Week 1
+## Completed Foundation
 
-1. Add and stabilize host-side unit coverage for Apple-free modules.
+These items are now checked in and verified in CI:
+
+1. Host-side unit coverage for Apple-free modules.
    Scope:
    - SPIR-V parser
    - SPIR-V to MSL emitter
    - format table
-2. Run those tests in CI so parser and translation regressions fail before
-   runtime testing.
-3. Add ICD contract checks next.
+2. CI execution of those tests before runtime validation.
+3. ICD contract checks.
    Scope:
    - exported symbol coverage
    - manifest sanity checks
    - dispatch-table consistency
 
-## Week 2
+## Next Focus
 
 1. Improve runtime observability before the first Mac smoke test.
    Scope:

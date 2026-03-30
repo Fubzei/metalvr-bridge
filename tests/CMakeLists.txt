@@ -9,6 +9,7 @@ FetchContent_MakeAvailable(googletest)
 
 add_executable(mvrvb_unit_tests
     unit/format_table_tests.cpp
+    unit/icd_contract_tests.cpp
     unit/spirv_parser_tests.cpp
     unit/spirv_to_msl_tests.cpp
 )
@@ -22,6 +23,9 @@ target_link_libraries(mvrvb_unit_tests PRIVATE
 )
 
 target_compile_features(mvrvb_unit_tests PRIVATE cxx_std_20)
+target_compile_definitions(mvrvb_unit_tests PRIVATE
+    MVRVB_SOURCE_ROOT="${CMAKE_SOURCE_DIR}"
+)
 
 include(GoogleTest)
 gtest_discover_tests(mvrvb_unit_tests)
