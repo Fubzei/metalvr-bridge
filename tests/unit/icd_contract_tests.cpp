@@ -71,7 +71,8 @@ bool extractJsonBool(const std::string& json, const std::string& key, bool* valu
 }
 
 std::vector<std::string> extractDispatchNames(const std::string& source) {
-    const std::regex entryPattern(R"(\{\s*"([^"]+)"\s*,\s*\(PFN_vkVoidFunction\)\s*[A-Za-z0-9_]+\s*\})");
+    const std::regex entryPattern(
+        R"mvrvb(\{\s*"([^"]+)"\s*,\s*\(PFN_vkVoidFunction\)\s*[A-Za-z0-9_]+\s*\})mvrvb");
     std::vector<std::string> names;
     for (auto it = std::sregex_iterator(source.begin(), source.end(), entryPattern);
          it != std::sregex_iterator();
@@ -82,7 +83,8 @@ std::vector<std::string> extractDispatchNames(const std::string& source) {
 }
 
 std::unordered_map<std::string, std::string> extractDispatchMap(const std::string& source) {
-    const std::regex entryPattern(R"(\{\s*"([^"]+)"\s*,\s*\(PFN_vkVoidFunction\)\s*([A-Za-z0-9_]+)\s*\})");
+    const std::regex entryPattern(
+        R"mvrvb(\{\s*"([^"]+)"\s*,\s*\(PFN_vkVoidFunction\)\s*([A-Za-z0-9_]+)\s*\})mvrvb");
     std::unordered_map<std::string, std::string> map;
     for (auto it = std::sregex_iterator(source.begin(), source.end(), entryPattern);
          it != std::sregex_iterator();
