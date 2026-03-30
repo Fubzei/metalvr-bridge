@@ -341,12 +341,24 @@ VkResult mvb_CreateGraphicsPipelines(VkDevice device,
             if (mvCache->shaderCache) sc = mvCache->shaderCache;
         }
 
+        MVRVB_LOG_INFO("CreateGraphicsPipelines: count=%u cache=%s device='%s'",
+                       count,
+                       pipelineCache ? "yes" : "no",
+                       [mtlDev.name UTF8String]);
+
         VkResult firstError = VK_SUCCESS;
 
         for (uint32_t ci = 0; ci < count; ++ci) {
             const VkGraphicsPipelineCreateInfo& info = pCIs[ci];
             auto* pipe = new MvPipeline();
             pipe->isCompute = false;
+
+            MVRVB_LOG_DEBUG("Graphics pipeline #%u request: stages=%u subpass=%u layout=%s renderPass=%s",
+                            ci,
+                            info.stageCount,
+                            info.subpass,
+                            info.layout ? "yes" : "no",
+                            info.renderPass ? "yes" : "no");
 
             // Store layout back-pointer for push-constant binding at draw time.
             if (info.layout) {
@@ -613,6 +625,9 @@ VkResult mvb_CreateGraphicsPipelines(VkDevice device,
                             pipe->hasDynamicScissor  ? "S" : "");
         } // for each pipeline
 
+        if (firstError != VK_SUCCESS) {
+            MVRVB_LOG_WARN("CreateGraphicsPipelines completed with firstError=%d", firstError);
+        }
         return firstError;
     } // @autoreleasepool
 }
@@ -637,12 +652,22 @@ VkResult mvb_CreateComputePipelines(VkDevice device,
             if (mvCache->shaderCache) sc = mvCache->shaderCache;
         }
 
+        MVRVB_LOG_INFO("CreateComputePipelines: count=%u cache=%s device='%s'",
+                       count,
+                       pipelineCache ? "yes" : "no",
+                       [mtlDev.name UTF8String]);
+
         VkResult firstError = VK_SUCCESS;
 
         for (uint32_t ci = 0; ci < count; ++ci) {
             const auto& info = pCIs[ci];
             auto* pipe = new MvPipeline();
             pipe->isCompute = true;
+
+            MVRVB_LOG_DEBUG("Compute pipeline #%u request: entry='%s' layout=%s",
+                            ci,
+                            info.stage.pName ? info.stage.pName : "main",
+                            info.layout ? "yes" : "no");
 
             if (info.layout) {
                 pipe->layout = toMv(info.layout);
@@ -689,6 +714,9 @@ VkResult mvb_CreateComputePipelines(VkDevice device,
                             ci, pipe->localSizeX, pipe->localSizeY, pipe->localSizeZ);
         }
 
+        if (firstError != VK_SUCCESS) {
+            MVRVB_LOG_WARN("CreateComputePipelines completed with firstError=%d", firstError);
+        }
         return firstError;
     } // @autoreleasepool
 }

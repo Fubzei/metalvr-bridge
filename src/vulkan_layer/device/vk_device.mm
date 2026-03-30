@@ -275,17 +275,48 @@ MvDevice::~MvDevice() {
 
 using namespace mvrvb;
 
+namespace {
+
+uint32_t countRequestedQueues(const VkDeviceCreateInfo* pCI) {
+    if (!pCI || !pCI->pQueueCreateInfos) return 0;
+
+    uint32_t total = 0;
+    for (uint32_t i = 0; i < pCI->queueCreateInfoCount; ++i) {
+        total += pCI->pQueueCreateInfos[i].queueCount;
+    }
+    return total;
+}
+
+} // namespace
+
 extern "C" {
 
 VkResult vkCreateInstance(const VkInstanceCreateInfo* pCI,
                            const VkAllocationCallbacks*,
                            VkInstance* pInstance) {
-    if (!pCI || !pInstance) return VK_ERROR_INITIALIZATION_FAILED;
+    if (!pCI || !pInstance) {
+        MVRVB_LOG_ERROR("vkCreateInstance failed: pCI=%p pInstance=%p",
+                        (const void*)pCI, (void*)pInstance);
+        return VK_ERROR_INITIALIZATION_FAILED;
+    }
+
+    const char* appName =
+        (pCI->pApplicationInfo && pCI->pApplicationInfo->pApplicationName)
+            ? pCI->pApplicationInfo->pApplicationName
+            : "<unnamed>";
+    const uint32_t apiVersion =
+        pCI->pApplicationInfo ? pCI->pApplicationInfo->apiVersion : VK_API_VERSION_1_0;
+
+    MVRVB_LOG_INFO("vkCreateInstance request: app='%s' apiVersion=%u.%u extensions=%u layers=%u flags=0x%x",
+                   appName,
+                   VK_VERSION_MAJOR(apiVersion),
+                   VK_VERSION_MINOR(apiVersion),
+                   pCI->enabledExtensionCount,
+                   pCI->enabledLayerCount,
+                   pCI->flags);
 
     auto* inst = new MvInstance();
-    inst->apiVersionRequested = pCI->pApplicationInfo ?
-                                pCI->pApplicationInfo->apiVersion :
-                                VK_API_VERSION_1_0;
+    inst->apiVersionRequested = apiVersion;
     if (pCI->pApplicationInfo && pCI->pApplicationInfo->pApplicationName)
         inst->appName = pCI->pApplicationInfo->pApplicationName;
 
@@ -294,12 +325,18 @@ VkResult vkCreateInstance(const VkInstanceCreateInfo* pCI,
                    inst->appName.c_str(),
                    VK_VERSION_MAJOR(inst->apiVersionRequested),
                    VK_VERSION_MINOR(inst->apiVersionRequested));
+    MVRVB_LOG_DEBUG("vkCreateInstance physical devices available=%zu",
+                    inst->physicalDevices.size());
     return VK_SUCCESS;
 }
 
 void vkDestroyInstance(VkInstance instance, const VkAllocationCallbacks*) {
     if (!instance) return;
-    delete toMv(instance);
+    auto* inst = toMv(instance);
+    MVRVB_LOG_DEBUG("vkDestroyInstance: app='%s' physicalDevices=%zu",
+                    inst->appName.c_str(),
+                    inst->physicalDevices.size());
+    delete inst;
 }
 
 VkResult vkEnumerateInstanceVersion(uint32_t* pVersion) {
@@ -333,13 +370,27 @@ VkResult vkEnumerateInstanceLayerProperties(uint32_t* pCount, VkLayerProperties*
 VkResult vkEnumeratePhysicalDevices(VkInstance instance,
                                      uint32_t* pCount,
                                      VkPhysicalDevice* pDevices) {
+    if (!pCount) {
+        MVRVB_LOG_ERROR("vkEnumeratePhysicalDevices failed: pCount is null");
+        return VK_ERROR_INITIALIZATION_FAILED;
+    }
+
     auto* inst = toMv(instance);
-    if (!inst) return VK_ERROR_INITIALIZATION_FAILED;
-    if (!pDevices) { *pCount = (uint32_t)inst->physicalDevices.size(); return VK_SUCCESS; }
+    if (!inst) {
+        MVRVB_LOG_ERROR("vkEnumeratePhysicalDevices failed: instance is null");
+        return VK_ERROR_INITIALIZATION_FAILED;
+    }
+    if (!pDevices) {
+        *pCount = (uint32_t)inst->physicalDevices.size();
+        MVRVB_LOG_DEBUG("vkEnumeratePhysicalDevices count query: available=%u", *pCount);
+        return VK_SUCCESS;
+    }
     uint32_t n = std::min(*pCount, (uint32_t)inst->physicalDevices.size());
     for (uint32_t i = 0; i < n; ++i)
         pDevices[i] = toVk(inst->physicalDevices[i]);
     *pCount = n;
+    MVRVB_LOG_DEBUG("vkEnumeratePhysicalDevices returned %u of %zu available device(s)",
+                    n, inst->physicalDevices.size());
     return (n < inst->physicalDevices.size()) ? VK_INCOMPLETE : VK_SUCCESS;
 }
 
@@ -465,7 +516,24 @@ VkResult vkCreateDevice(VkPhysicalDevice physDev,
                          VkDevice* pDevice) {
     @autoreleasepool {
         auto* phys = toMv(physDev);
+        if (!phys || !pCI || !pDevice) {
+            MVRVB_LOG_ERROR("vkCreateDevice failed: phys=%p pCI=%p pDevice=%p",
+                            (void*)phys, (const void*)pCI, (void*)pDevice);
+            return VK_ERROR_INITIALIZATION_FAILED;
+        }
+
         id<MTLDevice> mtlDev = phys->mtlDevice;
+        if (!mtlDev) {
+            MVRVB_LOG_ERROR("vkCreateDevice failed: physical device has no Metal device");
+            return VK_ERROR_INITIALIZATION_FAILED;
+        }
+
+        MVRVB_LOG_INFO("vkCreateDevice request: gpu='%s' queueInfos=%u totalQueues=%u extensions=%u layers=%u",
+                       [mtlDev.name UTF8String],
+                       pCI->queueCreateInfoCount,
+                       countRequestedQueues(pCI),
+                       pCI->enabledExtensionCount,
+                       pCI->enabledLayerCount);
 
         auto* dev = new MvDevice();
         dev->mtlDevice    = mtlDev;
@@ -500,9 +568,11 @@ VkResult vkCreateDevice(VkPhysicalDevice physDev,
         dev->memManager = std::make_unique<MemoryManager>(dev->mtlDevice);
 
         *pDevice = toVk(dev);
-        MVRVB_LOG_INFO("VkDevice created on '%s' (%s memory)",
+        MVRVB_LOG_INFO("vkCreateDevice OK: gpu='%s' memory=%s queues=%zu maxBufferLength=%llu",
                        [mtlDev.name UTF8String],
-                       dev->hasUnifiedMemory ? "unified" : "discrete");
+                       dev->hasUnifiedMemory ? "unified" : "discrete",
+                       dev->queues.size(),
+                       static_cast<unsigned long long>(dev->maxBufferLength));
         return VK_SUCCESS;
     }
 }
@@ -510,6 +580,9 @@ VkResult vkCreateDevice(VkPhysicalDevice physDev,
 void vkDestroyDevice(VkDevice device, const VkAllocationCallbacks*) {
     if (!device) return;
     auto* dev = toMv(device);
+    MVRVB_LOG_DEBUG("vkDestroyDevice: queues=%zu unifiedMemory=%s",
+                    dev->queues.size(),
+                    dev->hasUnifiedMemory ? "yes" : "no");
     // Release Metal objects
     if (dev->commandQueue) CFRelease((__bridge CFTypeRef)dev->commandQueue);
     if (dev->blitQueue)    CFRelease((__bridge CFTypeRef)dev->blitQueue);
@@ -532,6 +605,8 @@ void vkGetDeviceQueue(VkDevice device, uint32_t family, uint32_t idx, VkQueue* p
             return;
         }
     }
+    MVRVB_LOG_WARN("vkGetDeviceQueue returned VK_NULL_HANDLE for family=%u index=%u",
+                   family, idx);
     *pQueue = VK_NULL_HANDLE;
 }
 

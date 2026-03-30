@@ -29,12 +29,20 @@ These items are now checked in and verified in CI:
    - exported symbol coverage
    - manifest sanity checks
    - dispatch-table consistency
+4. First-pass runtime observability.
+   Scope:
+   - instance and physical-device discovery
+   - logical-device creation
+   - graphics and compute pipeline creation
+   - swapchain create, acquire, and present
+   - queue submit and idle boundaries
 
 ## Next Focus
 
-1. Improve runtime observability before the first Mac smoke test.
+1. Expand runtime observability into failure triage before the first Mac smoke test.
    Scope:
-   - structured logs for instance, device, pipeline, swapchain, submit, and present
+   - command-buffer replay and state-application breadcrumbs
+   - concise failure summaries around the first broken runtime boundary
 2. Separate more Apple-free logic into host-testable units where practical.
 3. Prepare the Mac runtime execution kit.
    Scope:
