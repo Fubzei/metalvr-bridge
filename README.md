@@ -24,7 +24,8 @@ Windows game
 - `src/vr_runtime` exists in the repository, but it is not part of the active root
   build today.
 - A checked-in `tests/` harness now covers the SPIR-V parser, MSL emitter,
-  format table, ICD contract checks, and extracted transfer-range helpers.
+  format table, ICD contract checks, and extracted transfer helpers including
+  range, slice, and region-geometry math.
 - First-pass runtime observability logs now cover instance, device, pipeline,
   swapchain, submit, present, command-replay boundaries, draw/dispatch
   state-flush summaries, transfer/secondary-command breadcrumbs, and

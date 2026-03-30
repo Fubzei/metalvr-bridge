@@ -448,38 +448,43 @@ static bool buildTransferRegionUniforms(const VkOffset3D srcOffsets[2],
                                         MTLScissorRect* scissor) {
     if (!uniforms || !viewport || !scissor) return false;
 
-    const uint32_t dstWidth =
-        static_cast<uint32_t>(std::abs(dstOffsets[1].x - dstOffsets[0].x));
-    const uint32_t dstHeight =
-        static_cast<uint32_t>(std::abs(dstOffsets[1].y - dstOffsets[0].y));
-    if (dstWidth == 0 || dstHeight == 0) return false;
+    TransferRegionUniformData region{};
+    TransferViewport regionViewport{};
+    TransferScissorRect regionScissor{};
+    if (!buildTransferRegionGeometry(srcOffsets,
+                                     dstOffsets,
+                                     srcWidth,
+                                     srcHeight,
+                                     sampleCount,
+                                     &region,
+                                     &regionViewport,
+                                     &regionScissor)) {
+        return false;
+    }
 
-    const int32_t dstMinX = std::min(dstOffsets[0].x, dstOffsets[1].x);
-    const int32_t dstMinY = std::min(dstOffsets[0].y, dstOffsets[1].y);
+    uniforms->dstOrigin[0] = region.dstOrigin[0];
+    uniforms->dstOrigin[1] = region.dstOrigin[1];
+    uniforms->dstExtent[0] = region.dstExtent[0];
+    uniforms->dstExtent[1] = region.dstExtent[1];
+    uniforms->srcOrigin[0] = region.srcOrigin[0];
+    uniforms->srcOrigin[1] = region.srcOrigin[1];
+    uniforms->srcExtent[0] = region.srcExtent[0];
+    uniforms->srcExtent[1] = region.srcExtent[1];
+    uniforms->srcTextureSize[0] = region.srcTextureSize[0];
+    uniforms->srcTextureSize[1] = region.srcTextureSize[1];
+    uniforms->sampleCount = region.sampleCount;
 
-    uniforms->dstOrigin[0] = static_cast<float>(dstMinX);
-    uniforms->dstOrigin[1] = static_cast<float>(dstMinY);
-    uniforms->dstExtent[0] = static_cast<float>(dstWidth);
-    uniforms->dstExtent[1] = static_cast<float>(dstHeight);
-    uniforms->srcOrigin[0] = static_cast<float>(srcOffsets[0].x);
-    uniforms->srcOrigin[1] = static_cast<float>(srcOffsets[0].y);
-    uniforms->srcExtent[0] = static_cast<float>(srcOffsets[1].x - srcOffsets[0].x);
-    uniforms->srcExtent[1] = static_cast<float>(srcOffsets[1].y - srcOffsets[0].y);
-    uniforms->srcTextureSize[0] = static_cast<float>(srcWidth);
-    uniforms->srcTextureSize[1] = static_cast<float>(srcHeight);
-    uniforms->sampleCount = sampleCount;
+    viewport->originX = regionViewport.originX;
+    viewport->originY = regionViewport.originY;
+    viewport->width = regionViewport.width;
+    viewport->height = regionViewport.height;
+    viewport->znear = regionViewport.znear;
+    viewport->zfar = regionViewport.zfar;
 
-    viewport->originX = static_cast<double>(dstMinX);
-    viewport->originY = static_cast<double>(dstMinY);
-    viewport->width = static_cast<double>(dstWidth);
-    viewport->height = static_cast<double>(dstHeight);
-    viewport->znear = 0.0;
-    viewport->zfar = 1.0;
-
-    scissor->x = static_cast<NSUInteger>(std::max(0, dstMinX));
-    scissor->y = static_cast<NSUInteger>(std::max(0, dstMinY));
-    scissor->width = dstWidth;
-    scissor->height = dstHeight;
+    scissor->x = static_cast<NSUInteger>(regionScissor.x);
+    scissor->y = static_cast<NSUInteger>(regionScissor.y);
+    scissor->width = static_cast<NSUInteger>(regionScissor.width);
+    scissor->height = static_cast<NSUInteger>(regionScissor.height);
     return true;
 }
 

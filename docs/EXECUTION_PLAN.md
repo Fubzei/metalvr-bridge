@@ -53,6 +53,8 @@ These items are now checked in and verified in CI:
    Progress:
    - transfer range, mip, slice, and buffer-span helpers now live in a pure C++
      module with direct unit coverage
+   - transfer-region uniform, viewport, and scissor geometry now shares that
+     same host-tested helper surface
 3. Tighten the Mac smoke-test handoff where useful.
    Scope:
    - reduce ambiguity in tester instructions

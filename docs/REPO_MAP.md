@@ -46,7 +46,7 @@ That subtree exists in the repo, but it is not currently added by the root
 
 - `tests/`
   - GoogleTest-based unit coverage for parser, emitter, format-table logic,
-    ICD contract checks, and extracted transfer helper logic
+    ICD contract checks, and extracted transfer helper logic including region geometry
 
 ## Directories Not Currently Checked In
 
@@ -108,7 +108,8 @@ Do not describe that directory as present unless it is added in the same change.
 ### `tests`
 
 - host-side unit tests
-- parser, emitter, format-table, ICD contract, and transfer-helper regression coverage
+- parser, emitter, format-table, ICD contract, and transfer-helper regression coverage,
+  including region-geometry math used by blit/resolve replay
 - intended to run in CI before Mac runtime validation
 
 ## Ownership Model

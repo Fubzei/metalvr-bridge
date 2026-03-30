@@ -103,5 +103,81 @@ TEST(TransferUtils, DetectsRepeatedBytePatterns) {
     EXPECT_FALSE(isRepeatedBytePattern(0xAABBCCDDu));
 }
 
+TEST(TransferUtils, BuildsTransferRegionGeometryForPositiveDestinationExtents) {
+    const VkOffset3D srcOffsets[2]{{4, 8, 0}, {20, 24, 1}};
+    const VkOffset3D dstOffsets[2]{{10, 12, 0}, {26, 28, 1}};
+
+    TransferRegionUniformData uniforms{};
+    TransferViewport viewport{};
+    TransferScissorRect scissor{};
+    ASSERT_TRUE(buildTransferRegionGeometry(
+        srcOffsets, dstOffsets, 128u, 64u, 4u, &uniforms, &viewport, &scissor));
+
+    EXPECT_FLOAT_EQ(uniforms.dstOrigin[0], 10.0f);
+    EXPECT_FLOAT_EQ(uniforms.dstOrigin[1], 12.0f);
+    EXPECT_FLOAT_EQ(uniforms.dstExtent[0], 16.0f);
+    EXPECT_FLOAT_EQ(uniforms.dstExtent[1], 16.0f);
+    EXPECT_FLOAT_EQ(uniforms.srcOrigin[0], 4.0f);
+    EXPECT_FLOAT_EQ(uniforms.srcOrigin[1], 8.0f);
+    EXPECT_FLOAT_EQ(uniforms.srcExtent[0], 16.0f);
+    EXPECT_FLOAT_EQ(uniforms.srcExtent[1], 16.0f);
+    EXPECT_FLOAT_EQ(uniforms.srcTextureSize[0], 128.0f);
+    EXPECT_FLOAT_EQ(uniforms.srcTextureSize[1], 64.0f);
+    EXPECT_EQ(uniforms.sampleCount, 4u);
+
+    EXPECT_DOUBLE_EQ(viewport.originX, 10.0);
+    EXPECT_DOUBLE_EQ(viewport.originY, 12.0);
+    EXPECT_DOUBLE_EQ(viewport.width, 16.0);
+    EXPECT_DOUBLE_EQ(viewport.height, 16.0);
+    EXPECT_DOUBLE_EQ(viewport.znear, 0.0);
+    EXPECT_DOUBLE_EQ(viewport.zfar, 1.0);
+
+    EXPECT_EQ(scissor.x, 10u);
+    EXPECT_EQ(scissor.y, 12u);
+    EXPECT_EQ(scissor.width, 16u);
+    EXPECT_EQ(scissor.height, 16u);
+}
+
+TEST(TransferUtils, BuildsTransferRegionGeometryForReversedSourceAndNegativeDestination) {
+    const VkOffset3D srcOffsets[2]{{24, 20, 0}, {8, 4, 1}};
+    const VkOffset3D dstOffsets[2]{{12, 6, 0}, {-4, -10, 1}};
+
+    TransferRegionUniformData uniforms{};
+    TransferViewport viewport{};
+    TransferScissorRect scissor{};
+    ASSERT_TRUE(buildTransferRegionGeometry(
+        srcOffsets, dstOffsets, 64u, 32u, 1u, &uniforms, &viewport, &scissor));
+
+    EXPECT_FLOAT_EQ(uniforms.dstOrigin[0], -4.0f);
+    EXPECT_FLOAT_EQ(uniforms.dstOrigin[1], -10.0f);
+    EXPECT_FLOAT_EQ(uniforms.dstExtent[0], 16.0f);
+    EXPECT_FLOAT_EQ(uniforms.dstExtent[1], 16.0f);
+    EXPECT_FLOAT_EQ(uniforms.srcOrigin[0], 24.0f);
+    EXPECT_FLOAT_EQ(uniforms.srcOrigin[1], 20.0f);
+    EXPECT_FLOAT_EQ(uniforms.srcExtent[0], -16.0f);
+    EXPECT_FLOAT_EQ(uniforms.srcExtent[1], -16.0f);
+
+    EXPECT_DOUBLE_EQ(viewport.originX, -4.0);
+    EXPECT_DOUBLE_EQ(viewport.originY, -10.0);
+    EXPECT_DOUBLE_EQ(viewport.width, 16.0);
+    EXPECT_DOUBLE_EQ(viewport.height, 16.0);
+
+    EXPECT_EQ(scissor.x, 0u);
+    EXPECT_EQ(scissor.y, 0u);
+    EXPECT_EQ(scissor.width, 16u);
+    EXPECT_EQ(scissor.height, 16u);
+}
+
+TEST(TransferUtils, RejectsZeroSizedTransferRegionGeometry) {
+    const VkOffset3D srcOffsets[2]{{0, 0, 0}, {4, 4, 1}};
+    const VkOffset3D dstOffsets[2]{{3, 7, 0}, {3, 9, 1}};
+
+    TransferRegionUniformData uniforms{};
+    TransferViewport viewport{};
+    TransferScissorRect scissor{};
+    EXPECT_FALSE(buildTransferRegionGeometry(
+        srcOffsets, dstOffsets, 16u, 16u, 1u, &uniforms, &viewport, &scissor));
+}
+
 }  // namespace
 }  // namespace mvrvb

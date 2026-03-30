@@ -71,4 +71,53 @@ bool isRepeatedBytePattern(uint32_t pattern) {
     return pattern == (uint32_t(byteValue) * 0x01010101u);
 }
 
+bool buildTransferRegionGeometry(const VkOffset3D srcOffsets[2],
+                                 const VkOffset3D dstOffsets[2],
+                                 uint32_t srcWidth,
+                                 uint32_t srcHeight,
+                                 uint32_t sampleCount,
+                                 TransferRegionUniformData* uniforms,
+                                 TransferViewport* viewport,
+                                 TransferScissorRect* scissor) {
+    if (!srcOffsets || !dstOffsets || !uniforms || !viewport || !scissor) {
+        return false;
+    }
+
+    const int64_t dstDeltaX = static_cast<int64_t>(dstOffsets[1].x) -
+                              static_cast<int64_t>(dstOffsets[0].x);
+    const int64_t dstDeltaY = static_cast<int64_t>(dstOffsets[1].y) -
+                              static_cast<int64_t>(dstOffsets[0].y);
+    const uint32_t dstWidth = static_cast<uint32_t>(dstDeltaX >= 0 ? dstDeltaX : -dstDeltaX);
+    const uint32_t dstHeight = static_cast<uint32_t>(dstDeltaY >= 0 ? dstDeltaY : -dstDeltaY);
+    if (dstWidth == 0 || dstHeight == 0) return false;
+
+    const int32_t dstMinX = std::min(dstOffsets[0].x, dstOffsets[1].x);
+    const int32_t dstMinY = std::min(dstOffsets[0].y, dstOffsets[1].y);
+
+    uniforms->dstOrigin[0] = static_cast<float>(dstMinX);
+    uniforms->dstOrigin[1] = static_cast<float>(dstMinY);
+    uniforms->dstExtent[0] = static_cast<float>(dstWidth);
+    uniforms->dstExtent[1] = static_cast<float>(dstHeight);
+    uniforms->srcOrigin[0] = static_cast<float>(srcOffsets[0].x);
+    uniforms->srcOrigin[1] = static_cast<float>(srcOffsets[0].y);
+    uniforms->srcExtent[0] = static_cast<float>(srcOffsets[1].x - srcOffsets[0].x);
+    uniforms->srcExtent[1] = static_cast<float>(srcOffsets[1].y - srcOffsets[0].y);
+    uniforms->srcTextureSize[0] = static_cast<float>(srcWidth);
+    uniforms->srcTextureSize[1] = static_cast<float>(srcHeight);
+    uniforms->sampleCount = sampleCount;
+
+    viewport->originX = static_cast<double>(dstMinX);
+    viewport->originY = static_cast<double>(dstMinY);
+    viewport->width = static_cast<double>(dstWidth);
+    viewport->height = static_cast<double>(dstHeight);
+    viewport->znear = 0.0;
+    viewport->zfar = 1.0;
+
+    scissor->x = static_cast<uint32_t>(std::max(0, dstMinX));
+    scissor->y = static_cast<uint32_t>(std::max(0, dstMinY));
+    scissor->width = dstWidth;
+    scissor->height = dstHeight;
+    return true;
+}
+
 }  // namespace mvrvb
