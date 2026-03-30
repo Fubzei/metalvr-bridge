@@ -33,6 +33,7 @@ Windows game
 - The launcher includes an in-app triangle test and diagnostic log export.
 - `scripts/mac_runtime_smoke_test.sh` now automates the first hardware smoke-test
   bundle so Mac-side validation is easier to execute and report.
+- Green macOS CI runs now publish downloadable ICD and launcher artifacts.
 - The project now has protected `main` branch rules, security reporting, Dependabot,
   secret scanning, and an explicit CodeQL workflow.
 

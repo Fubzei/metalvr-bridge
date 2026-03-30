@@ -62,6 +62,7 @@ These items are now checked in and verified in CI:
      captures logs, prompts for manual launcher/vkcube outcomes, and packages
      the first-hardware report bundle
    - GitHub now has a dedicated Mac smoke-test issue template for reporting
+   - green macOS CI runs now publish downloadable ICD and launcher artifacts
 
 ## Exit Criteria
 

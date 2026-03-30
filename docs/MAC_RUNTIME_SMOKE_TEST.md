@@ -52,8 +52,21 @@ brew install cmake vulkan-headers vulkan-tools
 
 ## Build Setup
 
-The current repo workflow does not publish downloadable build artifacts, so
-the first smoke test should build locally on the Mac.
+You now have two valid setup paths:
+
+1. Preferred for code changes under active development: build locally on the Mac
+2. Faster for a pure smoke test of an already-green commit: download the ICD and
+   launcher artifacts from the latest green GitHub Actions run
+
+If you use CI artifacts, download:
+
+- `metalvr-bridge-icd`
+- `metalvr-launcher`
+
+The ICD artifact contains a manifest copy rewritten to point at the artifact-local
+`libMetalVRBridge.dylib`, so it can be used directly after extraction.
+
+For the most faithful first pass, local build is still recommended:
 
 ```bash
 export REPO_ROOT="$HOME/metalvr-bridge"
@@ -73,6 +86,7 @@ Expected outputs:
 - `$REPO_ROOT/build/libMetalVRBridge.dylib`
 - `$REPO_ROOT/vulkan_icd.json`
 - `$REPO_ROOT/launcher/MetalVR Bridge.app`
+- GitHub Actions artifacts named `metalvr-bridge-icd` and `metalvr-launcher` on green runs
 
 ## Logging Setup
 

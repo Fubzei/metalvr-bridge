@@ -30,6 +30,7 @@ runtime validation.
 | Host-side unit tests | PASSING | Parser, emitter, format-table, ICD contract, and transfer-helper coverage run in CI |
 | Runtime observability | IN PLACE | Instance, device, pipeline, swapchain, submit, present, replay-boundary, state-flush summary, transfer/secondary replay, and synchronization/unsupported-op logs are checked in |
 | Mac runtime runbook | IN PLACE | `docs/MAC_RUNTIME_SMOKE_TEST.md` and `scripts/mac_runtime_smoke_test.sh` define the first hardware validation pass |
+| CI build artifacts | IN PLACE | Green macOS runs publish `metalvr-bridge-icd` and `metalvr-launcher` artifacts |
 | `vulkaninfo` | NOT TESTED | First real ICD runtime target |
 | `vkcube` | NOT TESTED | First real rendering target |
 | Launcher triangle test | IMPLEMENTED, NOT VERIFIED ON MAC YET | Implemented in `launcher/BridgeViewModel.swift` |
