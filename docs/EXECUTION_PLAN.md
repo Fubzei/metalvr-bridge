@@ -50,6 +50,9 @@ These items are now checked in and verified in CI:
    - extend concise failure summaries into any remaining low-visibility replay paths
    - keep the first broken runtime boundary obvious in the exported log
 2. Separate more Apple-free logic into host-testable units where practical.
+   Progress:
+   - transfer range, mip, slice, and buffer-span helpers now live in a pure C++
+     module with direct unit coverage
 3. Tighten the Mac smoke-test handoff where useful.
    Scope:
    - reduce ambiguity in tester instructions

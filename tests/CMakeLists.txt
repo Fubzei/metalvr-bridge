@@ -12,6 +12,7 @@ add_executable(mvrvb_unit_tests
     unit/icd_contract_tests.cpp
     unit/spirv_parser_tests.cpp
     unit/spirv_to_msl_tests.cpp
+    unit/transfer_utils_tests.cpp
 )
 
 target_link_libraries(mvrvb_unit_tests PRIVATE
@@ -20,6 +21,7 @@ target_link_libraries(mvrvb_unit_tests PRIVATE
     mvrvb_format_table
     mvrvb_msl_emitter
     mvrvb_spirv_parser
+    mvrvb_transfer_utils
 )
 
 target_compile_features(mvrvb_unit_tests PRIVATE cxx_std_20)

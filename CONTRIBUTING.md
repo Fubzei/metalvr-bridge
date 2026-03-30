@@ -84,6 +84,7 @@ Before submitting a PR:
 ## Notes on Repo Reality
 
 - `src/vr_runtime/` is checked in but not part of the active root build today.
-- Transfer work currently lives inside `src/vulkan_layer/commands/vk_commands.mm`.
+- Transfer replay still lives inside `src/vulkan_layer/commands/vk_commands.mm`,
+  with portable helper logic extracted into `src/vulkan_layer/commands/transfer_utils.*`.
 - `tests/` is now checked in and is intended for host-side unit coverage before
   Mac runtime validation.

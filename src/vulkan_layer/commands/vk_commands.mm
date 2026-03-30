@@ -22,6 +22,7 @@
  */
 
 #include "vk_commands.h"
+#include "transfer_utils.h"
 #include "../device/vk_device.h"
 #include "../format_table/format_table.h"
 #include "../pipeline/vk_pipeline.h"
@@ -437,70 +438,6 @@ static id<MTLRenderPipelineState> ensureTransferRenderPipeline(
     return pipeline;
 }
 
-static uint32_t mipExtent(uint32_t baseExtent, uint32_t mipLevel) {
-    return std::max(1u, baseExtent >> mipLevel);
-}
-
-static uint32_t resolveRangeLevelCount(const MvImage* image,
-                                       const VkImageSubresourceRange& range) {
-    if (!image) return 0;
-    if (range.levelCount == VK_REMAINING_MIP_LEVELS) {
-        return image->mipLevels > range.baseMipLevel
-            ? image->mipLevels - range.baseMipLevel
-            : 0u;
-    }
-    return range.levelCount;
-}
-
-static uint32_t resolveRangeLayerCount(const MvImage* image,
-                                       const VkImageSubresourceRange& range,
-                                       uint32_t mipLevel) {
-    if (!image) return 0;
-    if (image->imageType == VK_IMAGE_TYPE_3D) {
-        return mipExtent(image->depth, mipLevel);
-    }
-    if (range.layerCount == VK_REMAINING_ARRAY_LAYERS) {
-        return image->arrayLayers > range.baseArrayLayer
-            ? image->arrayLayers - range.baseArrayLayer
-            : 0u;
-    }
-    return range.layerCount;
-}
-
-static bool resolveTransferSlices(const MvImage* image,
-                                  const VkImageSubresourceLayers& subresource,
-                                  const VkOffset3D offsets[2],
-                                  uint32_t* count,
-                                  int32_t* start,
-                                  int32_t* step) {
-    if (!image || !count || !start || !step) return false;
-
-    if (image->imageType == VK_IMAGE_TYPE_3D) {
-        *count = static_cast<uint32_t>(std::abs(offsets[1].z - offsets[0].z));
-        *start = offsets[0].z;
-        *step = (offsets[1].z >= offsets[0].z) ? 1 : -1;
-    } else {
-        *count = subresource.layerCount;
-        *start = static_cast<int32_t>(subresource.baseArrayLayer);
-        *step = 1;
-    }
-
-    return *count > 0;
-}
-
-static uint64_t resolvedBufferRangeSize(const MvBuffer* buffer,
-                                        VkDeviceSize dstOffset,
-                                        VkDeviceSize size) {
-    if (!buffer || dstOffset >= buffer->size) return 0;
-    if (size == VK_WHOLE_SIZE) return buffer->size - dstOffset;
-    return std::min<uint64_t>(size, buffer->size - dstOffset);
-}
-
-static bool isRepeatedBytePattern(uint32_t pattern) {
-    const uint8_t byteValue = static_cast<uint8_t>(pattern & 0xFF);
-    return pattern == (uint32_t(byteValue) * 0x01010101u);
-}
-
 static bool buildTransferRegionUniforms(const VkOffset3D srcOffsets[2],
                                         const VkOffset3D dstOffsets[2],
                                         uint32_t srcWidth,
@@ -582,20 +519,20 @@ static bool encodeColorBlitRegion(MvDevice* device,
         filter = VK_FILTER_NEAREST;
     }
 
-    uint32_t sliceCount = 0;
-    int32_t srcSliceStart = 0;
-    int32_t srcSliceStep = 1;
-    int32_t dstSliceStart = 0;
-    int32_t dstSliceStep = 1;
-    if (!resolveTransferSlices(srcImage, region.srcSubresource, region.srcOffsets,
-                               &sliceCount, &srcSliceStart, &srcSliceStep)) {
+    TransferSliceResolution srcSlices{};
+    if (!resolveTransferSlices(srcImage->imageType,
+                               region.srcSubresource,
+                               region.srcOffsets,
+                               &srcSlices)) {
         return false;
     }
 
-    uint32_t dstSliceCount = 0;
-    if (!resolveTransferSlices(dstImage, region.dstSubresource, region.dstOffsets,
-                               &dstSliceCount, &dstSliceStart, &dstSliceStep) ||
-        dstSliceCount != sliceCount) {
+    TransferSliceResolution dstSlices{};
+    if (!resolveTransferSlices(dstImage->imageType,
+                               region.dstSubresource,
+                               region.dstOffsets,
+                               &dstSlices) ||
+        dstSlices.count != srcSlices.count) {
         return false;
     }
 
@@ -617,9 +554,11 @@ static bool encodeColorBlitRegion(MvDevice* device,
     const uint32_t srcMipWidth = mipExtent(srcImage->width, region.srcSubresource.mipLevel);
     const uint32_t srcMipHeight = mipExtent(srcImage->height, region.srcSubresource.mipLevel);
 
-    for (uint32_t sliceIndex = 0; sliceIndex < sliceCount; ++sliceIndex) {
-        const uint32_t srcSlice = static_cast<uint32_t>(srcSliceStart + srcSliceStep * int32_t(sliceIndex));
-        const uint32_t dstSlice = static_cast<uint32_t>(dstSliceStart + dstSliceStep * int32_t(sliceIndex));
+    for (uint32_t sliceIndex = 0; sliceIndex < srcSlices.count; ++sliceIndex) {
+        const uint32_t srcSlice = static_cast<uint32_t>(
+            srcSlices.start + srcSlices.step * int32_t(sliceIndex));
+        const uint32_t dstSlice = static_cast<uint32_t>(
+            dstSlices.start + dstSlices.step * int32_t(sliceIndex));
 
         @autoreleasepool {
             id<MTLTexture> srcView = createSingleSliceTextureView(
@@ -2600,7 +2539,8 @@ static void replayCommand(const DeferredCmd& cmd, ReplayState& rs) {
             break;
         }
 
-        uint64_t resolvedSize = resolvedBufferRangeSize(dst, cmd.fillBuffer.dstOffset, cmd.fillBuffer.size);
+        uint64_t resolvedSize = resolvedBufferRangeSize(
+            dst->size, cmd.fillBuffer.dstOffset, cmd.fillBuffer.size);
         if (resolvedSize == 0) {
             MVRVB_LOG_WARN("Replay FillBuffer skipped: resolved size is zero");
             break;
@@ -2732,10 +2672,11 @@ static void replayCommand(const DeferredCmd& cmd, ReplayState& rs) {
 
         for (uint32_t r = 0; r < cmd.clearColorImage.rangeCount; ++r) {
             const auto& range = cmd.clearColorImage.ranges[r];
-            uint32_t levelCount = resolveRangeLevelCount(img, range);
+            uint32_t levelCount = resolveRangeLevelCount(img->mipLevels, range);
             for (uint32_t level = 0; level < levelCount; ++level) {
                 uint32_t mip = range.baseMipLevel + level;
-                uint32_t layerCount = resolveRangeLayerCount(img, range, mip);
+                uint32_t layerCount = resolveRangeLayerCount(
+                    img->imageType, img->arrayLayers, img->depth, range, mip);
                 for (uint32_t layer = 0; layer < layerCount; ++layer) {
                     uint32_t slice = (img->imageType == VK_IMAGE_TYPE_3D) ? layer : range.baseArrayLayer + layer;
                     @autoreleasepool {
@@ -2775,10 +2716,11 @@ static void replayCommand(const DeferredCmd& cmd, ReplayState& rs) {
 
         for (uint32_t r = 0; r < cmd.clearDepthStencilImage.rangeCount; ++r) {
             const auto& range = cmd.clearDepthStencilImage.ranges[r];
-            uint32_t levelCount = resolveRangeLevelCount(img, range);
+            uint32_t levelCount = resolveRangeLevelCount(img->mipLevels, range);
             for (uint32_t level = 0; level < levelCount; ++level) {
                 uint32_t mip = range.baseMipLevel + level;
-                uint32_t layerCount = resolveRangeLayerCount(img, range, mip);
+                uint32_t layerCount = resolveRangeLayerCount(
+                    img->imageType, img->arrayLayers, img->depth, range, mip);
                 for (uint32_t layer = 0; layer < layerCount; ++layer) {
                     uint32_t slice = range.baseArrayLayer + layer;
                     @autoreleasepool {

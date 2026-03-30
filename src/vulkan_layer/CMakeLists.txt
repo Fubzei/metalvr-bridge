@@ -7,6 +7,15 @@ target_link_libraries(mvrvb_format_table PUBLIC Vulkan::Headers)
 target_compile_features(mvrvb_format_table PUBLIC cxx_std_20)
 target_compile_options(mvrvb_format_table PRIVATE -Wall -Wextra -Wno-unused-parameter -fvisibility=hidden)
 
+# Pure transfer helpers that can be tested off-Mac.
+add_library(mvrvb_transfer_utils STATIC
+    commands/transfer_utils.cpp
+)
+target_include_directories(mvrvb_transfer_utils PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+target_link_libraries(mvrvb_transfer_utils PUBLIC Vulkan::Headers)
+target_compile_features(mvrvb_transfer_utils PUBLIC cxx_std_20)
+target_compile_options(mvrvb_transfer_utils PRIVATE -Wall -Wextra -Wno-unused-parameter -fvisibility=hidden)
+
 # ── The main Vulkan ICD dylib ──────────────────────────────────────────────────
 # All translation sources compiled into one shared library that the Vulkan
 # loader discovers via the ICD JSON manifest.
@@ -56,6 +65,7 @@ target_include_directories(MetalVRBridge_ICD PRIVATE
 target_link_libraries(MetalVRBridge_ICD PRIVATE
     mvrvb_common
     mvrvb_format_table
+    mvrvb_transfer_utils
     mvrvb_shader_cache       # pulls in spirv_parser + msl_emitter
     Vulkan::Headers
     "-framework Metal"

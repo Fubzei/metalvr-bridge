@@ -16,10 +16,10 @@ runtime validation.
 | 6 | Descriptors | DONE | `src/vulkan_layer/descriptors/` | In active build |
 | 7 | Sync | DONE | `src/vulkan_layer/sync/` | In active build |
 | 8 | Swapchain | DONE | `src/vulkan_layer/swapchain/` | CAMetalLayer path in repo |
-| 9 | Transfers | DONE | `src/vulkan_layer/commands/vk_commands.mm` | Integrated into command replay |
+| 9 | Transfers | DONE | `src/vulkan_layer/commands/` | Integrated into command replay with host-tested helper coverage |
 | 10 | Wine + DXVK integration | NOT STARTED | no dedicated module yet | Some surface hooks exist, full flow not implemented |
 | 11 | Utilities | PARTIAL | `src/common/` | Logging, threading, and memory-pool header exist |
-| 12 | Game testing | PARTIAL | `tests/` | Host-side unit harness added; Mac runtime validation is still next |
+| 12 | Game testing | PARTIAL | `tests/` | Host-side unit harness covers parser, emitter, format table, ICD contracts, and transfer helpers; Mac runtime validation is still next |
 
 ## Runtime Validation
 
@@ -27,7 +27,7 @@ runtime validation.
 |--------|--------|-------|
 | macOS ICD CI build | PASSING | Compile and link checks are green |
 | macOS launcher CI build | PASSING | Swift launcher compiles |
-| Host-side unit tests | PASSING | Parser, emitter, format-table, and ICD contract coverage run in CI |
+| Host-side unit tests | PASSING | Parser, emitter, format-table, ICD contract, and transfer-helper coverage run in CI |
 | Runtime observability | IN PLACE | Instance, device, pipeline, swapchain, submit, present, replay-boundary, state-flush summary, transfer/secondary replay, and synchronization/unsupported-op logs are checked in |
 | Mac runtime runbook | IN PLACE | `docs/MAC_RUNTIME_SMOKE_TEST.md` defines the first hardware validation pass |
 | `vulkaninfo` | NOT TESTED | First real ICD runtime target |
