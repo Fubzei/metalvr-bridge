@@ -2259,13 +2259,26 @@ static void replayCommand(const DeferredCmd& cmd, ReplayState& rs) {
         break;
     }
     case CmdTag::DrawIndirect: {
-        if (rs.activeEncoder != EncoderType::Render || !rs.renderEnc) break;
+        if (rs.activeEncoder != EncoderType::Render || !rs.renderEnc) {
+            MVRVB_LOG_WARN("Replay DrawIndirect skipped: render encoder unavailable");
+            break;
+        }
         rs.flushRenderState();
+        if (!rs.boundGraphicsPipeline || !rs.boundGraphicsPipeline->renderPipelineState) {
+            MVRVB_LOG_WARN("Replay DrawIndirect proceeding without a valid graphics pipeline state");
+        }
         auto* buf = reinterpret_cast<MvBuffer*>(cmd.drawIndirect.buffer);
-        if (!buf || !buf->mtlBuffer) break;
+        if (!buf || !buf->mtlBuffer) {
+            MVRVB_LOG_WARN("Replay DrawIndirect skipped: indirect buffer unavailable");
+            break;
+        }
         MTLPrimitiveType prim = MTLPrimitiveTypeTriangle;
         if (rs.boundGraphicsPipeline)
             prim = toMTLPrimitive((VkPrimitiveTopology)rs.boundGraphicsPipeline->topology);
+        MVRVB_LOG_DEBUG("Replay DrawIndirect: drawCount=%u stride=%u offset=%llu",
+                        cmd.drawIndirect.drawCount,
+                        cmd.drawIndirect.stride,
+                        static_cast<unsigned long long>(cmd.drawIndirect.offset));
         for (uint32_t d = 0; d < cmd.drawIndirect.drawCount; ++d) {
             [rs.renderEnc drawPrimitives:prim
                           indirectBuffer:(__bridge id<MTLBuffer>)buf->mtlBuffer
@@ -2274,15 +2287,28 @@ static void replayCommand(const DeferredCmd& cmd, ReplayState& rs) {
         break;
     }
     case CmdTag::DrawIndexedIndirect: {
-        if (rs.activeEncoder != EncoderType::Render || !rs.renderEnc) break;
+        if (rs.activeEncoder != EncoderType::Render || !rs.renderEnc) {
+            MVRVB_LOG_WARN("Replay DrawIndexedIndirect skipped: render encoder unavailable");
+            break;
+        }
         rs.flushRenderState();
+        if (!rs.boundGraphicsPipeline || !rs.boundGraphicsPipeline->renderPipelineState) {
+            MVRVB_LOG_WARN("Replay DrawIndexedIndirect proceeding without a valid graphics pipeline state");
+        }
         auto* buf = reinterpret_cast<MvBuffer*>(cmd.drawIndirect.buffer);
         auto* ib  = reinterpret_cast<MvBuffer*>(rs.indexBuffer);
-        if (!buf || !buf->mtlBuffer || !ib || !ib->mtlBuffer) break;
+        if (!buf || !buf->mtlBuffer || !ib || !ib->mtlBuffer) {
+            MVRVB_LOG_WARN("Replay DrawIndexedIndirect skipped: indirect or index buffer unavailable");
+            break;
+        }
         MTLPrimitiveType prim = MTLPrimitiveTypeTriangle;
         if (rs.boundGraphicsPipeline)
             prim = toMTLPrimitive((VkPrimitiveTopology)rs.boundGraphicsPipeline->topology);
         MTLIndexType mtlIdxType = toMTLIndex(rs.indexType);
+        MVRVB_LOG_DEBUG("Replay DrawIndexedIndirect: drawCount=%u stride=%u offset=%llu",
+                        cmd.drawIndirect.drawCount,
+                        cmd.drawIndirect.stride,
+                        static_cast<unsigned long long>(cmd.drawIndirect.offset));
         for (uint32_t d = 0; d < cmd.drawIndirect.drawCount; ++d) {
             [rs.renderEnc drawIndexedPrimitives:prim
                                       indexType:mtlIdxType
@@ -2298,13 +2324,27 @@ static void replayCommand(const DeferredCmd& cmd, ReplayState& rs) {
         // Metal doesn't have native indirect-count support.
         // Emit up to maxDrawCount draws; GPU validation will cull extra.
         // TODO: implement via ICB or argument buffer for true indirect count
-        if (rs.activeEncoder != EncoderType::Render || !rs.renderEnc) break;
+        if (rs.activeEncoder != EncoderType::Render || !rs.renderEnc) {
+            MVRVB_LOG_WARN("Replay IndirectCount skipped: render encoder unavailable");
+            break;
+        }
         rs.flushRenderState();
+        if (!rs.boundGraphicsPipeline || !rs.boundGraphicsPipeline->renderPipelineState) {
+            MVRVB_LOG_WARN("Replay IndirectCount proceeding without a valid graphics pipeline state");
+        }
         auto* buf = reinterpret_cast<MvBuffer*>(cmd.drawIndirectCount.buffer);
-        if (!buf || !buf->mtlBuffer) break;
+        if (!buf || !buf->mtlBuffer) {
+            MVRVB_LOG_WARN("Replay IndirectCount skipped: indirect buffer unavailable");
+            break;
+        }
         MTLPrimitiveType prim = MTLPrimitiveTypeTriangle;
         if (rs.boundGraphicsPipeline)
             prim = toMTLPrimitive((VkPrimitiveTopology)rs.boundGraphicsPipeline->topology);
+        MVRVB_LOG_DEBUG("Replay %s: maxDrawCount=%u stride=%u offset=%llu",
+                        cmd.tag == CmdTag::DrawIndirectCount ? "DrawIndirectCount" : "DrawIndexedIndirectCount",
+                        cmd.drawIndirectCount.maxDrawCount,
+                        cmd.drawIndirectCount.stride,
+                        static_cast<unsigned long long>(cmd.drawIndirectCount.offset));
         if (cmd.tag == CmdTag::DrawIndirectCount) {
             for (uint32_t d = 0; d < cmd.drawIndirectCount.maxDrawCount; ++d) {
                 [rs.renderEnc drawPrimitives:prim
@@ -2313,7 +2353,10 @@ static void replayCommand(const DeferredCmd& cmd, ReplayState& rs) {
             }
         } else {
             auto* ib = reinterpret_cast<MvBuffer*>(rs.indexBuffer);
-            if (!ib || !ib->mtlBuffer) break;
+            if (!ib || !ib->mtlBuffer) {
+                MVRVB_LOG_WARN("Replay DrawIndexedIndirectCount skipped: index buffer unavailable");
+                break;
+            }
             MTLIndexType mtlIdxType = toMTLIndex(rs.indexType);
             for (uint32_t d = 0; d < cmd.drawIndirectCount.maxDrawCount; ++d) {
                 [rs.renderEnc drawIndexedPrimitives:prim
@@ -2362,8 +2405,16 @@ static void replayCommand(const DeferredCmd& cmd, ReplayState& rs) {
         rs.ensureComputeEncoder();
         rs.flushComputeState();
         auto* buf = reinterpret_cast<MvBuffer*>(cmd.dispatchIndirect.buffer);
-        if (!buf || !buf->mtlBuffer || !rs.computeEnc) break;
+        if (rs.boundComputePipeline && !rs.boundComputePipeline->computePipelineState) {
+            MVRVB_LOG_WARN("Replay DispatchIndirect proceeding without a valid compute pipeline state");
+        }
+        if (!buf || !buf->mtlBuffer || !rs.computeEnc) {
+            MVRVB_LOG_WARN("Replay DispatchIndirect skipped: indirect buffer or compute encoder unavailable");
+            break;
+        }
         MTLSize threadsPerGroup = MTLSizeMake(64, 1, 1);
+        MVRVB_LOG_DEBUG("Replay DispatchIndirect: offset=%llu",
+                        static_cast<unsigned long long>(cmd.dispatchIndirect.offset));
         [rs.computeEnc dispatchThreadgroupsWithIndirectBuffer:(__bridge id<MTLBuffer>)buf->mtlBuffer
                                          indirectBufferOffset:cmd.dispatchIndirect.offset
                                         threadsPerThreadgroup:threadsPerGroup];

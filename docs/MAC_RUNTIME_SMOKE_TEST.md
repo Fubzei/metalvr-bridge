@@ -182,6 +182,8 @@ Useful log markers when narrowing the first break:
   - confirms descriptor sets were actually flushed to Metal bindings
 - `Replay Draw` or `Replay DrawIndexed`
   - confirms a draw call was reached
+- `Replay DrawIndirect`, `Replay DrawIndexedIndirect`, or `Replay DispatchIndirect`
+  - confirms indirect work reached the replay path
 - `Replay CopyBuffer`, `Replay CopyBufferToImage`, `Replay ResolveImage`, `Replay BlitImage`
   - confirms transfer activity leading into the render path
 - `Replay ExecuteCommands`
