@@ -11,6 +11,7 @@ docs/
 launcher/
 shaders/
 src/
+tests/
 CMakeLists.txt
 README.md
 CONTRIBUTING.md
@@ -26,6 +27,10 @@ The root `CMakeLists.txt` currently adds these directories:
 - `src/shader_translator`
 - `src/vulkan_layer`
 
+When `MVRVB_BUILD_TESTS` is enabled, the root build also adds:
+
+- `tests`
+
 These directories are part of the current build and should be treated as the active
 implementation surface.
 
@@ -36,14 +41,18 @@ implementation surface.
 That subtree exists in the repo, but it is not currently added by the root
 `CMakeLists.txt`.
 
-## Directories Not Currently Checked In
-
-The root build has optional hooks for these directories if they are created later:
+## Checked-In Test Surface
 
 - `tests/`
+  - GoogleTest-based unit coverage for parser, emitter, and format-table logic
+
+## Directories Not Currently Checked In
+
+The root build still has an optional hook for:
+
 - `tools/`
 
-Do not describe those directories as present unless they are added in the same change.
+Do not describe that directory as present unless it is added in the same change.
 
 ## Module Map
 
@@ -78,6 +87,12 @@ Do not describe those directories as present unless they are added in the same c
 ### `shaders`
 
 - Metal shader sources used by the project
+
+### `tests`
+
+- host-side unit tests
+- parser, emitter, and format-table regression coverage
+- intended to run in CI before Mac runtime validation
 
 ## Ownership Model
 

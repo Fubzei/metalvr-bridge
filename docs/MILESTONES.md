@@ -19,7 +19,7 @@ runtime validation.
 | 9 | Transfers | DONE | `src/vulkan_layer/commands/vk_commands.mm` | Integrated into command replay |
 | 10 | Wine + DXVK integration | NOT STARTED | no dedicated module yet | Some surface hooks exist, full flow not implemented |
 | 11 | Utilities | PARTIAL | `src/common/` | Logging, threading, and memory-pool header exist |
-| 12 | Game testing | NOT STARTED | no checked-in `tests/` directory | Runtime validation is next |
+| 12 | Game testing | PARTIAL | `tests/` | Host-side unit harness added; Mac runtime validation is still next |
 
 ## Runtime Validation
 
@@ -27,6 +27,7 @@ runtime validation.
 |--------|--------|-------|
 | macOS ICD CI build | PASSING | Compile and link checks are green |
 | macOS launcher CI build | PASSING | Swift launcher compiles |
+| Host-side unit tests | PASSING | Parser, emitter, and format-table coverage run in CI |
 | `vulkaninfo` | NOT TESTED | First real ICD runtime target |
 | `vkcube` | NOT TESTED | First real rendering target |
 | Launcher triangle test | IMPLEMENTED, NOT VERIFIED ON MAC YET | Implemented in `launcher/BridgeViewModel.swift` |

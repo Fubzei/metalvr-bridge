@@ -14,6 +14,7 @@
 /src/vulkan_layer/ @Fubzei
 /launcher/ @Fubzei
 /shaders/ @Fubzei
+/tests/ @Fubzei
 
 # Deferred tree
 /src/vr_runtime/ @Fubzei

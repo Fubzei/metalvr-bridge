@@ -16,6 +16,8 @@ Use and maintain these files as the canonical references:
   - Checked-in layout and active-build surface
 - `docs/MILESTONES.md`
   - Milestone and runtime-validation status
+- `docs/EXECUTION_PLAN.md`
+  - The current short-term execution plan and ordering
 - `SECURITY.md`
   - Security policy and reporting
 - `launcher/README.md`
@@ -62,6 +64,7 @@ Update docs when the matching area changes:
 - Update `README.md` when the high-level project story, quick start, or repo reality changes.
 - Update `docs/REPO_MAP.md` when directories, active targets, or ownership boundaries change.
 - Update `docs/MILESTONES.md` when milestone status or runtime-validation status changes.
+- Update `docs/EXECUTION_PLAN.md` when the near-term execution order changes.
 - Update `SECURITY.md` when reporting or security posture changes.
 - Update `launcher/README.md` when the launcher packaging flow changes.
 
@@ -79,5 +82,5 @@ Before submitting a PR:
 
 - `src/vr_runtime/` is checked in but not part of the active root build today.
 - Transfer work currently lives inside `src/vulkan_layer/commands/vk_commands.mm`.
-- There is no checked-in `tests/` directory today, so avoid documenting tests as if
-  they already exist unless they are added in the same PR.
+- `tests/` is now checked in and is intended for host-side unit coverage before
+  Mac runtime validation.

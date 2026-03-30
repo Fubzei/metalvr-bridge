@@ -23,10 +23,12 @@ Windows game
   - `src/vulkan_layer`
 - `src/vr_runtime` exists in the repository, but it is not part of the active root
   build today.
-- There is currently no checked-in `tests/` or `tools/` directory.
+- A checked-in `tests/` harness now covers the SPIR-V parser, MSL emitter, and
+  format table.
+- There is currently no checked-in `tools/` directory.
 - The launcher includes an in-app triangle test and diagnostic log export.
 - The project now has protected `main` branch rules, security reporting, Dependabot,
-  secret scanning, and CodeQL default setup.
+  secret scanning, and an explicit CodeQL workflow.
 
 ## Source of Truth
 
@@ -37,6 +39,8 @@ status. Use these files first:
   - Actual checked-in layout and which modules are in the active build
 - `docs/MILESTONES.md`
   - Current milestone status and runtime-validation status
+- `docs/EXECUTION_PLAN.md`
+  - Current two-week execution plan while Mac runtime testing is pending
 - `CONTRIBUTING.md`
   - Workflow, conventions, and doc-update expectations
 - `SECURITY.md`
@@ -103,12 +107,14 @@ src/
 launcher/              SwiftUI macOS launcher app
 shaders/               Metal shader sources
 docs/                  Repository source-of-truth docs
+tests/                 Host-side unit tests for Apple-free modules
 ```
 
 ## Related Docs
 
 - `docs/REPO_MAP.md`
 - `docs/MILESTONES.md`
+- `docs/EXECUTION_PLAN.md`
 - `CONTRIBUTING.md`
 - `SECURITY.md`
 - `launcher/README.md`

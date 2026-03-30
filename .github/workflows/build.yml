@@ -20,6 +20,8 @@ jobs:
       run: mkdir build && cd build && cmake .. -DCMAKE_BUILD_TYPE=Release
     - name: Build
       run: cd build && make -j$(sysctl -n hw.ncpu)
+    - name: Run unit tests
+      run: cd build && ctest --output-on-failure
     - name: Check
       run: ls -lh build/libMetalVRBridge.dylib
   build-launcher:
