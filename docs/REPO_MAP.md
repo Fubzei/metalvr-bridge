@@ -104,7 +104,9 @@ That subtree exists in the repo, but it is not currently added by the root
   preview reader, guided runtime action planner, imported bundle reveal/open/report
   actions, one-click imported setup/launch actions, imported launch-command and
   environment clipboard helpers, concise execution-prep export, inline
-  execution-prep preview, and log export
+  execution-prep preview, known-title onboarding sourced from the bundled
+  compatibility catalog, starter runtime-bundle command generation, in-app
+  starter-bundle generation/import when helper resources are bundled, and log export
 - packaging script
 
 ### `docs`

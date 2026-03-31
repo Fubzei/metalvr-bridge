@@ -144,6 +144,16 @@ These items are now checked in and verified in CI:
      and `launcher/ContentView.swift` now also run imported bash setup and
      launch scripts from the app so the product layer can move from preview-only
      to actual one-click runtime actions without waiting for the full runtime wrapper
+   - `launcher/CompatibilityCatalog.swift`, `launcher/BridgeViewModel.swift`,
+     and `launcher/ContentView.swift` now turn the bundled compatibility catalog
+     into a known-title onboarding card with starter runtime-bundle command
+     generation, so testers can pick a checked-in title and stage bundle export
+     from a more consumer-friendly surface
+   - `launcher/BridgeViewModel.swift`, `launcher/ContentView.swift`,
+     `launcher/setup.sh`, and `.github/workflows/build.yml` now also bundle and
+     use the host-safe runtime-bundle builder plus checked-in `profiles/` tree,
+     so the launcher can generate and immediately import starter runtime bundles
+     for selected titles when those resources are present
    - `src/common/runtime_launch_command.*` now avoids emitting shell-invalid
      `cd C:\...` steps when a launch request starts from a Windows-style
      executable path and no explicit host working directory is supplied

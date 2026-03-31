@@ -10,6 +10,8 @@ struct RuntimeGuidedActionPlan {
 
     enum Action {
         case importJson
+        case generateStarterBundle
+        case copyStarterCommand
         case openChecklist
         case runSetupScript
         case runLaunchScript
@@ -38,19 +40,58 @@ struct RuntimeGuidedActionPlan {
         runtimeLaunchPlan: RuntimeLaunchPlanSnapshot?,
         runtimeBundleManifest: RuntimeBundleManifestSnapshot?,
         runtimeBundleArtifactPreview: RuntimeBundleArtifactPreview?,
+        canGenerateStarterBundleInApp: Bool,
+        selectedCatalogEntry: CompatibilityCatalogSnapshot.Entry?,
         compatibilityCatalogEntry: CompatibilityCatalogSnapshot.Entry?
     ) -> RuntimeGuidedActionPlan {
         guard let runtimeLaunchPlan else {
-            var steps = [
-                Step(
-                    id: "import-json",
-                    title: "Import Runtime JSON",
-                    detail: "Import a launch-plan.json or bundle-manifest.json file to load backend, setup, and launch policy into the launcher.",
-                    tone: .ready,
-                    action: .importJson,
-                    actionLabel: "Import JSON"
+            var steps: [Step] = []
+
+            if let selectedCatalogEntry {
+                steps.append(
+                    Step(
+                        id: "known-title-onboarding",
+                        title: "Start From A Known Title",
+                        detail: "\(selectedCatalogEntry.displayName) is selected. \(selectedCatalogEntry.installSummary)",
+                        tone: .ready,
+                        action: nil,
+                        actionLabel: nil
+                    )
                 )
-            ]
+                steps.append(
+                    Step(
+                        id: canGenerateStarterBundleInApp ? "generate-starter-bundle" : "copy-starter-command",
+                        title: canGenerateStarterBundleInApp ? "Generate A Starter Bundle" : "Copy The Starter Bundle Command",
+                        detail: canGenerateStarterBundleInApp
+                            ? "Use the bundled runtime-bundle builder to generate and import a portable starter bundle for the selected title directly from the app."
+                            : "Use the launcher-generated starter command to build a portable runtime bundle for the selected title before importing anything back into the app.",
+                        tone: .ready,
+                        action: canGenerateStarterBundleInApp ? .generateStarterBundle : .copyStarterCommand,
+                        actionLabel: canGenerateStarterBundleInApp ? "Generate Bundle" : "Copy Starter Cmd"
+                    )
+                )
+                steps.append(
+                    Step(
+                        id: "import-json",
+                        title: "Import The Generated Bundle",
+                        detail: "After the builder runs, import the resulting launch-plan.json or bundle-manifest.json so the launcher can unlock guided setup and launch actions.",
+                        tone: .ready,
+                        action: .importJson,
+                        actionLabel: "Import JSON"
+                    )
+                )
+            } else {
+                steps.append(
+                    Step(
+                        id: "import-json",
+                        title: "Import Runtime JSON",
+                        detail: "Import a launch-plan.json or bundle-manifest.json file to load backend, setup, and launch policy into the launcher.",
+                        tone: .ready,
+                        action: .importJson,
+                        actionLabel: "Import JSON"
+                    )
+                )
+            }
 
             if let nextGate = projectStatus?.nextGate {
                 steps.append(
@@ -66,7 +107,9 @@ struct RuntimeGuidedActionPlan {
             }
 
             return RuntimeGuidedActionPlan(
-                headline: "Import runtime policy first so the launcher can generate a guided path.",
+                headline: selectedCatalogEntry == nil
+                    ? "Import runtime policy first so the launcher can generate a guided path."
+                    : "Start from the selected known title, build a starter bundle, then import it back into the launcher.",
                 steps: steps
             )
         }

@@ -69,5 +69,11 @@ same execution-prep surface inline, so the tester sees ordered next steps and
 can move into Terminal prep faster. Those exported bundles can now be generated
 through the cross-platform `mvrvb_runtime_bundle_builder` tool, and when no
 explicit prefix path is supplied they default to a portable self-contained
-`prefix/` directory inside the bundle. If those files are missing, the app
-still works for the Metal hardware test.
+`prefix/` directory inside the bundle. The launcher also turns the bundled
+compatibility catalog into a known-title onboarding card, so a tester can pick
+a checked-in title, paste an executable path, and copy a starter bundle-builder
+command without leaving the app. When the launcher bundle also includes the
+runtime-bundle helper and the checked-in `profiles/` tree, that same onboarding
+card can generate and immediately import a starter runtime bundle from inside
+the app. If those files are missing, the app still works for the Metal
+hardware test.

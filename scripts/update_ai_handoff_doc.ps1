@@ -34,6 +34,12 @@ MetalVR Bridge.
   Mac app reflects the same current phase and next gate tracked in the repo docs.
 - The launcher now also consumes the bundled `docs/GAME_COMPATIBILITY_CATALOG.json`
   snapshot so the app can summarize checked-in profile coverage without rerunning tools.
+- The launcher now turns that bundled compatibility snapshot into a known-title
+  onboarding card so the app can browse checked-in titles and generate starter
+  runtime-bundle commands from the same source-of-truth catalog.
+- When the launcher bundle also includes the runtime-bundle helper plus the
+  checked-in `profiles/` tree, that onboarding path can now generate and import
+  starter runtime bundles directly inside the app.
 - The launcher now imports or consumes bundled `launch-plan.json` previews exported
   from the shared runtime-plan tooling, so product policy can be inspected in-app.
 - The launcher now also imports `bundle-manifest.json` exports from the shared
@@ -95,8 +101,8 @@ bash scripts/mac_runtime_smoke_test.sh
 
 ## Best Next Non-Mac Priorities
 
-1. Move from imported runtime bundles toward launcher-generated one-click onboarding
-   for known profiles so setup does not depend on external export steps first.
+1. Move from starter-bundle generation toward launcher-run prefix installation
+   and first title launch for selected known profiles.
 2. Keep the compatibility profile and prefix-preset governance strong as more games or
    templates are added.
 3. Keep the repo and generated docs aligned whenever the product/runtime surface changes.

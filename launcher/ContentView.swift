@@ -121,6 +121,9 @@ struct ContentView: View {
                 // Project Status Card
                 projectStatusCard
 
+                // Known Titles Card
+                knownTitlesCard
+
                 // Runtime Plan Card
                 runtimePlanCard
 
@@ -316,6 +319,169 @@ struct ContentView: View {
     }
 
     // MARK: - System Info Card
+
+    private var knownTitlesCard: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack {
+                Image(systemName: "gamecontroller")
+                    .font(.system(size: 13, weight: .bold))
+                    .foregroundColor(Color(hex: "38bdf8"))
+                Text("Known Titles")
+                    .font(.system(size: 13, weight: .bold, design: .monospaced))
+                    .foregroundColor(.white)
+            }
+
+            if let selectedEntry = vm.selectedCatalogEntry {
+                statusCallout(
+                    title: "Consumer Path",
+                    message: "Pick a checked-in title, paste an executable path, then copy a starter command that generates a self-contained runtime bundle with a portable prefix."
+                )
+
+                VStack(alignment: .leading, spacing: 8) {
+                    ForEach(vm.knownCatalogEntries) { entry in
+                        Button(action: { vm.selectCatalogProfile(entry.profileId) }) {
+                            HStack(spacing: 8) {
+                                Circle()
+                                    .fill(entry.profileId == selectedEntry.profileId ? Color(hex: "38bdf8") : Color(hex: "334155"))
+                                    .frame(width: 8, height: 8)
+
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text(entry.displayName)
+                                        .font(.system(size: 10, weight: .bold, design: .monospaced))
+                                        .foregroundColor(.white)
+
+                                    Text("\(entry.category) | \(entry.backendSummary)")
+                                        .font(.system(size: 9))
+                                        .foregroundColor(Color(hex: "94a3b8"))
+                                }
+
+                                Spacer()
+                            }
+                            .padding(8)
+                            .background(
+                                RoundedRectangle(cornerRadius: 8)
+                                    .fill(entry.profileId == selectedEntry.profileId ? Color(hex: "102132") : Color(hex: "0d0d14"))
+                                    .overlay(
+                                        RoundedRectangle(cornerRadius: 8)
+                                            .stroke(
+                                                entry.profileId == selectedEntry.profileId ? Color(hex: "38bdf8") : Color(hex: "1e2030"),
+                                                lineWidth: 1
+                                            )
+                                    )
+                            )
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+
+                VStack(alignment: .leading, spacing: 7) {
+                    statusRow(label: "Title", value: selectedEntry.displayName)
+                    statusRow(label: "Status", value: selectedEntry.status)
+                    statusRow(label: "Backend", value: selectedEntry.backendSummary)
+                    statusRow(label: "Prefix", value: selectedEntry.appliedPrefixPresetDisplayName)
+                    statusRow(label: "Traits", value: selectedEntry.behaviorSummary)
+                }
+
+                statusCallout(
+                    title: "Validation",
+                    message: "\(selectedEntry.isPlanningOnly ? "Planning-only today." : "Validated profile.") Anti-cheat risk: \(selectedEntry.antiCheatRiskLabel)."
+                )
+                statusCallout(title: "Runtime", message: selectedEntry.runtimeSummary)
+                statusCallout(title: "Install", message: selectedEntry.installSummary)
+                statusCallout(title: "Match", message: selectedEntry.matchSummary)
+                statusCallout(title: "Notes", message: selectedEntry.notes)
+                statusCallout(
+                    title: "Builder",
+                    message: vm.canGenerateStarterBundleInApp
+                        ? "Bundled runtime-bundle builder is available. The launcher can generate and import a starter bundle directly."
+                        : "Bundled runtime-bundle builder is not available in this launcher build yet. Copy the starter command as the fallback path."
+                )
+
+                VStack(alignment: .leading, spacing: 6) {
+                    Text("Executable Path")
+                        .font(.system(size: 10, weight: .semibold, design: .monospaced))
+                        .foregroundColor(Color(hex: "64748b"))
+
+                    TextField("/path/to/Game.exe", text: $vm.starterExecutablePath)
+                        .textFieldStyle(.plain)
+                        .font(.system(size: 10, weight: .medium, design: .monospaced))
+                        .foregroundColor(.white)
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 8)
+                        .background(
+                            RoundedRectangle(cornerRadius: 8)
+                                .fill(Color(hex: "0d0d14"))
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 8)
+                                        .stroke(Color(hex: "1e2030"), lineWidth: 1)
+                                )
+                        )
+                }
+
+                prepSnippetBlock(title: "Starter Command", contents: vm.starterBundleCommandPreview)
+                statusCallout(title: "Starter Summary", message: vm.starterBundleSummary)
+
+                HStack(spacing: 8) {
+                    Button(action: { vm.generateStarterRuntimeBundle() }) {
+                        HStack(spacing: 6) {
+                            Image(systemName: vm.runtimeAutomationRunning ? "hourglass" : "wand.and.stars.inverse")
+                                .font(.system(size: 10))
+                            Text(vm.runtimeAutomationRunning ? "Running..." : "Generate Bundle")
+                                .font(.system(size: 10, weight: .semibold, design: .monospaced))
+                        }
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 8)
+                        .background(
+                            RoundedRectangle(cornerRadius: 8)
+                                .fill(Color(hex: "0d0d14"))
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 8)
+                                        .stroke(Color(hex: "1e2030"), lineWidth: 1)
+                                )
+                        )
+                        .foregroundColor(Color(hex: "cbd5e1"))
+                    }
+                    .buttonStyle(.plain)
+                    .disabled(!vm.canGenerateStarterBundleInApp || vm.runtimeAutomationRunning)
+
+                    Button(action: { vm.copyStarterBundleCommand() }) {
+                        HStack(spacing: 6) {
+                            Image(systemName: "doc.on.clipboard")
+                                .font(.system(size: 10))
+                            Text("Copy Starter Command")
+                                .font(.system(size: 10, weight: .semibold, design: .monospaced))
+                        }
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 8)
+                        .background(
+                            RoundedRectangle(cornerRadius: 8)
+                                .fill(Color(hex: "0d0d14"))
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 8)
+                                        .stroke(Color(hex: "1e2030"), lineWidth: 1)
+                                )
+                        )
+                        .foregroundColor(Color(hex: "cbd5e1"))
+                    }
+                    .buttonStyle(.plain)
+                }
+            } else {
+                Text("No bundled compatibility entries are available yet. Rebuild the launcher from the repo root to package GAME_COMPATIBILITY_CATALOG.json into the app.")
+                    .font(.system(size: 11))
+                    .foregroundColor(Color(hex: "94a3b8"))
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+        .padding(14)
+        .background(
+            RoundedRectangle(cornerRadius: 10)
+                .fill(Color(hex: "111118"))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 10)
+                        .stroke(Color(hex: "1e2030"), lineWidth: 1)
+                )
+        )
+    }
 
     private var runtimePlanCard: some View {
         VStack(alignment: .leading, spacing: 12) {

@@ -41,7 +41,9 @@ $status = [ordered]@{
         "launcher-runtime-one-click-actions",
         "launcher-runtime-copy-helpers",
         "launcher-runtime-prep-export",
-        "launcher-runtime-prep-preview"
+        "launcher-runtime-prep-preview",
+        "launcher-known-title-onboarding",
+        "launcher-starter-bundle-generation"
     )
     notYetProven = @(
         "launcher-triangle-on-real-mac",
@@ -51,7 +53,7 @@ $status = [ordered]@{
     )
     nextGate = "Launcher triangle, vulkaninfo, and vkcube on Mac hardware."
     nextNonMacSteps = @(
-        "Move from imported runtime bundles toward launcher-generated one-click onboarding for known profiles so setup does not depend on external export steps first.",
+        "Move from starter-bundle generation toward launcher-run prefix installation and first title launch for selected known profiles.",
         "Keep compatibility profiles and prefix presets governed through lint and docs.",
         "Keep repo and wiki handoff docs aligned with the checked-in source of truth."
     )

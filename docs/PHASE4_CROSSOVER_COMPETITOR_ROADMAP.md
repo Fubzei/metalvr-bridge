@@ -214,6 +214,16 @@ The first checked-in Phase 4 deliverables are:
   and `launcher/ContentView.swift`
   - launcher-side one-click setup and launch actions that execute imported bash
     runtime scripts from the app and surface automation status in the UI/log
+- `launcher/CompatibilityCatalog.swift`, `launcher/BridgeViewModel.swift`, and
+  `launcher/ContentView.swift`
+  - launcher-side known-title onboarding card that browses checked-in
+    compatibility entries and stages starter runtime-bundle commands for a
+    selected title without leaving the app
+- `launcher/BridgeViewModel.swift`, `launcher/ContentView.swift`,
+  `launcher/setup.sh`, and `.github/workflows/build.yml`
+  - launcher-side starter-bundle generation/import path that bundles the
+    runtime-bundle helper plus checked-in `profiles/` tree so the app can build
+    and immediately load starter runtime bundles when those resources are present
 - `scripts/update_ai_handoff_doc.ps1` and `scripts/export_ai_handoff_bundle.ps1`
   - direct update and export path for a carry-forward AI handoff package
 - `scripts/export_runtime_bundle.ps1`

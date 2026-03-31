@@ -105,8 +105,10 @@ Windows game
   reveal/open/export actions for imported runtime bundles, one-click setup and
   launch actions for imported bash runtime scripts, clipboard copy helpers for
   imported launch-command and environment snippets, concise execution-prep
-  sheet export from the launcher, in-app execution-prep preview, and
-  diagnostic log export.
+  sheet export from the launcher, in-app execution-prep preview, a known-title
+  onboarding card sourced from the compatibility catalog, starter runtime-bundle
+  command generation for selected titles, in-app starter-bundle generation and
+  import when the helper/resources are bundled, and diagnostic log export.
 - `scripts/mac_runtime_smoke_test.sh` now automates the first hardware smoke-test
   bundle so Mac-side validation is easier to execute and report.
 - Green macOS CI runs now publish downloadable ICD and launcher installer artifacts.

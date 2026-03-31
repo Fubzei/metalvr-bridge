@@ -46,7 +46,16 @@ for f in MetalVRBridgeApp.swift ContentView.swift BridgeViewModel.swift ProjectS
 done
 if [ $MISSING -eq 1 ]; then exit 1; fi
 
-echo "[1/6] Compiling app..."
+REPO_ROOT="$(cd .. && pwd)"
+HOST_HELPER_BUILD_DIR="$REPO_ROOT/build-launcher-host"
+RUNTIME_BUNDLE_TOOL=""
+PROFILES_SOURCE=""
+
+if [ -d "$REPO_ROOT/profiles" ]; then
+    PROFILES_SOURCE="$REPO_ROOT/profiles"
+fi
+
+echo "[1/7] Compiling app..."
 
 # Detect architecture
 ARCH=$(uname -m)
@@ -76,7 +85,25 @@ swiftc \
     RuntimeGuidedActionPlan.swift \
     2>&1
 
-echo "[2/6] Creating app bundle..."
+echo "[2/7] Building runtime helper..."
+
+if command -v cmake &> /dev/null && [ -f "$REPO_ROOT/host-tests/CMakeLists.txt" ]; then
+    if cmake -S "$REPO_ROOT/host-tests" -B "$HOST_HELPER_BUILD_DIR" -DMVRVB_REPO_ROOT="$REPO_ROOT" >/dev/null && \
+       cmake --build "$HOST_HELPER_BUILD_DIR" --target mvrvb_runtime_bundle_builder >/dev/null; then
+        if [ -f "$HOST_HELPER_BUILD_DIR/tools/mvrvb_runtime_bundle_builder" ]; then
+            RUNTIME_BUNDLE_TOOL="$HOST_HELPER_BUILD_DIR/tools/mvrvb_runtime_bundle_builder"
+            echo "  Built runtime bundle helper: $RUNTIME_BUNDLE_TOOL"
+        else
+            echo "  Runtime bundle helper was not produced (launcher will fall back to copy-only onboarding)"
+        fi
+    else
+        echo "  Runtime bundle helper build failed (launcher will fall back to copy-only onboarding)"
+    fi
+else
+    echo "  CMake or host-tests entrypoint not available (launcher will fall back to copy-only onboarding)"
+fi
+
+echo "[3/7] Creating app bundle..."
 
 APP="MetalVR Bridge.app"
 rm -rf "$APP"
@@ -87,7 +114,7 @@ mkdir -p "$APP/Contents/Frameworks"
 
 mv MetalVRBridge "$APP/Contents/MacOS/"
 
-echo "[3/6] Writing app metadata..."
+echo "[4/7] Writing app metadata..."
 
 cat > "$APP/Contents/Info.plist" << 'PLIST'
 <?xml version="1.0" encoding="UTF-8"?>
@@ -122,7 +149,7 @@ cat > "$APP/Contents/Info.plist" << 'PLIST'
 </plist>
 PLIST
 
-echo "[4/6] Bundling ICD (if available)..."
+echo "[5/7] Bundling resources..."
 
 # Auto-detect ICD files in common locations
 ICD_DYLIB=""
@@ -215,13 +242,28 @@ else
     echo "  Runtime plan preview not found (launcher plan card can still import JSON at runtime)"
 fi
 
-echo "[5/6] Creating distributable zip..."
+if [ -n "$RUNTIME_BUNDLE_TOOL" ]; then
+    cp "$RUNTIME_BUNDLE_TOOL" "$APP/Contents/Resources/"
+    chmod +x "$APP/Contents/Resources/$(basename "$RUNTIME_BUNDLE_TOOL")"
+    echo "  Bundled runtime bundle helper from: $RUNTIME_BUNDLE_TOOL"
+else
+    echo "  Runtime bundle helper not found (starter bundle generation button will be unavailable)"
+fi
+
+if [ -n "$PROFILES_SOURCE" ]; then
+    cp -R "$PROFILES_SOURCE" "$APP/Contents/Resources/"
+    echo "  Bundled compatibility profiles from: $PROFILES_SOURCE"
+else
+    echo "  Compatibility profiles directory not found (starter bundle generation button will be unavailable)"
+fi
+
+echo "[6/7] Creating distributable zip..."
 
 ZIP_NAME="MetalVR-Bridge-Installer.zip"
 rm -f "$ZIP_NAME"
 ditto -c -k --keepParent "$APP" "$ZIP_NAME"
 
-echo "[6/6] Cleaning up..."
+echo "[7/7] Cleaning up..."
 # Keep the .app around for local testing
 
 SIZE=$(du -sh "$ZIP_NAME" | cut -f1)

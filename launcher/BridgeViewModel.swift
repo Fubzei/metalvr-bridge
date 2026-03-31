@@ -121,6 +121,8 @@ class BridgeViewModel: ObservableObject {
     @Published var systemInfo: SystemInfo
     @Published var projectStatus: ProjectStatusSnapshot?
     @Published var compatibilityCatalog: CompatibilityCatalogSnapshot?
+    @Published var selectedCatalogProfileId: String = ""
+    @Published var starterExecutablePath: String = ""
     @Published var runtimeLaunchPlan: RuntimeLaunchPlanSnapshot?
     @Published var runtimeLaunchPlanSource: String = ""
     @Published var runtimeBundleManifest: RuntimeBundleManifestSnapshot?
@@ -144,6 +146,7 @@ class BridgeViewModel: ObservableObject {
         self.systemInfo = SystemInfo.gather()
         self.projectStatus = ProjectStatusSnapshot.load()
         self.compatibilityCatalog = CompatibilityCatalogSnapshot.load()
+        primeKnownTitleSelection()
         if let loadedRuntimeBundle = RuntimeBundleManifestSnapshot.loadFirstAvailable() {
             applyRuntimeBundleManifest(loadedRuntimeBundle, logSuccess: false)
         }
@@ -151,6 +154,7 @@ class BridgeViewModel: ObservableObject {
            let loadedRuntimePlan = RuntimeLaunchPlanSnapshot.loadFirstAvailable() {
             self.runtimeLaunchPlan = loadedRuntimePlan.snapshot
             self.runtimeLaunchPlanSource = loadedRuntimePlan.sourceDescription
+            synchronizeKnownTitleSelection(with: loadedRuntimePlan.snapshot.selectedProfileId)
         }
         checkInstallation()
         logProjectStatus()
@@ -164,12 +168,65 @@ class BridgeViewModel: ObservableObject {
             runtimeLaunchPlan: runtimeLaunchPlan,
             runtimeBundleManifest: runtimeBundleManifest,
             runtimeBundleArtifactPreview: runtimeBundleArtifactPreview,
+            canGenerateStarterBundleInApp: canGenerateStarterBundleInApp,
+            selectedCatalogEntry: selectedCatalogEntry,
             compatibilityCatalogEntry: runtimeLaunchPlan.flatMap { compatibilityCatalog?.entry(for: $0.selectedProfileId) }
         )
     }
 
     var hasRuntimeExecutionPrep: Bool {
         runtimeLaunchPlan != nil || runtimeBundleManifest != nil
+    }
+
+    var knownCatalogEntries: [CompatibilityCatalogSnapshot.Entry] {
+        compatibilityCatalog?.knownEntries ?? []
+    }
+
+    var selectedCatalogEntry: CompatibilityCatalogSnapshot.Entry? {
+        if let selected = compatibilityCatalog?.entry(for: selectedCatalogProfileId),
+           selected.profileId != "global-defaults" {
+            return selected
+        }
+
+        return knownCatalogEntries.first
+    }
+
+    var starterBundleCommandPreview: String {
+        guard let selectedCatalogEntry else {
+            return "Bundle the compatibility catalog first so the launcher can stage a starter command."
+        }
+
+        let executablePath = starterExecutablePath.trimmingCharacters(in: .whitespacesAndNewlines)
+        let resolvedExecutablePath = executablePath.isEmpty
+            ? defaultStarterExecutablePath(for: selectedCatalogEntry)
+            : executablePath
+        let outputDirectory = "./build-host/exports/\(selectedCatalogEntry.profileId)-bundle"
+
+        var lines = [
+            "./build-host/tools/mvrvb_runtime_bundle_builder \\",
+            "  --exe \"\(escapedCommandValue(resolvedExecutablePath))\" \\"
+        ]
+
+        if let launcher = selectedCatalogEntry.match.launchers.first,
+           !launcher.isEmpty {
+            lines.append("  --launcher \"\(escapedCommandValue(launcher))\" \\")
+        }
+
+        if let store = selectedCatalogEntry.match.stores.first,
+           !store.isEmpty {
+            lines.append("  --store \"\(escapedCommandValue(store))\" \\")
+        }
+
+        lines.append("  --out-dir \"\(escapedCommandValue(outputDirectory))\"")
+        return lines.joined(separator: "\n")
+    }
+
+    var starterBundleSummary: String {
+        guard let selectedCatalogEntry else {
+            return "No checked-in title is currently selected."
+        }
+
+        return "\(selectedCatalogEntry.displayName) | \(selectedCatalogEntry.backendSummary) | \(selectedCatalogEntry.installSummary)"
     }
 
     var runtimeExecutionPrepSummary: String {
@@ -202,6 +259,98 @@ class BridgeViewModel: ObservableObject {
 
     var canCancelRuntimeAutomation: Bool {
         runtimeAutomationRunning && activeRuntimeProcess != nil
+    }
+
+    var canGenerateStarterBundleInApp: Bool {
+        selectedCatalogEntry != nil &&
+        runtimeBundleBuilderUrl() != nil &&
+        bundledProfilesDirectoryUrl() != nil
+    }
+
+    // MARK: - Known Title Onboarding
+
+    func selectCatalogProfile(_ profileId: String) {
+        guard let entry = compatibilityCatalog?.entry(for: profileId),
+              entry.profileId != "global-defaults" else {
+            return
+        }
+
+        selectedCatalogProfileId = entry.profileId
+        starterExecutablePath = defaultStarterExecutablePath(for: entry)
+        log(.info, "Selected known title onboarding profile: \(entry.displayName)")
+    }
+
+    func copyStarterBundleCommand() {
+        guard selectedCatalogEntry != nil else {
+            log(.warn, "No known title onboarding profile is available to copy")
+            return
+        }
+
+        copyTextToPasteboard(
+            starterBundleCommandPreview,
+            description: "starter runtime-bundle command"
+        )
+    }
+
+    func generateStarterRuntimeBundle() {
+        guard let selectedCatalogEntry else {
+            log(.warn, "No known title onboarding profile is available to generate")
+            runtimeAutomationStatus = "No known title selected for runtime-bundle generation."
+            return
+        }
+
+        let trimmedExecutablePath = starterExecutablePath.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmedExecutablePath.isEmpty,
+              !trimmedExecutablePath.hasPrefix("/path/to/") else {
+            log(.warn, "Starter runtime-bundle generation needs a real executable path first")
+            runtimeAutomationStatus = "Enter a real executable path before generating a starter bundle."
+            return
+        }
+
+        guard let builderUrl = runtimeBundleBuilderUrl() else {
+            log(.warn, "Runtime bundle builder is not available in this launcher build")
+            runtimeAutomationStatus = "Bundled runtime-bundle builder not available. Copy the starter command instead."
+            return
+        }
+
+        guard let profilesDirectoryUrl = bundledProfilesDirectoryUrl() else {
+            log(.warn, "Bundled profiles directory is not available in this launcher build")
+            runtimeAutomationStatus = "Bundled profiles are missing. Rebuild the launcher from the repo root."
+            return
+        }
+
+        let outputDirectoryUrl = defaultStarterBundleOutputDirectory(for: selectedCatalogEntry)
+        var arguments = [
+            "--profiles-dir", profilesDirectoryUrl.path,
+            "--exe", trimmedExecutablePath,
+            "--out-dir", outputDirectoryUrl.path
+        ]
+        if let launcher = selectedCatalogEntry.match.launchers.first,
+           !launcher.isEmpty {
+            arguments.append(contentsOf: ["--launcher", launcher])
+        }
+        if let store = selectedCatalogEntry.match.stores.first,
+           !store.isEmpty {
+            arguments.append(contentsOf: ["--store", store])
+        }
+
+        runRuntimeAutomationProcess(
+            displayName: "starter bundle generation",
+            executableUrl: builderUrl,
+            arguments: arguments,
+            currentDirectoryUrl: outputDirectoryUrl.deletingLastPathComponent()
+        ) { [weak self] in
+            guard let self else { return }
+            let manifestUrl = outputDirectoryUrl.appendingPathComponent("bundle-manifest.json")
+            do {
+                let loadedRuntimeBundle = try RuntimeBundleManifestSnapshot.load(from: manifestUrl)
+                self.applyRuntimeBundleManifest(loadedRuntimeBundle, logSuccess: true)
+                self.log(.pass, "Generated and imported starter runtime bundle for \(selectedCatalogEntry.displayName)")
+            } catch {
+                self.runtimeAutomationStatus = "Generated starter bundle, but importing the manifest failed."
+                self.log(.error, "Starter bundle generation succeeded but the manifest could not be imported: \(error.localizedDescription)")
+            }
+        }
     }
 
     // MARK: - Installation Check
@@ -616,6 +765,7 @@ class BridgeViewModel: ObservableObject {
                 runtimeBundleManifest = nil
                 runtimeBundleManifestSource = ""
                 runtimeBundleArtifactPreview = nil
+                synchronizeKnownTitleSelection(with: loadedRuntimePlan.snapshot.selectedProfileId)
                 log(.pass, "Imported runtime plan: \(loadedRuntimePlan.snapshot.selectedDisplayName)")
                 logRuntimeLaunchPlan()
             } catch {
@@ -660,7 +810,7 @@ class BridgeViewModel: ObservableObject {
     // MARK: - Export Log
 
     func exportLog() -> String {
-        var text = "MetalVR Bridge — Diagnostic Log\n"
+        var text = "MetalVR Bridge - Diagnostic Log\n"
         text += "Generated: \(Date())\n"
         text += "System: \(systemInfo.osVersion), \(systemInfo.chipType)\n"
         text += "GPU: \(systemInfo.gpuName) (\(systemInfo.metalVersion))\n"
@@ -677,6 +827,12 @@ class BridgeViewModel: ObservableObject {
             text += "Catalog Profiles: \(compatibilityCatalog.summary.totalProfiles)\n"
             text += "Catalog Competitive Profiles: \(compatibilityCatalog.summary.competitiveProfiles)\n"
             text += "Catalog Planning Profiles: \(compatibilityCatalog.planningProfileCount)\n"
+        }
+        if let selectedCatalogEntry {
+            text += "Known Title Selection: \(selectedCatalogEntry.displayName)\n"
+            text += "Known Title Backend: \(selectedCatalogEntry.backendSummary)\n"
+            text += "Known Title Install: \(selectedCatalogEntry.installSummary)\n"
+            text += "Known Title Starter Path: \(starterExecutablePath)\n"
         }
         if let runtimeLaunchPlan {
             text += "Runtime Plan Profile: \(runtimeLaunchPlan.selectedDisplayName)\n"
@@ -859,6 +1015,10 @@ class BridgeViewModel: ObservableObject {
         switch action {
         case .importJson:
             importRuntimeLaunchPlan()
+        case .generateStarterBundle:
+            generateStarterRuntimeBundle()
+        case .copyStarterCommand:
+            copyStarterBundleCommand()
         case .openChecklist:
             openRuntimeBundleChecklist()
         case .runSetupScript:
@@ -978,6 +1138,7 @@ class BridgeViewModel: ObservableObject {
         if let loadedRuntimePlan = try? RuntimeLaunchPlanSnapshot.load(from: launchPlanUrl) {
             runtimeLaunchPlan = loadedRuntimePlan.snapshot
             runtimeLaunchPlanSource = "Bundle manifest: \(loadedRuntimeBundle.sourceDescription)"
+            synchronizeKnownTitleSelection(with: loadedRuntimePlan.snapshot.selectedProfileId)
             logRuntimeLaunchPlan()
         } else {
             log(.warn, "Runtime bundle imported but launch-plan.json could not be loaded from the manifest path")
@@ -1115,6 +1276,89 @@ class BridgeViewModel: ObservableObject {
         return text
     }
 
+    private func primeKnownTitleSelection() {
+        guard selectedCatalogProfileId.isEmpty,
+              let firstEntry = knownCatalogEntries.first else {
+            return
+        }
+
+        selectedCatalogProfileId = firstEntry.profileId
+        starterExecutablePath = defaultStarterExecutablePath(for: firstEntry)
+    }
+
+    private func synchronizeKnownTitleSelection(with profileId: String) {
+        guard let entry = compatibilityCatalog?.entry(for: profileId),
+              entry.profileId != "global-defaults" else {
+            return
+        }
+
+        selectedCatalogProfileId = entry.profileId
+        let trimmedPath = starterExecutablePath.trimmingCharacters(in: .whitespacesAndNewlines)
+        if trimmedPath.isEmpty || trimmedPath.hasPrefix("/path/to/") {
+            starterExecutablePath = defaultStarterExecutablePath(for: entry)
+        }
+    }
+
+    private func defaultStarterExecutablePath(
+        for entry: CompatibilityCatalogSnapshot.Entry
+    ) -> String {
+        "/path/to/\(entry.starterExecutableHint)"
+    }
+
+    private func escapedCommandValue(_ value: String) -> String {
+        value.replacingOccurrences(of: "\"", with: "\\\"")
+    }
+
+    private func runtimeBundleBuilderUrl() -> URL? {
+        let fileManager = FileManager.default
+        var candidateUrls: [URL] = []
+
+        if let resourceUrl = Bundle.main.resourceURL {
+            candidateUrls.append(resourceUrl.appendingPathComponent("mvrvb_runtime_bundle_builder"))
+        }
+
+        let cwdUrl = URL(fileURLWithPath: fileManager.currentDirectoryPath, isDirectory: true)
+        candidateUrls.append(cwdUrl.appendingPathComponent("build-host/tools/mvrvb_runtime_bundle_builder"))
+        candidateUrls.append(cwdUrl.appendingPathComponent("../build-host/tools/mvrvb_runtime_bundle_builder"))
+        candidateUrls.append(cwdUrl.appendingPathComponent("build-launcher-host/tools/mvrvb_runtime_bundle_builder"))
+        candidateUrls.append(cwdUrl.appendingPathComponent("../build-launcher-host/tools/mvrvb_runtime_bundle_builder"))
+
+        return candidateUrls
+            .map(\.standardizedFileURL)
+            .first(where: { fileManager.fileExists(atPath: $0.path) })
+    }
+
+    private func bundledProfilesDirectoryUrl() -> URL? {
+        let fileManager = FileManager.default
+        var candidateUrls: [URL] = []
+
+        if let resourceUrl = Bundle.main.resourceURL {
+            candidateUrls.append(resourceUrl.appendingPathComponent("profiles"))
+        }
+
+        let cwdUrl = URL(fileURLWithPath: fileManager.currentDirectoryPath, isDirectory: true)
+        candidateUrls.append(cwdUrl.appendingPathComponent("profiles"))
+        candidateUrls.append(cwdUrl.appendingPathComponent("../profiles"))
+
+        return candidateUrls
+            .map(\.standardizedFileURL)
+            .first(where: { fileManager.fileExists(atPath: $0.path) })
+    }
+
+    private func defaultStarterBundleOutputDirectory(
+        for entry: CompatibilityCatalogSnapshot.Entry
+    ) -> URL {
+        let fileManager = FileManager.default
+        let documentsDirectory = fileManager.urls(
+            for: .documentDirectory,
+            in: .userDomainMask
+        ).first ?? fileManager.homeDirectoryForCurrentUser
+
+        return documentsDirectory
+            .appendingPathComponent("MetalVR Bridge Bundles", isDirectory: true)
+            .appendingPathComponent("\(entry.profileId)-bundle-\(dateStamp())", isDirectory: true)
+    }
+
     private func readRuntimeBundleTextAsset(for manifestPath: String) -> String? {
         guard let loadedRuntimeBundle else {
             return nil
@@ -1246,6 +1490,21 @@ class BridgeViewModel: ObservableObject {
         displayName: String,
         scriptUrl: URL
     ) {
+        runRuntimeAutomationProcess(
+            displayName: displayName,
+            executableUrl: URL(fileURLWithPath: "/bin/bash"),
+            arguments: [scriptUrl.path],
+            currentDirectoryUrl: scriptUrl.deletingLastPathComponent()
+        )
+    }
+
+    private func runRuntimeAutomationProcess(
+        displayName: String,
+        executableUrl: URL,
+        arguments: [String],
+        currentDirectoryUrl: URL?,
+        onSuccess: (() -> Void)? = nil
+    ) {
         guard !runtimeAutomationRunning else {
             log(.warn, "Runtime automation is already running - wait for it to finish before starting another action")
             return
@@ -1256,9 +1515,9 @@ class BridgeViewModel: ObservableObject {
         let standardError = Pipe()
         var standardOutputData = Data()
         var standardErrorData = Data()
-        process.executableURL = URL(fileURLWithPath: "/bin/bash")
-        process.arguments = [scriptUrl.path]
-        process.currentDirectoryURL = scriptUrl.deletingLastPathComponent()
+        process.executableURL = executableUrl
+        process.arguments = arguments
+        process.currentDirectoryURL = currentDirectoryUrl
         process.standardOutput = standardOutput
         process.standardError = standardError
 
@@ -1301,6 +1560,7 @@ class BridgeViewModel: ObservableObject {
                 } else if finishedProcess.terminationStatus == 0 {
                     self?.runtimeAutomationStatus = "Completed: \(displayName)"
                     self?.log(.pass, "Completed \(displayName)")
+                    onSuccess?()
                 } else {
                     self?.runtimeAutomationStatus = "Failed: \(displayName) (exit \(finishedProcess.terminationStatus))"
                     self?.log(.fail, "Failed \(displayName) with exit code \(finishedProcess.terminationStatus)")
@@ -1311,12 +1571,19 @@ class BridgeViewModel: ObservableObject {
         }
 
         do {
+            if let currentDirectoryUrl {
+                try FileManager.default.createDirectory(
+                    at: currentDirectoryUrl,
+                    withIntermediateDirectories: true
+                )
+            }
             try process.run()
             activeRuntimeProcess = process
             runtimeAutomationRunning = true
             runtimeAutomationCancellationRequested = false
             runtimeAutomationStatus = "Running: \(displayName)"
-            log(.info, "Started \(displayName): \(scriptUrl.path)")
+            let launchedCommand = ([executableUrl.path] + arguments).joined(separator: " ")
+            log(.info, "Started \(displayName): \(launchedCommand)")
         } catch {
             runtimeAutomationStatus = "Failed to start: \(displayName)"
             runtimeAutomationCancellationRequested = false
