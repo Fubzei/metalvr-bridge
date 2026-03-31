@@ -2,6 +2,7 @@
 
 #include "runtime_launch_plan.h"
 
+#include <fstream>
 #include <filesystem>
 
 namespace mvrvb {
@@ -81,6 +82,26 @@ TEST(RuntimeLaunchPlan, SummaryIncludesCoreDecisionFields) {
     EXPECT_NE(summary.find("Match score: 175"), std::string::npos);
 }
 
+TEST(RuntimeLaunchPlan, DetailedReportIncludesEnvironmentAndArguments) {
+    const auto result = buildRuntimeLaunchPlanFromDirectory(
+        repoRoot() / "profiles",
+        CompatibilityProfileQuery{
+            .executable = R"(C:\Games\Overwatch\Overwatch.exe)",
+            .launcher = "Battle.net",
+            .store = "battlenet",
+        });
+
+    ASSERT_TRUE(result) << result.errorMessage;
+    const std::string report = describeRuntimeLaunchPlan(result.plan);
+
+    EXPECT_NE(report.find("Environment:"), std::string::npos);
+    EXPECT_NE(report.find("MVRVB_PROFILE=overwatch-2"), std::string::npos);
+    EXPECT_NE(report.find("DLL overrides:"), std::string::npos);
+    EXPECT_NE(report.find("d3d11=native,builtin"), std::string::npos);
+    EXPECT_NE(report.find("Launch arguments:"), std::string::npos);
+    EXPECT_NE(report.find("--fullscreen"), std::string::npos);
+}
+
 TEST(RuntimeLaunchPlan, JsonIncludesMachineReadableFields) {
     const auto result = buildRuntimeLaunchPlanFromDirectory(
         repoRoot() / "profiles",
@@ -93,12 +114,77 @@ TEST(RuntimeLaunchPlan, JsonIncludesMachineReadableFields) {
     ASSERT_TRUE(result) << result.errorMessage;
     const std::string json = runtimeLaunchPlanToJson(result.plan);
 
+    EXPECT_NE(json.find("\"schemaVersion\":\"1\""), std::string::npos);
     EXPECT_NE(json.find("\"selectedProfileId\":\"overwatch-2\""), std::string::npos);
     EXPECT_NE(json.find("\"backend\":\"dxvk\""), std::string::npos);
     EXPECT_NE(json.find("\"syncMode\":\"msync\""), std::string::npos);
     EXPECT_NE(json.find("\"antiCheatRisk\":\"blocking\""), std::string::npos);
     EXPECT_NE(json.find("\"d3d11\":\"native,builtin\""), std::string::npos);
     EXPECT_NE(json.find("\"launchArgs\":[\"--fullscreen\"]"), std::string::npos);
+}
+
+TEST(RuntimeLaunchPlan, WritesJsonAndReportFiles) {
+    const auto result = buildRuntimeLaunchPlanFromDirectory(
+        repoRoot() / "profiles",
+        CompatibilityProfileQuery{
+            .executable = R"(C:\Games\Overwatch\Overwatch.exe)",
+            .launcher = "Battle.net",
+            .store = "battlenet",
+        });
+
+    ASSERT_TRUE(result) << result.errorMessage;
+
+    const auto tempRoot = std::filesystem::temp_directory_path() / "mvrvb-runtime-launch-plan-tests";
+    std::error_code ec;
+    std::filesystem::create_directories(tempRoot, ec);
+    ASSERT_FALSE(static_cast<bool>(ec)) << ec.message();
+
+    const auto jsonPath = tempRoot / "overwatch.launch-plan.json";
+    const auto reportPath = tempRoot / "overwatch.launch-plan.txt";
+    std::filesystem::remove(jsonPath, ec);
+    std::filesystem::remove(reportPath, ec);
+
+    std::string errorMessage;
+    ASSERT_TRUE(writeRuntimeLaunchPlanJson(result.plan, jsonPath, &errorMessage)) << errorMessage;
+    ASSERT_TRUE(writeRuntimeLaunchPlanReport(result.plan, reportPath, &errorMessage)) << errorMessage;
+
+    std::ifstream jsonStream(jsonPath);
+    ASSERT_TRUE(jsonStream.is_open());
+    const std::string json((std::istreambuf_iterator<char>(jsonStream)),
+                           std::istreambuf_iterator<char>());
+    EXPECT_NE(json.find("\"selectedProfileId\":\"overwatch-2\""), std::string::npos);
+    const auto loaded = loadRuntimeLaunchPlanJson(jsonPath);
+    ASSERT_TRUE(loaded) << loaded.errorMessage;
+    EXPECT_EQ(loaded.plan.selectedProfileId, "overwatch-2");
+    EXPECT_EQ(loaded.plan.backend, RendererBackend::DXVK);
+    EXPECT_EQ(loaded.plan.syncMode, SyncMode::MSync);
+
+    std::ifstream reportStream(reportPath);
+    ASSERT_TRUE(reportStream.is_open());
+    const std::string report((std::istreambuf_iterator<char>(reportStream)),
+                             std::istreambuf_iterator<char>());
+    EXPECT_NE(report.find("Selected profile: overwatch-2"), std::string::npos);
+    EXPECT_NE(report.find("Launch arguments:"), std::string::npos);
+
+    std::filesystem::remove(jsonPath, ec);
+    std::filesystem::remove(reportPath, ec);
+}
+
+TEST(RuntimeLaunchPlan, RejectsUnknownBackendInPersistedJson) {
+    const auto result = parseRuntimeLaunchPlanJson(
+        R"({"schemaVersion":"1","selectedProfileId":"bad","backend":"totally-unknown","runtime":{"windowsVersion":"win11","syncMode":"default","highResolutionMode":false,"metalFxUpscaling":false},"latencySensitive":false,"competitive":false,"antiCheatRisk":"unknown","launchArgs":[],"environment":{},"dllOverrides":{}})");
+
+    ASSERT_FALSE(result);
+    EXPECT_NE(result.errorMessage.find("Unknown renderer backend"), std::string::npos);
+}
+
+TEST(RuntimeLaunchPlan, RejectsUnsupportedSchemaVersionInPersistedJson) {
+    const auto result = parseRuntimeLaunchPlanJson(
+        R"({"schemaVersion":"999","selectedProfileId":"bad","backend":"auto","runtime":{"windowsVersion":"win11","syncMode":"default","highResolutionMode":false,"metalFxUpscaling":false},"latencySensitive":false,"competitive":false,"antiCheatRisk":"unknown","launchArgs":[],"environment":{},"dllOverrides":{}})");
+
+    ASSERT_FALSE(result);
+    EXPECT_NE(result.errorMessage.find("Unsupported runtime launch plan schemaVersion"),
+              std::string::npos);
 }
 
 }  // namespace

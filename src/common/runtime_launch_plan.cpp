@@ -1,6 +1,10 @@
 #include "runtime_launch_plan.h"
 
 #include <algorithm>
+#include <charconv>
+#include <cctype>
+#include <fstream>
+#include <iterator>
 #include <sstream>
 
 namespace mvrvb {
@@ -64,6 +68,529 @@ void appendJsonStringMap(std::ostringstream* out,
     }
     *out << '}';
 }
+
+bool writeTextFile(const std::filesystem::path& path,
+                   std::string_view contents,
+                   std::string* errorMessage) {
+    std::error_code ec;
+    const auto parent = path.parent_path();
+    if (!parent.empty()) {
+        std::filesystem::create_directories(parent, ec);
+        if (ec) {
+            if (errorMessage) {
+                *errorMessage = "Failed to create parent directory for launch-plan file: " +
+                                ec.message();
+            }
+            return false;
+        }
+    }
+
+    std::ofstream stream(path, std::ios::binary | std::ios::trunc);
+    if (!stream.is_open()) {
+        if (errorMessage) {
+            *errorMessage = "Failed to open launch-plan output file: " + path.string();
+        }
+        return false;
+    }
+
+    stream.write(contents.data(), static_cast<std::streamsize>(contents.size()));
+    if (!stream.good()) {
+        if (errorMessage) {
+            *errorMessage = "Failed while writing launch-plan output file: " + path.string();
+        }
+        return false;
+    }
+
+    return true;
+}
+
+void appendUtf8CodePoint(std::string* out, uint32_t codePoint) {
+    if (!out) return;
+    if (codePoint <= 0x7Fu) {
+        out->push_back(static_cast<char>(codePoint));
+    } else if (codePoint <= 0x7FFu) {
+        out->push_back(static_cast<char>(0xC0u | ((codePoint >> 6u) & 0x1Fu)));
+        out->push_back(static_cast<char>(0x80u | (codePoint & 0x3Fu)));
+    } else if (codePoint <= 0xFFFFu) {
+        out->push_back(static_cast<char>(0xE0u | ((codePoint >> 12u) & 0x0Fu)));
+        out->push_back(static_cast<char>(0x80u | ((codePoint >> 6u) & 0x3Fu)));
+        out->push_back(static_cast<char>(0x80u | (codePoint & 0x3Fu)));
+    } else {
+        out->push_back(static_cast<char>(0xF0u | ((codePoint >> 18u) & 0x07u)));
+        out->push_back(static_cast<char>(0x80u | ((codePoint >> 12u) & 0x3Fu)));
+        out->push_back(static_cast<char>(0x80u | ((codePoint >> 6u) & 0x3Fu)));
+        out->push_back(static_cast<char>(0x80u | (codePoint & 0x3Fu)));
+    }
+}
+
+std::optional<RendererBackend> rendererBackendFromName(std::string_view value) {
+    if (value == "auto") return RendererBackend::Auto;
+    if (value == "dxvk") return RendererBackend::DXVK;
+    if (value == "vkd3d-proton") return RendererBackend::VKD3DProton;
+    if (value == "d3dmetal") return RendererBackend::D3DMetal;
+    if (value == "dxmt") return RendererBackend::DXMT;
+    if (value == "wined3d") return RendererBackend::WineD3D;
+    if (value == "native-vulkan") return RendererBackend::NativeVulkan;
+    return std::nullopt;
+}
+
+std::optional<SyncMode> syncModeFromName(std::string_view value) {
+    if (value == "default") return SyncMode::Default;
+    if (value == "msync") return SyncMode::MSync;
+    if (value == "esync") return SyncMode::ESync;
+    if (value == "disabled") return SyncMode::Disabled;
+    return std::nullopt;
+}
+
+std::optional<AntiCheatRisk> antiCheatRiskFromName(std::string_view value) {
+    if (value == "unknown") return AntiCheatRisk::Unknown;
+    if (value == "low") return AntiCheatRisk::Low;
+    if (value == "medium") return AntiCheatRisk::Medium;
+    if (value == "high") return AntiCheatRisk::High;
+    if (value == "blocking") return AntiCheatRisk::Blocking;
+    return std::nullopt;
+}
+
+class RuntimeLaunchPlanJsonParser {
+public:
+    explicit RuntimeLaunchPlanJsonParser(std::string_view input) : input_(input) {}
+
+    RuntimeLaunchPlanResult parse() {
+        RuntimeLaunchPlanResult result;
+        bool sawSchemaVersion = false;
+        skipWhitespace();
+        if (!parseTopLevelObject(&result.plan, &sawSchemaVersion, &result.errorMessage)) {
+            return result;
+        }
+        skipWhitespace();
+        if (!atEnd()) {
+            result.errorMessage = "Unexpected trailing JSON content at offset " +
+                                  std::to_string(position_);
+            return result;
+        }
+        if (result.plan.selectedProfileId.empty()) {
+            result.errorMessage = "Runtime launch plan JSON is missing selectedProfileId";
+        } else if (sawSchemaVersion &&
+                   schemaVersion_ != kRuntimeLaunchPlanSchemaVersion) {
+            result.errorMessage = "Unsupported runtime launch plan schemaVersion: " +
+                                  schemaVersion_;
+        }
+        return result;
+    }
+
+private:
+    bool atEnd() const { return position_ >= input_.size(); }
+
+    char peek() const { return atEnd() ? '\0' : input_[position_]; }
+
+    void skipWhitespace() {
+        while (!atEnd() &&
+               std::isspace(static_cast<unsigned char>(input_[position_])) != 0) {
+            ++position_;
+        }
+    }
+
+    bool consume(char expected) {
+        skipWhitespace();
+        if (peek() != expected) return false;
+        ++position_;
+        return true;
+    }
+
+    bool expect(char expected, std::string* errorMessage) {
+        if (consume(expected)) return true;
+        if (errorMessage) {
+            *errorMessage = std::string("Expected '") + expected + "' at offset " +
+                            std::to_string(position_);
+        }
+        return false;
+    }
+
+    bool parseString(std::string* out, std::string* errorMessage) {
+        if (!out) return false;
+        skipWhitespace();
+        if (peek() != '"') {
+            if (errorMessage) {
+                *errorMessage = "Expected JSON string at offset " + std::to_string(position_);
+            }
+            return false;
+        }
+        ++position_;
+        std::string value;
+        while (!atEnd()) {
+            const char ch = input_[position_++];
+            if (ch == '"') {
+                *out = std::move(value);
+                return true;
+            }
+            if (ch != '\\') {
+                value.push_back(ch);
+                continue;
+            }
+            if (atEnd()) {
+                if (errorMessage) {
+                    *errorMessage = "Unterminated escape sequence in JSON string";
+                }
+                return false;
+            }
+
+            const char escape = input_[position_++];
+            switch (escape) {
+                case '"': value.push_back('"'); break;
+                case '\\': value.push_back('\\'); break;
+                case '/': value.push_back('/'); break;
+                case 'b': value.push_back('\b'); break;
+                case 'f': value.push_back('\f'); break;
+                case 'n': value.push_back('\n'); break;
+                case 'r': value.push_back('\r'); break;
+                case 't': value.push_back('\t'); break;
+                case 'u': {
+                    if (position_ + 4u > input_.size()) {
+                        if (errorMessage) {
+                            *errorMessage = "Incomplete \\u escape in JSON string";
+                        }
+                        return false;
+                    }
+                    uint32_t codePoint = 0u;
+                    for (size_t i = 0; i < 4u; ++i) {
+                        const char hex = input_[position_++];
+                        codePoint <<= 4u;
+                        if (hex >= '0' && hex <= '9') codePoint |= static_cast<uint32_t>(hex - '0');
+                        else if (hex >= 'A' && hex <= 'F') codePoint |= static_cast<uint32_t>(10 + hex - 'A');
+                        else if (hex >= 'a' && hex <= 'f') codePoint |= static_cast<uint32_t>(10 + hex - 'a');
+                        else {
+                            if (errorMessage) {
+                                *errorMessage = "Invalid hex digit in \\u escape";
+                            }
+                            return false;
+                        }
+                    }
+                    appendUtf8CodePoint(&value, codePoint);
+                    break;
+                }
+                default:
+                    if (errorMessage) {
+                        *errorMessage = std::string("Unsupported JSON escape sequence: \\") +
+                                        escape;
+                    }
+                    return false;
+            }
+        }
+
+        if (errorMessage) {
+            *errorMessage = "Unterminated JSON string";
+        }
+        return false;
+    }
+
+    bool parseBool(bool* out, std::string* errorMessage) {
+        if (!out) return false;
+        skipWhitespace();
+        if (input_.substr(position_, 4u) == "true") {
+            position_ += 4u;
+            *out = true;
+            return true;
+        }
+        if (input_.substr(position_, 5u) == "false") {
+            position_ += 5u;
+            *out = false;
+            return true;
+        }
+        if (errorMessage) {
+            *errorMessage = "Expected JSON boolean at offset " + std::to_string(position_);
+        }
+        return false;
+    }
+
+    bool parseInt(int* out, std::string* errorMessage) {
+        if (!out) return false;
+        skipWhitespace();
+        const size_t start = position_;
+        if (peek() == '-') {
+            ++position_;
+        }
+        while (!atEnd() &&
+               std::isdigit(static_cast<unsigned char>(input_[position_])) != 0) {
+            ++position_;
+        }
+        if (position_ == start || (position_ == start + 1u && input_[start] == '-')) {
+            if (errorMessage) {
+                *errorMessage = "Expected JSON integer at offset " + std::to_string(start);
+            }
+            return false;
+        }
+
+        const auto numberView = input_.substr(start, position_ - start);
+        const char* begin = numberView.data();
+        const char* end = numberView.data() + numberView.size();
+        auto [ptr, ec] = std::from_chars(begin, end, *out);
+        if (ec != std::errc() || ptr != end) {
+            if (errorMessage) {
+                *errorMessage = "Invalid integer in runtime launch plan JSON";
+            }
+            return false;
+        }
+        return true;
+    }
+
+    bool parseStringArray(std::vector<std::string>* out, std::string* errorMessage) {
+        if (!out) return false;
+        out->clear();
+        if (!expect('[', errorMessage)) return false;
+        skipWhitespace();
+        if (consume(']')) return true;
+
+        while (true) {
+            std::string value;
+            if (!parseString(&value, errorMessage)) return false;
+            out->push_back(std::move(value));
+            skipWhitespace();
+            if (consume(']')) return true;
+            if (!expect(',', errorMessage)) return false;
+        }
+    }
+
+    bool parseBackendArray(std::vector<RendererBackend>* out, std::string* errorMessage) {
+        if (!out) return false;
+        std::vector<std::string> names;
+        if (!parseStringArray(&names, errorMessage)) return false;
+        out->clear();
+        for (const auto& name : names) {
+            const auto backend = rendererBackendFromName(name);
+            if (!backend.has_value()) {
+                if (errorMessage) {
+                    *errorMessage = "Unknown renderer backend in runtime launch plan JSON: " + name;
+                }
+                return false;
+            }
+            out->push_back(*backend);
+        }
+        return true;
+    }
+
+    bool parseStringMap(std::map<std::string, std::string>* out, std::string* errorMessage) {
+        if (!out) return false;
+        out->clear();
+        if (!expect('{', errorMessage)) return false;
+        skipWhitespace();
+        if (consume('}')) return true;
+
+        while (true) {
+            std::string key;
+            std::string value;
+            if (!parseString(&key, errorMessage)) return false;
+            if (!expect(':', errorMessage)) return false;
+            if (!parseString(&value, errorMessage)) return false;
+            (*out)[std::move(key)] = std::move(value);
+            skipWhitespace();
+            if (consume('}')) return true;
+            if (!expect(',', errorMessage)) return false;
+        }
+    }
+
+    bool skipLiteral(std::string_view literal) {
+        if (input_.substr(position_, literal.size()) != literal) return false;
+        position_ += literal.size();
+        return true;
+    }
+
+    bool skipNumber(std::string* errorMessage) {
+        const size_t start = position_;
+        if (peek() == '-') ++position_;
+        while (!atEnd() &&
+               std::isdigit(static_cast<unsigned char>(input_[position_])) != 0) {
+            ++position_;
+        }
+        if (!atEnd() && input_[position_] == '.') {
+            ++position_;
+            while (!atEnd() &&
+                   std::isdigit(static_cast<unsigned char>(input_[position_])) != 0) {
+                ++position_;
+            }
+        }
+        if (!atEnd() && (input_[position_] == 'e' || input_[position_] == 'E')) {
+            ++position_;
+            if (!atEnd() && (input_[position_] == '+' || input_[position_] == '-')) ++position_;
+            while (!atEnd() &&
+                   std::isdigit(static_cast<unsigned char>(input_[position_])) != 0) {
+                ++position_;
+            }
+        }
+        if (position_ == start) {
+            if (errorMessage) {
+                *errorMessage = "Expected JSON number at offset " + std::to_string(start);
+            }
+            return false;
+        }
+        return true;
+    }
+
+    bool skipArray(std::string* errorMessage) {
+        if (!expect('[', errorMessage)) return false;
+        skipWhitespace();
+        if (consume(']')) return true;
+        while (true) {
+            if (!skipValue(errorMessage)) return false;
+            skipWhitespace();
+            if (consume(']')) return true;
+            if (!expect(',', errorMessage)) return false;
+        }
+    }
+
+    bool skipObject(std::string* errorMessage) {
+        if (!expect('{', errorMessage)) return false;
+        skipWhitespace();
+        if (consume('}')) return true;
+        while (true) {
+            std::string ignoredKey;
+            if (!parseString(&ignoredKey, errorMessage)) return false;
+            if (!expect(':', errorMessage)) return false;
+            if (!skipValue(errorMessage)) return false;
+            skipWhitespace();
+            if (consume('}')) return true;
+            if (!expect(',', errorMessage)) return false;
+        }
+    }
+
+    bool skipValue(std::string* errorMessage) {
+        skipWhitespace();
+        switch (peek()) {
+            case '{': return skipObject(errorMessage);
+            case '[': return skipArray(errorMessage);
+            case '"': {
+                std::string ignored;
+                return parseString(&ignored, errorMessage);
+            }
+            case 't': return skipLiteral("true");
+            case 'f': return skipLiteral("false");
+            case 'n': return skipLiteral("null");
+            default:
+                if (peek() == '-' ||
+                    std::isdigit(static_cast<unsigned char>(peek())) != 0) {
+                    return skipNumber(errorMessage);
+                }
+                if (errorMessage) {
+                    *errorMessage = "Unsupported JSON value at offset " +
+                                    std::to_string(position_);
+                }
+                return false;
+        }
+    }
+
+    bool parseRuntimeObject(RuntimeLaunchPlan* plan, std::string* errorMessage) {
+        if (!plan) return false;
+        if (!expect('{', errorMessage)) return false;
+        skipWhitespace();
+        if (consume('}')) return true;
+
+        while (true) {
+            std::string key;
+            if (!parseString(&key, errorMessage)) return false;
+            if (!expect(':', errorMessage)) return false;
+
+            if (key == "windowsVersion") {
+                if (!parseString(&plan->windowsVersion, errorMessage)) return false;
+            } else if (key == "syncMode") {
+                std::string value;
+                if (!parseString(&value, errorMessage)) return false;
+                const auto mode = syncModeFromName(value);
+                if (!mode.has_value()) {
+                    if (errorMessage) {
+                        *errorMessage = "Unknown sync mode in runtime launch plan JSON: " + value;
+                    }
+                    return false;
+                }
+                plan->syncMode = *mode;
+            } else if (key == "highResolutionMode") {
+                if (!parseBool(&plan->highResolutionMode, errorMessage)) return false;
+            } else if (key == "metalFxUpscaling") {
+                if (!parseBool(&plan->metalFxUpscaling, errorMessage)) return false;
+            } else {
+                if (!skipValue(errorMessage)) return false;
+            }
+
+            skipWhitespace();
+            if (consume('}')) return true;
+            if (!expect(',', errorMessage)) return false;
+        }
+    }
+
+    bool parseTopLevelObject(RuntimeLaunchPlan* plan,
+                            bool* sawSchemaVersion,
+                            std::string* errorMessage) {
+        if (!plan) return false;
+        if (!expect('{', errorMessage)) return false;
+        skipWhitespace();
+        if (consume('}')) return true;
+
+        while (true) {
+            std::string key;
+            if (!parseString(&key, errorMessage)) return false;
+            if (!expect(':', errorMessage)) return false;
+
+            if (key == "schemaVersion") {
+                if (!parseString(&schemaVersion_, errorMessage)) return false;
+                if (sawSchemaVersion) *sawSchemaVersion = true;
+            } else if (key == "selectedProfileId") {
+                if (!parseString(&plan->selectedProfileId, errorMessage)) return false;
+            } else if (key == "selectedDisplayName") {
+                if (!parseString(&plan->selectedDisplayName, errorMessage)) return false;
+            } else if (key == "appliedProfileIds") {
+                if (!parseStringArray(&plan->appliedProfileIds, errorMessage)) return false;
+            } else if (key == "matchScore") {
+                if (!parseInt(&plan->matchScore, errorMessage)) return false;
+            } else if (key == "backend") {
+                std::string value;
+                if (!parseString(&value, errorMessage)) return false;
+                const auto backend = rendererBackendFromName(value);
+                if (!backend.has_value()) {
+                    if (errorMessage) {
+                        *errorMessage =
+                            "Unknown renderer backend in runtime launch plan JSON: " + value;
+                    }
+                    return false;
+                }
+                plan->backend = *backend;
+            } else if (key == "fallbackBackends") {
+                if (!parseBackendArray(&plan->fallbackBackends, errorMessage)) return false;
+            } else if (key == "runtime") {
+                if (!parseRuntimeObject(plan, errorMessage)) return false;
+            } else if (key == "latencySensitive") {
+                if (!parseBool(&plan->latencySensitive, errorMessage)) return false;
+            } else if (key == "competitive") {
+                if (!parseBool(&plan->competitive, errorMessage)) return false;
+            } else if (key == "antiCheatRisk") {
+                std::string value;
+                if (!parseString(&value, errorMessage)) return false;
+                const auto risk = antiCheatRiskFromName(value);
+                if (!risk.has_value()) {
+                    if (errorMessage) {
+                        *errorMessage =
+                            "Unknown anti-cheat risk in runtime launch plan JSON: " + value;
+                    }
+                    return false;
+                }
+                plan->antiCheatRisk = *risk;
+            } else if (key == "launchArgs") {
+                if (!parseStringArray(&plan->launchArgs, errorMessage)) return false;
+            } else if (key == "environment") {
+                if (!parseStringMap(&plan->environment, errorMessage)) return false;
+            } else if (key == "dllOverrides") {
+                if (!parseStringMap(&plan->dllOverrides, errorMessage)) return false;
+            } else {
+                if (!skipValue(errorMessage)) return false;
+            }
+
+            skipWhitespace();
+            if (consume('}')) return true;
+            if (!expect(',', errorMessage)) return false;
+        }
+    }
+
+    std::string_view input_;
+    std::string schemaVersion_;
+    size_t position_{0};
+};
 
 void appendUniqueString(std::vector<std::string>* items, const std::string& value) {
     if (!items || value.empty()) return;
@@ -191,6 +718,23 @@ RuntimeLaunchPlanResult buildRuntimeLaunchPlanFromDirectory(
     return buildRuntimeLaunchPlan(batch.profiles, query);
 }
 
+RuntimeLaunchPlanResult parseRuntimeLaunchPlanJson(std::string_view text) {
+    return RuntimeLaunchPlanJsonParser(text).parse();
+}
+
+RuntimeLaunchPlanResult loadRuntimeLaunchPlanJson(const std::filesystem::path& path) {
+    RuntimeLaunchPlanResult result;
+    std::ifstream stream(path, std::ios::binary);
+    if (!stream.is_open()) {
+        result.errorMessage = "Failed to open runtime launch plan JSON: " + path.string();
+        return result;
+    }
+
+    const std::string text((std::istreambuf_iterator<char>(stream)),
+                           std::istreambuf_iterator<char>());
+    return parseRuntimeLaunchPlanJson(text);
+}
+
 std::string summarizeRuntimeLaunchPlan(const RuntimeLaunchPlan& plan) {
     std::ostringstream out;
     out << "Selected profile: " << plan.selectedProfileId;
@@ -230,11 +774,43 @@ std::string summarizeRuntimeLaunchPlan(const RuntimeLaunchPlan& plan) {
     return out.str();
 }
 
+std::string describeRuntimeLaunchPlan(const RuntimeLaunchPlan& plan) {
+    std::ostringstream out;
+    out << summarizeRuntimeLaunchPlan(plan) << "\n";
+    out << "Environment:\n";
+    if (plan.environment.empty()) {
+        out << "  (none)\n";
+    } else {
+        for (const auto& [key, value] : plan.environment) {
+            out << "  " << key << "=" << value << "\n";
+        }
+    }
+    out << "DLL overrides:\n";
+    if (plan.dllOverrides.empty()) {
+        out << "  (none)\n";
+    } else {
+        for (const auto& [key, value] : plan.dllOverrides) {
+            out << "  " << key << "=" << value << "\n";
+        }
+    }
+    out << "Launch arguments:\n";
+    if (plan.launchArgs.empty()) {
+        out << "  (none)\n";
+    } else {
+        for (const auto& arg : plan.launchArgs) {
+            out << "  " << arg << "\n";
+        }
+    }
+    return out.str();
+}
+
 std::string runtimeLaunchPlanToJson(const RuntimeLaunchPlan& plan) {
     std::ostringstream out;
     out << '{';
 
-    out << "\"selectedProfileId\":";
+    out << "\"schemaVersion\":";
+    appendJsonString(&out, kRuntimeLaunchPlanSchemaVersion);
+    out << ",\"selectedProfileId\":";
     appendJsonString(&out, plan.selectedProfileId);
     out << ",\"selectedDisplayName\":";
     appendJsonString(&out, plan.selectedDisplayName);
@@ -275,6 +851,18 @@ std::string runtimeLaunchPlanToJson(const RuntimeLaunchPlan& plan) {
     out << '}';
 
     return out.str();
+}
+
+bool writeRuntimeLaunchPlanReport(const RuntimeLaunchPlan& plan,
+                                  const std::filesystem::path& path,
+                                  std::string* errorMessage) {
+    return writeTextFile(path, describeRuntimeLaunchPlan(plan), errorMessage);
+}
+
+bool writeRuntimeLaunchPlanJson(const RuntimeLaunchPlan& plan,
+                                const std::filesystem::path& path,
+                                std::string* errorMessage) {
+    return writeTextFile(path, runtimeLaunchPlanToJson(plan), errorMessage);
 }
 
 }  // namespace mvrvb

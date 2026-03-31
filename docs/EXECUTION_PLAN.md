@@ -90,6 +90,13 @@ These items are now checked in and verified in CI:
      waiting on launcher wiring or Mac hardware
    - the same preview tool now has a machine-readable JSON mode so future
      launcher/runtime code can consume the shared launch-plan contract directly
+   - `scripts/export_runtime_plan.ps1` now produces persisted JSON plus human-readable
+     launch-plan bundles from that same shared contract for future runtime glue
+   - persisted JSON launch-plan bundles can now be loaded back into
+     `src/common/runtime_launch_plan.*`, so future runtime or launcher glue can
+     consume exported plans without re-solving compatibility profiles
+   - the persisted JSON contract is now schema-versioned for safer future
+     launcher/runtime integration
    - GitHub now has a dedicated game-compatibility report template
 
 ## Exit Criteria

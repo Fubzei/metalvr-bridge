@@ -57,7 +57,7 @@ That subtree exists in the repo, but it is not currently added by the root
   - checked-in compatibility profiles for future runtime and launcher policy
 - `tools/`
   - checked-in host-safe preview tool for resolving runtime launch plans from
-    profile inputs
+    profile inputs and writing them to disk
 
 ## Module Map
 
@@ -113,6 +113,7 @@ That subtree exists in the repo, but it is not currently added by the root
 
 - Mac smoke-test automation and bundle collection
 - Windows/host-side local test entrypoint for Apple-free modules
+- launch-plan export helper for JSON plus human-readable report bundles
 - intended to reduce ambiguity for the first dedicated hardware run
 
 ### `host-tests`
@@ -129,6 +130,7 @@ That subtree exists in the repo, but it is not currently added by the root
   selection into backend, env, DLL override, and launch-argument output
 - supports both human-readable summaries and machine-readable JSON output for
   future launcher/runtime consumption
+- verified in host-side checks for stdout, file-output, and persisted-plan reload modes
 
 ### `shaders`
 

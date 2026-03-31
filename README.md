@@ -40,6 +40,14 @@ Windows game
   plans can be resolved and inspected locally before the launcher wiring is
   complete, including a machine-readable JSON export for future runtime or
   launcher integration.
+- A checked-in export helper now lives in `scripts/export_runtime_plan.ps1` so
+  persisted JSON and human-readable launch-plan bundles can be generated from
+  the same shared contract without Mac hardware.
+- Those persisted JSON plans can now also be loaded back through the shared
+  launch-plan layer, so future runtime or launcher glue can consume exported
+  plans without re-solving profiles.
+- The persisted launch-plan JSON contract is now schema-versioned so future
+  consumers can validate compatibility instead of guessing.
 - First-pass runtime observability logs now cover instance, device, pipeline,
   swapchain, submit, present, command-replay boundaries, draw/dispatch
   state-flush summaries, transfer/secondary-command breadcrumbs, and

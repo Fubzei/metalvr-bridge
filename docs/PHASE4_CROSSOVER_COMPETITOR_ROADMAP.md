@@ -128,7 +128,13 @@ The first checked-in Phase 4 deliverables are:
   - host-safe launch-plan builder that resolves backend/env/args/runtime policy from profiles
 - `tools/mvrvb_runtime_plan_preview`
   - host-safe preview entry point for inspecting merged launch decisions without Mac hardware,
-    with JSON output that future launcher/runtime code can reuse
+    with JSON output and persisted file export that future launcher/runtime code can reuse
+- `scripts/export_runtime_plan.ps1`
+  - host-safe helper for generating launch-plan bundles on disk from the shared contract
+- persisted launch-plan JSON now round-trips through the shared runtime-plan layer,
+  so future launcher/runtime code can consume exported bundles directly
+- the persisted launch-plan JSON contract is now schema-versioned for future
+  compatibility checks
 - `profiles/`
   - checked-in defaults, templates, and planning profiles with runtime-policy knobs
 - `tests/unit/compatibility_profile_tests.cpp`

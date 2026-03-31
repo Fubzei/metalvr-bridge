@@ -9,6 +9,8 @@
 
 namespace mvrvb {
 
+inline constexpr const char* kRuntimeLaunchPlanSchemaVersion = "1";
+
 struct RuntimeLaunchPlan {
     std::vector<std::string> appliedProfileIds;
     std::string selectedProfileId;
@@ -41,7 +43,18 @@ RuntimeLaunchPlanResult buildRuntimeLaunchPlan(
 RuntimeLaunchPlanResult buildRuntimeLaunchPlanFromDirectory(
     const std::filesystem::path& root,
     const CompatibilityProfileQuery& query);
+RuntimeLaunchPlanResult parseRuntimeLaunchPlanJson(std::string_view text);
+RuntimeLaunchPlanResult loadRuntimeLaunchPlanJson(const std::filesystem::path& path);
 std::string summarizeRuntimeLaunchPlan(const RuntimeLaunchPlan& plan);
+std::string describeRuntimeLaunchPlan(const RuntimeLaunchPlan& plan);
 std::string runtimeLaunchPlanToJson(const RuntimeLaunchPlan& plan);
+bool writeRuntimeLaunchPlanReport(
+    const RuntimeLaunchPlan& plan,
+    const std::filesystem::path& path,
+    std::string* errorMessage = nullptr);
+bool writeRuntimeLaunchPlanJson(
+    const RuntimeLaunchPlan& plan,
+    const std::filesystem::path& path,
+    std::string* errorMessage = nullptr);
 
 }  // namespace mvrvb

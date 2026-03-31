@@ -71,6 +71,12 @@ policy before the full runtime product layer is in place.
 The checked-in `tools/mvrvb_runtime_plan_preview` tool can resolve these files
 into a concrete backend/env/launch-argument plan without Mac hardware, and can
 also emit the same decision as JSON for future launcher/runtime consumption.
+The companion `scripts/export_runtime_plan.ps1` helper can persist that plan as
+both JSON and a human-readable report bundle on disk.
+Those JSON plans can now also be loaded back by the shared runtime-launch-plan
+layer, so exported bundles can become an input to future launcher/runtime flows.
+That persisted JSON contract is schema-versioned so future consumers can reject
+incompatible plan formats cleanly.
 
 ## Auto-Match Rules
 
