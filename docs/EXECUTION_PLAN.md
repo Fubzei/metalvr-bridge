@@ -119,6 +119,10 @@ These items are now checked in and verified in CI:
      launch-script, lint, and compatibility-catalog summaries from imported
      runtime bundles, and `export_runtime_bundle.ps1` now writes portable
      relative asset paths inside bundle manifests
+   - `launcher/BridgeViewModel.swift` and `launcher/ContentView.swift` now reveal
+     imported runtime-bundle folders in Finder, open checklist/setup/launch
+     assets directly, and export combined runtime-bundle reports so testers can
+     move from preview to action inside the app
    - `profiles/` now holds defaults, templates, and planning profiles
    - `tests/unit/compatibility_profile_tests.cpp` validates the parser and the
      checked-in profile files

@@ -419,6 +419,83 @@ struct ContentView: View {
                     .buttonStyle(.plain)
                 }
             }
+
+            if vm.runtimeBundleManifest != nil {
+                HStack(spacing: 8) {
+                    Button(action: { vm.revealRuntimeBundleAssets() }) {
+                        HStack(spacing: 6) {
+                            Image(systemName: "folder")
+                                .font(.system(size: 10))
+                            Text("Reveal Bundle")
+                                .font(.system(size: 10, weight: .semibold, design: .monospaced))
+                        }
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 8)
+                        .background(
+                            RoundedRectangle(cornerRadius: 8)
+                                .fill(Color(hex: "0d0d14"))
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 8)
+                                        .stroke(Color(hex: "1e2030"), lineWidth: 1)
+                                )
+                        )
+                        .foregroundColor(Color(hex: "cbd5e1"))
+                    }
+                    .buttonStyle(.plain)
+
+                    Button(action: { vm.saveRuntimeBundleReport() }) {
+                        HStack(spacing: 6) {
+                            Image(systemName: "doc.text")
+                                .font(.system(size: 10))
+                            Text("Save Report")
+                                .font(.system(size: 10, weight: .semibold, design: .monospaced))
+                        }
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 8)
+                        .background(
+                            RoundedRectangle(cornerRadius: 8)
+                                .fill(Color(hex: "0d0d14"))
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 8)
+                                        .stroke(Color(hex: "1e2030"), lineWidth: 1)
+                                )
+                        )
+                        .foregroundColor(Color(hex: "94a3b8"))
+                    }
+                    .buttonStyle(.plain)
+                }
+
+                Menu {
+                    Button("Open Checklist") {
+                        vm.openRuntimeBundleChecklist()
+                    }
+                    Button("Open Setup Script") {
+                        vm.openRuntimeBundleSetupScript()
+                    }
+                    Button("Open Launch Script") {
+                        vm.openRuntimeBundleLaunchScript()
+                    }
+                } label: {
+                    HStack(spacing: 6) {
+                        Image(systemName: "link")
+                            .font(.system(size: 10))
+                        Text("Open Bundle Asset")
+                            .font(.system(size: 10, weight: .semibold, design: .monospaced))
+                    }
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 8)
+                    .background(
+                        RoundedRectangle(cornerRadius: 8)
+                            .fill(Color(hex: "0d0d14"))
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 8)
+                                    .stroke(Color(hex: "1e2030"), lineWidth: 1)
+                            )
+                    )
+                    .foregroundColor(Color(hex: "cbd5e1"))
+                }
+                .buttonStyle(.plain)
+            }
         }
         .padding(14)
         .background(

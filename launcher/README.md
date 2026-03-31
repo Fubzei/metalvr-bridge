@@ -58,5 +58,7 @@ an exported launch policy without rerunning tools. At runtime, the launcher can
 also import either a direct `launch-plan.json` file or a `bundle-manifest.json`
 file exported by `scripts/export_runtime_bundle.ps1`. Imported runtime bundles
 now also surface their checklist, setup-script, launch-script, lint, and
-compatibility-catalog previews in the app. If those files are missing, the app
-still works for the Metal hardware test.
+compatibility-catalog previews in the app, and the launcher can reveal the
+bundle folder, open the imported bundle assets directly, or export a combined
+runtime-bundle report. If those files are missing, the app still works for the
+Metal hardware test.

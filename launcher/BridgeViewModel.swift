@@ -134,6 +134,7 @@ class BridgeViewModel: ObservableObject {
 
     private let bridgeDylibName = "libMetalVRBridge.dylib"
     private let icdManifestName = "vulkan_icd.json"
+    private var loadedRuntimeBundle: LoadedRuntimeBundleManifest?
 
     init() {
         self.systemInfo = SystemInfo.gather()
@@ -561,6 +562,7 @@ class BridgeViewModel: ObservableObject {
                 let loadedRuntimePlan = try RuntimeLaunchPlanSnapshot.load(from: url)
                 runtimeLaunchPlan = loadedRuntimePlan.snapshot
                 runtimeLaunchPlanSource = loadedRuntimePlan.sourceDescription
+                loadedRuntimeBundle = nil
                 runtimeBundleManifest = nil
                 runtimeBundleManifestSource = ""
                 runtimeBundleArtifactPreview = nil
@@ -576,6 +578,7 @@ class BridgeViewModel: ObservableObject {
         runtimeBundleManifest = nil
         runtimeBundleManifestSource = ""
         runtimeBundleArtifactPreview = nil
+        loadedRuntimeBundle = nil
 
         if let loadedRuntimeBundle = RuntimeBundleManifestSnapshot.loadFirstAvailable() {
             applyRuntimeBundleManifest(loadedRuntimeBundle, logSuccess: false)
@@ -626,6 +629,9 @@ class BridgeViewModel: ObservableObject {
             text += "Runtime Bundle Target: \(runtimeBundleManifest.targetSummary)\n"
             text += "Runtime Bundle Source: \(runtimeBundleManifestSource)\n"
         }
+        if let loadedRuntimeBundle {
+            text += "Runtime Bundle Directory: \(loadedRuntimeBundle.bundleDirectoryUrl.path)\n"
+        }
         if let runtimeBundleArtifactPreview {
             text += "Runtime Bundle Checklist: \(runtimeBundleArtifactPreview.checklistSummary)\n"
             text += "Runtime Bundle Setup Scripts: \(runtimeBundleArtifactPreview.setupScriptSummary)\n"
@@ -650,6 +656,64 @@ class BridgeViewModel: ObservableObject {
             if response == .OK, let url = panel.url {
                 try? text.write(to: url, atomically: true, encoding: .utf8)
                 self.log(.info, "Log saved to \(url.path)")
+            }
+        }
+    }
+
+    func revealRuntimeBundleAssets() {
+        guard let loadedRuntimeBundle else {
+            log(.warn, "No imported runtime bundle is available to reveal")
+            return
+        }
+
+        NSWorkspace.shared.activateFileViewerSelecting([loadedRuntimeBundle.bundleDirectoryUrl])
+        log(.info, "Revealed runtime bundle assets: \(loadedRuntimeBundle.bundleDirectoryUrl.path)")
+    }
+
+    func openRuntimeBundleChecklist() {
+        openRuntimeBundleAsset(
+            named: "runtime bundle checklist",
+            manifestPaths: [loadedRuntimeBundle?.snapshot.files.setupChecklist].compactMap { $0 }
+        )
+    }
+
+    func openRuntimeBundleSetupScript() {
+        openRuntimeBundleAsset(
+            named: "runtime bundle setup script",
+            manifestPaths: [
+                loadedRuntimeBundle?.snapshot.files.bashSetupScript,
+                loadedRuntimeBundle?.snapshot.files.powershellSetupScript
+            ].compactMap { $0 }
+        )
+    }
+
+    func openRuntimeBundleLaunchScript() {
+        openRuntimeBundleAsset(
+            named: "runtime bundle launch script",
+            manifestPaths: [
+                loadedRuntimeBundle?.snapshot.files.bashLaunchScript,
+                loadedRuntimeBundle?.snapshot.files.powershellLaunchScript
+            ].compactMap { $0 }
+        )
+    }
+
+    func saveRuntimeBundleReport() {
+        guard let reportText = buildRuntimeBundleReport() else {
+            log(.warn, "No imported runtime bundle report is available to export")
+            return
+        }
+
+        let panel = NSSavePanel()
+        panel.allowedContentTypes = [.plainText]
+        panel.nameFieldStringValue = "metalvr_runtime_bundle_\(dateStamp()).txt"
+        panel.begin { response in
+            if response == .OK, let url = panel.url {
+                do {
+                    try reportText.write(to: url, atomically: true, encoding: .utf8)
+                    self.log(.info, "Runtime bundle report saved to \(url.path)")
+                } catch {
+                    self.log(.error, "Failed to save runtime bundle report: \(error.localizedDescription)")
+                }
             }
         }
     }
@@ -735,6 +799,7 @@ class BridgeViewModel: ObservableObject {
         _ loadedRuntimeBundle: LoadedRuntimeBundleManifest,
         logSuccess: Bool
     ) {
+        self.loadedRuntimeBundle = loadedRuntimeBundle
         runtimeBundleManifest = loadedRuntimeBundle.snapshot
         runtimeBundleManifestSource = loadedRuntimeBundle.sourceDescription
 
@@ -760,6 +825,124 @@ class BridgeViewModel: ObservableObject {
 
         logRuntimeBundleManifest()
         logRuntimeBundleArtifactPreview()
+    }
+
+    private func buildRuntimeBundleReport() -> String? {
+        guard let loadedRuntimeBundle else {
+            return nil
+        }
+
+        var text = "MetalVR Bridge - Runtime Bundle Report\n"
+        text += "Generated: \(Date())\n"
+        text += "Bundle Target: \(loadedRuntimeBundle.snapshot.targetSummary)\n"
+        text += "Bundle Source: \(loadedRuntimeBundle.sourceDescription)\n"
+        text += "Bundle Directory: \(loadedRuntimeBundle.bundleDirectoryUrl.path)\n"
+        if let runtimeBundleArtifactPreview {
+            text += "Checklist Summary: \(runtimeBundleArtifactPreview.checklistSummary)\n"
+            text += "Setup Scripts Summary: \(runtimeBundleArtifactPreview.setupScriptSummary)\n"
+            text += "Launch Scripts Summary: \(runtimeBundleArtifactPreview.launchScriptSummary)\n"
+            text += "Lint Summary: \(runtimeBundleArtifactPreview.lintSummary)\n"
+            text += "Catalog Summary: \(runtimeBundleArtifactPreview.compatibilityCatalogSummary)\n"
+        }
+        text += String(repeating: "=", count: 72) + "\n\n"
+
+        appendRuntimeBundleSection(
+            "Launch Plan Report",
+            contents: readRuntimeBundleTextAsset(for: loadedRuntimeBundle.snapshot.files.launchPlanReport),
+            to: &text
+        )
+        appendRuntimeBundleSection(
+            "Setup Checklist",
+            contents: readRuntimeBundleTextAsset(for: loadedRuntimeBundle.snapshot.files.setupChecklist),
+            to: &text
+        )
+        appendRuntimeBundleSection(
+            "Profile Lint Report",
+            contents: readRuntimeBundleTextAsset(for: loadedRuntimeBundle.snapshot.files.profileLintReport),
+            to: &text
+        )
+        appendRuntimeBundleSection(
+            "Compatibility Catalog Report",
+            contents: readRuntimeBundleTextAsset(for: loadedRuntimeBundle.snapshot.files.compatibilityCatalogReport),
+            to: &text
+        )
+        appendRuntimeBundleSection(
+            "Bash Setup Script",
+            contents: readRuntimeBundleTextAsset(for: loadedRuntimeBundle.snapshot.files.bashSetupScript),
+            to: &text
+        )
+        appendRuntimeBundleSection(
+            "PowerShell Setup Script",
+            contents: readRuntimeBundleTextAsset(for: loadedRuntimeBundle.snapshot.files.powershellSetupScript),
+            to: &text
+        )
+        appendRuntimeBundleSection(
+            "Bash Launch Script",
+            contents: readRuntimeBundleTextAsset(for: loadedRuntimeBundle.snapshot.files.bashLaunchScript),
+            to: &text
+        )
+        appendRuntimeBundleSection(
+            "PowerShell Launch Script",
+            contents: readRuntimeBundleTextAsset(for: loadedRuntimeBundle.snapshot.files.powershellLaunchScript),
+            to: &text
+        )
+
+        return text
+    }
+
+    private func readRuntimeBundleTextAsset(for manifestPath: String) -> String? {
+        guard let loadedRuntimeBundle else {
+            return nil
+        }
+
+        let assetUrl = loadedRuntimeBundle.resolvedFileUrl(for: manifestPath)
+        return try? String(contentsOf: assetUrl, encoding: .utf8)
+    }
+
+    private func appendRuntimeBundleSection(
+        _ title: String,
+        contents: String?,
+        to text: inout String
+    ) {
+        text += "## \(title)\n\n"
+        if let contents,
+           !contents.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            text += contents.trimmingCharacters(in: .whitespacesAndNewlines)
+        } else {
+            text += "(missing from imported runtime bundle)"
+        }
+        text += "\n\n"
+    }
+
+    private func openRuntimeBundleAsset(
+        named assetName: String,
+        manifestPaths: [String]
+    ) {
+        guard let assetUrl = resolvedRuntimeBundleAssetUrl(for: manifestPaths) else {
+            log(.warn, "No \(assetName) was available in the imported runtime bundle")
+            return
+        }
+
+        if NSWorkspace.shared.open(assetUrl) {
+            log(.info, "Opened \(assetName): \(assetUrl.path)")
+        } else {
+            log(.warn, "Failed to open \(assetName): \(assetUrl.path)")
+        }
+    }
+
+    private func resolvedRuntimeBundleAssetUrl(for manifestPaths: [String]) -> URL? {
+        guard let loadedRuntimeBundle else {
+            return nil
+        }
+
+        for manifestPath in manifestPaths {
+            let assetUrl = loadedRuntimeBundle.resolvedFileUrl(for: manifestPath)
+            if FileManager.default.fileExists(atPath: assetUrl.path) {
+                return assetUrl
+            }
+        }
+
+        return nil
     }
 
     private func dateStamp() -> String {
