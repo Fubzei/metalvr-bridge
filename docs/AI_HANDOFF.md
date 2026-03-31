@@ -24,6 +24,8 @@ MetalVR Bridge.
   host-verified.
 - The launcher now consumes the bundled `docs/PROJECT_STATUS.json` snapshot so the
   Mac app reflects the same current phase and next gate tracked in the repo docs.
+- The launcher now also consumes the bundled `docs/GAME_COMPATIBILITY_CATALOG.json`
+  snapshot so the app can summarize checked-in profile coverage without rerunning tools.
 - A tester/runtime handoff bundle can be exported locally without Mac hardware.
 
 ## Not Yet Proven
@@ -43,11 +45,12 @@ Read these files in order before changing code:
 3. `docs/EXECUTION_PLAN.md`
 4. `docs/REPO_MAP.md`
 5. `docs/PHASE4_CROSSOVER_COMPETITOR_ROADMAP.md`
-6. `docs/GAME_COMPATIBILITY_CATALOG.md`
-7. `docs/MAC_RUNTIME_SMOKE_TEST.md`
-8. `profiles/README.md`
-9. `README.md`
-10. `CONTRIBUTING.md`
+6. `docs/GAME_COMPATIBILITY_CATALOG.json`
+7. `docs/GAME_COMPATIBILITY_CATALOG.md`
+8. `docs/MAC_RUNTIME_SMOKE_TEST.md`
+9. `profiles/README.md`
+10. `README.md`
+11. `CONTRIBUTING.md`
 
 ## Most Useful Commands
 
@@ -75,7 +78,7 @@ bash scripts/mac_runtime_smoke_test.sh
 ## Best Next Non-Mac Priorities
 
 1. Extend the Swift launcher to consume the shared runtime-plan, prefix-preset, lint,
-   and bundle surfaces beyond the checked-in project-status snapshot.
+   and bundle surfaces beyond the checked-in project-status and compatibility snapshots.
 2. Keep the compatibility profile and prefix-preset governance strong as more games or
    templates are added.
 3. Keep the repo and generated docs aligned whenever the product/runtime surface changes.

@@ -38,7 +38,7 @@ fi
 
 # Check for required source files
 MISSING=0
-for f in MetalVRBridgeApp.swift ContentView.swift BridgeViewModel.swift ProjectStatus.swift; do
+for f in MetalVRBridgeApp.swift ContentView.swift BridgeViewModel.swift ProjectStatus.swift CompatibilityCatalog.swift; do
     if [ ! -f "$f" ]; then
         echo "ERROR: Missing $f - make sure all .swift files are in this folder."
         MISSING=1
@@ -69,6 +69,7 @@ swiftc \
     ContentView.swift \
     BridgeViewModel.swift \
     ProjectStatus.swift \
+    CompatibilityCatalog.swift \
     2>&1
 
 echo "[2/6] Creating app bundle..."
@@ -180,6 +181,20 @@ if [ -n "$PROJECT_STATUS_SOURCE" ]; then
     echo "  Bundled project status snapshot from: $PROJECT_STATUS_SOURCE"
 else
     echo "  Project status snapshot not found (launcher status card will be limited)"
+fi
+
+CATALOG_SOURCE=""
+for path in "./GAME_COMPATIBILITY_CATALOG.json" "../GAME_COMPATIBILITY_CATALOG.json" "../docs/GAME_COMPATIBILITY_CATALOG.json"; do
+    if [ -z "$CATALOG_SOURCE" ] && [ -f "$path" ]; then
+        CATALOG_SOURCE="$path"
+    fi
+done
+
+if [ -n "$CATALOG_SOURCE" ]; then
+    cp "$CATALOG_SOURCE" "$APP/Contents/Resources/GAME_COMPATIBILITY_CATALOG.json"
+    echo "  Bundled compatibility catalog snapshot from: $CATALOG_SOURCE"
+else
+    echo "  Compatibility catalog snapshot not found (launcher catalog summary will be limited)"
 fi
 
 echo "[5/6] Creating distributable zip..."

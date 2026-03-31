@@ -99,6 +99,13 @@ These items are now checked in and verified in CI:
      `launcher/ContentView.swift` now surface that same project-status snapshot
      inside the macOS launcher UI and exported diagnostics when the bundle
      includes `PROJECT_STATUS.json`
+   - `docs/GAME_COMPATIBILITY_CATALOG.json` plus
+     `scripts/update_profile_catalog_json.ps1` now provide a checked-in
+     machine-readable compatibility snapshot for tooling or launcher consumers
+   - `launcher/CompatibilityCatalog.swift`, `launcher/BridgeViewModel.swift`,
+     and `launcher/ContentView.swift` now surface that same compatibility snapshot
+     inside the macOS launcher UI and exported diagnostics when the bundle
+     includes `GAME_COMPATIBILITY_CATALOG.json`
    - `profiles/` now holds defaults, templates, and planning profiles
    - `tests/unit/compatibility_profile_tests.cpp` validates the parser and the
      checked-in profile files

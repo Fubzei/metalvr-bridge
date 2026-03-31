@@ -278,6 +278,22 @@ struct ContentView: View {
                     .foregroundColor(Color(hex: "94a3b8"))
                     .fixedSize(horizontal: false, vertical: true)
             }
+
+            if let compatibilityCatalog = vm.compatibilityCatalog {
+                statusRow(label: "Catalog", value: compatibilityCatalog.summaryLine)
+
+                if let preview = compatibilityCatalog.knownTitlePreview {
+                    statusCallout(
+                        title: "Known Profiles",
+                        message: "\(compatibilityCatalog.planningProfileCount) planning-only today. Preview: \(preview)"
+                    )
+                }
+            } else {
+                Text("No bundled compatibility catalog snapshot found. Rebuild the launcher from the repo root to package GAME_COMPATIBILITY_CATALOG.json into the app.")
+                    .font(.system(size: 11))
+                    .foregroundColor(Color(hex: "94a3b8"))
+                    .fixedSize(horizontal: false, vertical: true)
+            }
         }
         .padding(14)
         .background(

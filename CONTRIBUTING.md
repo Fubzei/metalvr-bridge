@@ -24,6 +24,8 @@ Use and maintain these files as the canonical references:
   - Fast resume brief for future AI coding sessions
 - `docs/PROJECT_STATUS.json`
   - Machine-readable project status snapshot for tooling and AI handoff
+- `docs/GAME_COMPATIBILITY_CATALOG.json`
+  - Machine-readable compatibility catalog snapshot derived from checked-in profiles
 - `docs/MAC_RUNTIME_SMOKE_TEST.md`
   - The canonical Mac smoke-test procedure and reporting bundle
 - `SECURITY.md`
@@ -82,6 +84,7 @@ Update docs when the matching area changes:
 - Update `docs/PHASE4_CROSSOVER_COMPETITOR_ROADMAP.md` when productization scope or ordering changes.
 - Update `docs/AI_HANDOFF.md` when the current phase, proven surface, or next-step order changes.
 - Update `docs/PROJECT_STATUS.json` when the current phase, proven surface, or next-step order changes.
+- Update `docs/GAME_COMPATIBILITY_CATALOG.json` when checked-in profiles or prefix presets change.
 - Update `docs/MAC_RUNTIME_SMOKE_TEST.md` when the Mac validation procedure or required logs change.
 - Update `SECURITY.md` when reporting or security posture changes.
 - Update `profiles/README.md` when the compatibility profile format or vocabulary changes.
@@ -91,6 +94,7 @@ Update docs when the matching area changes:
 - Update `scripts/update_ai_handoff_doc.ps1` or `scripts/export_ai_handoff_bundle.ps1`
   when the AI handoff flow changes.
 - Update `scripts/update_project_status_json.ps1` when the machine-readable status flow changes.
+- Update `scripts/update_profile_catalog_json.ps1` when the checked-in compatibility JSON flow changes.
 - Update `launcher/README.md` when the launcher packaging flow changes.
 
 ## Pull Request Checklist

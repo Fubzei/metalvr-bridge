@@ -9,6 +9,7 @@ Describe what changed and why.
 - [ ] `docs/MILESTONES.md` updated if milestone or runtime status changed
 - [ ] `docs/AI_HANDOFF.md` updated if the current phase or next-step order changed
 - [ ] `docs/PROJECT_STATUS.json` updated if the current phase or next-step order changed
+- [ ] `docs/GAME_COMPATIBILITY_CATALOG.json` updated if checked-in profiles or prefix presets changed
 - [ ] `CONTRIBUTING.md` updated if workflow or conventions changed
 - [ ] `SECURITY.md` updated if security posture or reporting changed
 - [ ] No source-of-truth doc updates were needed

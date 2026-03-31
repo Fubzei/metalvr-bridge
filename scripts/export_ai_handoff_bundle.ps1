@@ -25,6 +25,14 @@ if (-not $?) {
 if (-not $?) {
     throw "Project status JSON update failed with exit code $LASTEXITCODE"
 }
+& (Join-Path $repoRoot "scripts\update_profile_catalog_json.ps1") | Out-Null
+if (-not $?) {
+    throw "Compatibility catalog JSON update failed with exit code $LASTEXITCODE"
+}
+& (Join-Path $repoRoot "scripts\update_profile_catalog_doc.ps1") | Out-Null
+if (-not $?) {
+    throw "Compatibility catalog doc update failed with exit code $LASTEXITCODE"
+}
 $projectStatusPath = Join-Path $repoRoot "docs\PROJECT_STATUS.json"
 $projectStatus = Get-Content -LiteralPath $projectStatusPath -Raw | ConvertFrom-Json
 
@@ -34,6 +42,7 @@ $docTargets = @(
     "SECURITY.md",
     "docs\AI_HANDOFF.md",
     "docs\PROJECT_STATUS.json",
+    "docs\GAME_COMPATIBILITY_CATALOG.json",
     "docs\REPO_MAP.md",
     "docs\MILESTONES.md",
     "docs\EXECUTION_PLAN.md",
@@ -78,6 +87,7 @@ $manifest = [ordered]@{
         "SECURITY.md",
         "docs/AI_HANDOFF.md",
         "docs/PROJECT_STATUS.json",
+        "docs/GAME_COMPATIBILITY_CATALOG.json",
         "docs/REPO_MAP.md",
         "docs/MILESTONES.md",
         "docs/EXECUTION_PLAN.md",

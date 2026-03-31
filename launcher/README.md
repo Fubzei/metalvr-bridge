@@ -34,6 +34,7 @@ Then:
    - ContentView.swift
    - BridgeViewModel.swift
    - ProjectStatus.swift
+   - CompatibilityCatalog.swift
 
 2. Open Terminal, cd to that folder
 
@@ -45,5 +46,7 @@ The script automatically finds and bundles the MetalVR Bridge ICD if it
 has been built. If `PROJECT_STATUS.json`, `../PROJECT_STATUS.json`, or
 `../docs/PROJECT_STATUS.json` is present, it also bundles the current repo
 phase snapshot so the launcher can display the next gate and project readiness
-status. If those files are missing, the app still works for the Metal hardware
-test.
+status. If `GAME_COMPATIBILITY_CATALOG.json`, `../GAME_COMPATIBILITY_CATALOG.json`,
+or `../docs/GAME_COMPATIBILITY_CATALOG.json` is present, it also bundles the
+checked-in compatibility snapshot so the launcher can summarize known profiles.
+If those files are missing, the app still works for the Metal hardware test.

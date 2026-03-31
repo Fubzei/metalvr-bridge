@@ -94,7 +94,8 @@ Windows game
   state-flush summaries, transfer/secondary-command breadcrumbs, and
   synchronization/unsupported-op breadcrumbs.
 - The launcher now includes an in-app triangle test, a bundled project-status
-  card sourced from `docs/PROJECT_STATUS.json`, and diagnostic log export.
+  card sourced from `docs/PROJECT_STATUS.json`, a bundled compatibility summary
+  sourced from `docs/GAME_COMPATIBILITY_CATALOG.json`, and diagnostic log export.
 - `scripts/mac_runtime_smoke_test.sh` now automates the first hardware smoke-test
   bundle so Mac-side validation is easier to execute and report.
 - Green macOS CI runs now publish downloadable ICD and launcher installer artifacts.
@@ -118,6 +119,8 @@ status. Use these files first:
   - Fastest repo-native resume file for AI coding helpers
 - `docs/PROJECT_STATUS.json`
   - Machine-readable project status snapshot for tooling and AI handoff
+- `docs/GAME_COMPATIBILITY_CATALOG.json`
+  - Machine-readable compatibility catalog snapshot derived from checked-in profiles
 - `docs/GAME_COMPATIBILITY_CATALOG.md`
   - Generated Markdown compatibility matrix derived from checked-in profiles
 - `docs/MAC_RUNTIME_SMOKE_TEST.md`
@@ -203,6 +206,8 @@ tests/                 Host-side unit tests for Apple-free modules
 - `docs/EXECUTION_PLAN.md`
 - `docs/PHASE4_CROSSOVER_COMPETITOR_ROADMAP.md`
 - `docs/AI_HANDOFF.md`
+- `docs/PROJECT_STATUS.json`
+- `docs/GAME_COMPATIBILITY_CATALOG.json`
 - `docs/GAME_COMPATIBILITY_CATALOG.md`
 - `docs/MAC_RUNTIME_SMOKE_TEST.md`
 - `CONTRIBUTING.md`

@@ -170,9 +170,14 @@ The first checked-in Phase 4 deliverables are:
   - canonical checked-in resume brief for any AI coding helper
 - `docs/PROJECT_STATUS.json`
   - machine-readable status snapshot for tooling and AI handoff
+- `docs/GAME_COMPATIBILITY_CATALOG.json`
+  - machine-readable compatibility snapshot derived from checked-in profiles
 - `launcher/ProjectStatus.swift`
   - launcher-side consumer for the bundled status snapshot so the app reflects
     the checked-in repo phase and next gate
+- `launcher/CompatibilityCatalog.swift`
+  - launcher-side consumer for the bundled compatibility snapshot so the app can
+    summarize known checked-in profile coverage without rerunning tools
 - `scripts/update_ai_handoff_doc.ps1` and `scripts/export_ai_handoff_bundle.ps1`
   - direct update and export path for a carry-forward AI handoff package
 - persisted launch-plan JSON now round-trips through the shared runtime-plan layer,

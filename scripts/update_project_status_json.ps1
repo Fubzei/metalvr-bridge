@@ -30,7 +30,8 @@ $status = [ordered]@{
         "runtime-setup-command-generation",
         "runtime-bundle-export",
         "ai-handoff-doc-and-bundle",
-        "launcher-project-status-snapshot"
+        "launcher-project-status-snapshot",
+        "launcher-compatibility-catalog-snapshot"
     )
     notYetProven = @(
         "launcher-triangle-on-real-mac",
@@ -40,7 +41,7 @@ $status = [ordered]@{
     )
     nextGate = "Launcher triangle, vulkaninfo, and vkcube on Mac hardware."
     nextNonMacSteps = @(
-        "Extend the Swift launcher to consume shared runtime-plan and runtime-bundle surfaces beyond the checked-in project-status snapshot.",
+        "Extend the Swift launcher to consume shared runtime-plan, lint, and runtime-bundle surfaces beyond the checked-in project-status and compatibility snapshots.",
         "Keep compatibility profiles and prefix presets governed through lint and docs.",
         "Keep repo and wiki handoff docs aligned with the checked-in source of truth."
     )
@@ -48,6 +49,7 @@ $status = [ordered]@{
         "README.md",
         "docs/PROJECT_STATUS.json",
         "docs/AI_HANDOFF.md",
+        "docs/GAME_COMPATIBILITY_CATALOG.json",
         "docs/MILESTONES.md",
         "docs/EXECUTION_PLAN.md",
         "docs/REPO_MAP.md",

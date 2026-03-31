@@ -120,6 +120,7 @@ class BridgeViewModel: ObservableObject {
     @Published var logs: [LogEntry] = []
     @Published var systemInfo: SystemInfo
     @Published var projectStatus: ProjectStatusSnapshot?
+    @Published var compatibilityCatalog: CompatibilityCatalogSnapshot?
     @Published var bridgeStatus: BridgeStatus = .notInstalled
     @Published var testStatus: TestStatus = .idle
     @Published var testRunning: Bool = false
@@ -132,8 +133,10 @@ class BridgeViewModel: ObservableObject {
     init() {
         self.systemInfo = SystemInfo.gather()
         self.projectStatus = ProjectStatusSnapshot.load()
+        self.compatibilityCatalog = CompatibilityCatalogSnapshot.load()
         checkInstallation()
         logProjectStatus()
+        logCompatibilityCatalog()
     }
 
     // MARK: - Installation Check
@@ -541,6 +544,11 @@ class BridgeViewModel: ObservableObject {
             text += "Next Gate: \(projectStatus.nextGate)\n"
             text += "Proven Surfaces: \(projectStatus.provenSurfaces.count)\n"
         }
+        if let compatibilityCatalog {
+            text += "Catalog Profiles: \(compatibilityCatalog.summary.totalProfiles)\n"
+            text += "Catalog Competitive Profiles: \(compatibilityCatalog.summary.competitiveProfiles)\n"
+            text += "Catalog Planning Profiles: \(compatibilityCatalog.planningProfileCount)\n"
+        }
         text += String(repeating: "=", count: 72) + "\n\n"
 
         for entry in logs {
@@ -590,6 +598,19 @@ class BridgeViewModel: ObservableObject {
         log(.info, "Phase 2 status: \(projectStatus.phase2Summary)")
         log(.info, "Next gate: \(projectStatus.nextGate)")
         log(.info, "Proven surfaces: \(projectStatus.provenSurfaces.count), pending Mac gates: \(projectStatus.notYetProven.count)")
+    }
+
+    private func logCompatibilityCatalog() {
+        guard let compatibilityCatalog else {
+            log(.warn, "Compatibility catalog snapshot not bundled - launcher will not show checked-in profile coverage")
+            return
+        }
+
+        log(.info, "Compatibility catalog profiles: \(compatibilityCatalog.summary.totalProfiles) total, \(compatibilityCatalog.summary.competitiveProfiles) competitive")
+        log(.info, "Compatibility catalog planning profiles: \(compatibilityCatalog.planningProfileCount)")
+        if let preview = compatibilityCatalog.knownTitlePreview {
+            log(.info, "Known profile preview: \(preview)")
+        }
     }
 
     private func dateStamp() -> String {

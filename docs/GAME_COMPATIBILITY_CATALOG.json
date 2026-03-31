@@ -1,0 +1,180 @@
+{
+    "schemaVersion":  "1",
+    "summary":  {
+                    "totalProfiles":  3,
+                    "autoMatchProfiles":  2,
+                    "templateProfiles":  1,
+                    "competitiveProfiles":  2,
+                    "latencySensitiveProfiles":  2,
+                    "statusCounts":  {
+                                         "planning":  3
+                                     },
+                    "categoryCounts":  {
+                                           "baseline":  1,
+                                           "competitive-shooter":  2
+                                       },
+                    "backendCounts":  {
+                                          "auto":  1,
+                                          "dxvk":  2
+                                      }
+                },
+    "entries":  [
+                    {
+                        "profileId":  "global-defaults",
+                        "displayName":  "Global Defaults",
+                        "appliedPrefixPresetDisplayName":  "General Game",
+                        "status":  "planning",
+                        "allowAutoMatch":  true,
+                        "category":  "baseline",
+                        "notes":  "Baseline runtime defaults while MetalVR Bridge grows from a Vulkan backend into a broader game runtime product.",
+                        "defaultRenderer":  "auto",
+                        "fallbackRenderers":  [
+                                                  "dxvk",
+                                                  "d3dmetal",
+                                                  "wined3d"
+                                              ],
+                        "latencySensitive":  false,
+                        "competitive":  false,
+                        "antiCheatRisk":  "unknown",
+                        "runtime":  {
+                                        "windowsVersion":  "win11",
+                                        "syncMode":  "default",
+                                        "highResolutionMode":  false,
+                                        "metalFxUpscaling":  false
+                                    },
+                        "match":  {
+                                      "executables":  [
+
+                                                      ],
+                                      "launchers":  [
+
+                                                    ],
+                                      "stores":  [
+
+                                                 ]
+                                  },
+                        "install":  {
+                                        "prefixPreset":  "general-game",
+                                        "packages":  [
+                                                         "dxvk"
+                                                     ],
+                                        "winetricks":  [
+                                                           "corefonts"
+                                                       ],
+                                        "requiresLauncher":  false,
+                                        "notes":  "Baseline setup intent for shared game prefixes while per-title install flows are still maturing."
+                                    },
+                        "launchArgs":  [
+
+                                       ],
+                        "environmentCount":  2,
+                        "dllOverrideCount":  0
+                    },
+                    {
+                        "profileId":  "competitive-shooter-dxvk",
+                        "displayName":  "Competitive Shooter (DXVK Template)",
+                        "appliedPrefixPresetDisplayName":  "Competitive Shooter",
+                        "status":  "planning",
+                        "allowAutoMatch":  false,
+                        "category":  "competitive-shooter",
+                        "notes":  "Planning template for latency-sensitive DXVK-backed titles. This is not a validated compatibility claim.",
+                        "defaultRenderer":  "dxvk",
+                        "fallbackRenderers":  [
+                                                  "d3dmetal",
+                                                  "wined3d"
+                                              ],
+                        "latencySensitive":  true,
+                        "competitive":  true,
+                        "antiCheatRisk":  "high",
+                        "runtime":  {
+                                        "windowsVersion":  "win11",
+                                        "syncMode":  "msync",
+                                        "highResolutionMode":  true,
+                                        "metalFxUpscaling":  false
+                                    },
+                        "match":  {
+                                      "executables":  [
+                                                          "Game.exe",
+                                                          "Game-Win64-Shipping.exe"
+                                                      ],
+                                      "launchers":  [
+
+                                                    ],
+                                      "stores":  [
+                                                     "battlenet",
+                                                     "steam"
+                                                 ]
+                                  },
+                        "install":  {
+                                        "prefixPreset":  "competitive-shooter",
+                                        "packages":  [
+                                                         "dxvk"
+                                                     ],
+                                        "winetricks":  [
+                                                           "corefonts",
+                                                           "vcrun2022"
+                                                       ],
+                                        "requiresLauncher":  false,
+                                        "notes":  "Template install intent only. Add any title-specific launcher or redistributable requirements in the final game profile."
+                                    },
+                        "launchArgs":  [
+                                           "--fullscreen"
+                                       ],
+                        "environmentCount":  3,
+                        "dllOverrideCount":  2
+                    },
+                    {
+                        "profileId":  "overwatch-2",
+                        "displayName":  "Overwatch 2",
+                        "appliedPrefixPresetDisplayName":  "Battle.net Shooter",
+                        "status":  "planning",
+                        "allowAutoMatch":  true,
+                        "category":  "competitive-shooter",
+                        "notes":  "Planning profile only. This file captures intended runtime policy and should not be read as a current compatibility claim.",
+                        "defaultRenderer":  "dxvk",
+                        "fallbackRenderers":  [
+                                                  "d3dmetal",
+                                                  "wined3d"
+                                              ],
+                        "latencySensitive":  true,
+                        "competitive":  true,
+                        "antiCheatRisk":  "blocking",
+                        "runtime":  {
+                                        "windowsVersion":  "win11",
+                                        "syncMode":  "msync",
+                                        "highResolutionMode":  true,
+                                        "metalFxUpscaling":  false
+                                    },
+                        "match":  {
+                                      "executables":  [
+                                                          "Overwatch.exe",
+                                                          "Overwatch Launcher.exe"
+                                                      ],
+                                      "launchers":  [
+                                                        "Battle.net"
+                                                    ],
+                                      "stores":  [
+                                                     "battlenet"
+                                                 ]
+                                  },
+                        "install":  {
+                                        "prefixPreset":  "battlenet-shooter",
+                                        "packages":  [
+                                                         "dxvk",
+                                                         "battle.net"
+                                                     ],
+                                        "winetricks":  [
+                                                           "corefonts",
+                                                           "vcrun2022"
+                                                       ],
+                                        "requiresLauncher":  true,
+                                        "notes":  "Install Battle.net in the target prefix first, then install or update Overwatch 2 from the launcher before gameplay attempts."
+                                    },
+                        "launchArgs":  [
+                                           "--fullscreen"
+                                       ],
+                        "environmentCount":  4,
+                        "dllOverrideCount":  2
+                    }
+                ]
+}
