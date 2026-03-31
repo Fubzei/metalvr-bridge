@@ -115,9 +115,10 @@ These items are now checked in and verified in CI:
      from the shared runtime-bundle tooling and load the referenced launch plan
      for in-app preview
    - `launcher/RuntimeBundleArtifactPreview.swift`, `launcher/BridgeViewModel.swift`,
-     and `launcher/ContentView.swift` now surface checklist, setup-script, and
-     lint summaries from imported runtime bundles, and `export_runtime_bundle.ps1`
-     now writes portable relative asset paths inside bundle manifests
+     and `launcher/ContentView.swift` now surface checklist, setup-script,
+     launch-script, lint, and compatibility-catalog summaries from imported
+     runtime bundles, and `export_runtime_bundle.ps1` now writes portable
+     relative asset paths inside bundle manifests
    - `profiles/` now holds defaults, templates, and planning profiles
    - `tests/unit/compatibility_profile_tests.cpp` validates the parser and the
      checked-in profile files

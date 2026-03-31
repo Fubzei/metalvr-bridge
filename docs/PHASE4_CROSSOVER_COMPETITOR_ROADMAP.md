@@ -185,8 +185,8 @@ The first checked-in Phase 4 deliverables are:
   - launcher-side runtime-bundle preview that consumes `bundle-manifest.json`
     exports and loads their referenced launch-plan payload for in-app inspection
 - `launcher/RuntimeBundleArtifactPreview.swift`
-  - launcher-side preview of setup checklist, setup-script, and lint summaries
-    referenced by imported runtime-bundle manifests
+  - launcher-side preview of setup checklist, setup-script, launch-script, lint,
+    and compatibility-catalog summaries referenced by imported runtime-bundle manifests
 - `scripts/update_ai_handoff_doc.ps1` and `scripts/export_ai_handoff_bundle.ps1`
   - direct update and export path for a carry-forward AI handoff package
 - `scripts/export_runtime_bundle.ps1`

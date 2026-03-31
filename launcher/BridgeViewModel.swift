@@ -629,7 +629,9 @@ class BridgeViewModel: ObservableObject {
         if let runtimeBundleArtifactPreview {
             text += "Runtime Bundle Checklist: \(runtimeBundleArtifactPreview.checklistSummary)\n"
             text += "Runtime Bundle Setup Scripts: \(runtimeBundleArtifactPreview.setupScriptSummary)\n"
+            text += "Runtime Bundle Launch Scripts: \(runtimeBundleArtifactPreview.launchScriptSummary)\n"
             text += "Runtime Bundle Lint: \(runtimeBundleArtifactPreview.lintSummary)\n"
+            text += "Runtime Bundle Catalog: \(runtimeBundleArtifactPreview.compatibilityCatalogSummary)\n"
         }
         text += String(repeating: "=", count: 72) + "\n\n"
 
@@ -724,7 +726,9 @@ class BridgeViewModel: ObservableObject {
 
         log(.info, "Runtime bundle checklist: \(runtimeBundleArtifactPreview.checklistSummary)")
         log(.info, "Runtime bundle setup scripts: \(runtimeBundleArtifactPreview.setupScriptSummary)")
+        log(.info, "Runtime bundle launch scripts: \(runtimeBundleArtifactPreview.launchScriptSummary)")
         log(.info, "Runtime bundle lint: \(runtimeBundleArtifactPreview.lintSummary)")
+        log(.info, "Runtime bundle catalog: \(runtimeBundleArtifactPreview.compatibilityCatalogSummary)")
     }
 
     private func applyRuntimeBundleManifest(

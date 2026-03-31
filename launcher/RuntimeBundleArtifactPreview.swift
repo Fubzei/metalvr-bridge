@@ -3,7 +3,9 @@ import Foundation
 struct RuntimeBundleArtifactPreview {
     let checklistSummary: String
     let setupScriptSummary: String
+    let launchScriptSummary: String
     let lintSummary: String
+    let compatibilityCatalogSummary: String
 
     static func load(
         from loadedRuntimeBundle: LoadedRuntimeBundleManifest,
@@ -33,8 +35,32 @@ struct RuntimeBundleArtifactPreview {
             ),
             fileManager: fileManager
         )
+        let bashLaunchText = loadText(
+            at: loadedRuntimeBundle.resolvedFileUrl(
+                for: loadedRuntimeBundle.snapshot.files.bashLaunchScript
+            ),
+            fileManager: fileManager
+        )
+        let powerShellLaunchText = loadText(
+            at: loadedRuntimeBundle.resolvedFileUrl(
+                for: loadedRuntimeBundle.snapshot.files.powershellLaunchScript
+            ),
+            fileManager: fileManager
+        )
+        let importedCompatibilityCatalog = loadCompatibilityCatalog(
+            at: loadedRuntimeBundle.resolvedFileUrl(
+                for: loadedRuntimeBundle.snapshot.files.compatibilityCatalogJson
+            ),
+            fileManager: fileManager
+        )
 
-        guard checklistText != nil || bashSetupText != nil || powerShellSetupText != nil || lintText != nil else {
+        guard checklistText != nil
+            || bashSetupText != nil
+            || powerShellSetupText != nil
+            || bashLaunchText != nil
+            || powerShellLaunchText != nil
+            || lintText != nil
+            || importedCompatibilityCatalog != nil else {
             return nil
         }
 
@@ -44,7 +70,12 @@ struct RuntimeBundleArtifactPreview {
                 bashSetupText: bashSetupText,
                 powerShellSetupText: powerShellSetupText
             ),
-            lintSummary: summarizeLint(lintText)
+            launchScriptSummary: summarizeLaunchScripts(
+                bashLaunchText: bashLaunchText,
+                powerShellLaunchText: powerShellLaunchText
+            ),
+            lintSummary: summarizeLint(lintText),
+            compatibilityCatalogSummary: summarizeCompatibilityCatalog(importedCompatibilityCatalog)
         )
     }
 
@@ -57,6 +88,17 @@ struct RuntimeBundleArtifactPreview {
         }
 
         return try? String(contentsOf: url, encoding: .utf8)
+    }
+
+    private static func loadCompatibilityCatalog(
+        at url: URL,
+        fileManager: FileManager
+    ) -> CompatibilityCatalogSnapshot? {
+        guard fileManager.fileExists(atPath: url.path) else {
+            return nil
+        }
+
+        return try? CompatibilityCatalogSnapshot.load(from: url)
     }
 
     private static func summarizeChecklist(_ checklistText: String?) -> String {
@@ -93,8 +135,8 @@ struct RuntimeBundleArtifactPreview {
         powerShellSetupText: String?
     ) -> String {
         let availableScripts = availableScriptSurfaces(
-            bashSetupText: bashSetupText,
-            powerShellSetupText: powerShellSetupText
+            bashScriptText: bashSetupText,
+            powerShellScriptText: powerShellSetupText
         )
         let combinedScriptText = [bashSetupText, powerShellSetupText]
             .compactMap { $0 }
@@ -136,6 +178,50 @@ struct RuntimeBundleArtifactPreview {
         }
 
         return compactPreview(lines, limit: 2)
+    }
+
+    private static func summarizeLaunchScripts(
+        bashLaunchText: String?,
+        powerShellLaunchText: String?
+    ) -> String {
+        let availableScripts = availableScriptSurfaces(
+            bashScriptText: bashLaunchText,
+            powerShellScriptText: powerShellLaunchText
+        )
+        guard !availableScripts.isEmpty else {
+            return "No exported launch scripts were found in the runtime bundle."
+        }
+
+        var parts = ["Available: \(availableScripts.joined(separator: ", "))"]
+        let scriptSources = [bashLaunchText, powerShellLaunchText].compactMap { $0 }
+
+        if let workingDirectory = extractWorkingDirectory(from: scriptSources) {
+            parts.append("Working dir: \(workingDirectory)")
+        }
+
+        if let launchCommand = extractLaunchCommand(from: scriptSources) {
+            parts.append("Command: \(launchCommand)")
+        }
+
+        return parts.joined(separator: " | ")
+    }
+
+    private static func summarizeCompatibilityCatalog(
+        _ importedCompatibilityCatalog: CompatibilityCatalogSnapshot?
+    ) -> String {
+        guard let importedCompatibilityCatalog else {
+            return "Compatibility catalog missing from the imported runtime bundle."
+        }
+
+        var parts = [importedCompatibilityCatalog.summaryLine]
+        if importedCompatibilityCatalog.planningProfileCount > 0 {
+            parts.append("\(importedCompatibilityCatalog.planningProfileCount) planning-only")
+        }
+        if let preview = importedCompatibilityCatalog.knownTitlePreview {
+            parts.append("Preview: \(preview)")
+        }
+
+        return parts.joined(separator: " | ")
     }
 
     private static func extractBullets(
@@ -181,19 +267,54 @@ struct RuntimeBundleArtifactPreview {
     }
 
     private static func availableScriptSurfaces(
-        bashSetupText: String?,
-        powerShellSetupText: String?
+        bashScriptText: String?,
+        powerShellScriptText: String?
     ) -> [String] {
         var surfaces: [String] = []
-        if let bashSetupText,
-           !bashSetupText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+        if let bashScriptText,
+           !bashScriptText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
             surfaces.append("bash")
         }
-        if let powerShellSetupText,
-           !powerShellSetupText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+        if let powerShellScriptText,
+           !powerShellScriptText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
             surfaces.append("PowerShell")
         }
         return surfaces
+    }
+
+    private static func extractWorkingDirectory(from scripts: [String]) -> String? {
+        let bashPrefix = "cd '"
+        let powerShellPrefix = "Set-Location -LiteralPath '"
+
+        for script in scripts {
+            for rawLine in script.components(separatedBy: .newlines) {
+                let line = rawLine.trimmingCharacters(in: .whitespacesAndNewlines)
+                if let extractedValue = extractQuotedValue(from: line, prefix: bashPrefix) {
+                    return cleanScriptLine(extractedValue)
+                }
+                if let extractedValue = extractQuotedValue(from: line, prefix: powerShellPrefix) {
+                    return cleanScriptLine(extractedValue)
+                }
+            }
+        }
+
+        return nil
+    }
+
+    private static func extractLaunchCommand(from scripts: [String]) -> String? {
+        for script in scripts {
+            for rawLine in script.components(separatedBy: .newlines) {
+                let line = rawLine.trimmingCharacters(in: .whitespacesAndNewlines)
+                if line.hasPrefix("exec ") {
+                    return cleanScriptLine(String(line.dropFirst(5)))
+                }
+                if line.hasPrefix("& ") {
+                    return cleanScriptLine(String(line.dropFirst(2)))
+                }
+            }
+        }
+
+        return nil
     }
 
     private static func cleanBullet(_ text: String) -> String {
@@ -201,6 +322,24 @@ struct RuntimeBundleArtifactPreview {
             .replacingOccurrences(of: "`", with: "")
             .replacingOccurrences(of: "  ", with: " ")
             .trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    private static func cleanScriptLine(_ text: String) -> String {
+        text
+            .replacingOccurrences(of: "'", with: "")
+            .replacingOccurrences(of: "  ", with: " ")
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    private static func extractQuotedValue(
+        from line: String,
+        prefix: String
+    ) -> String? {
+        guard line.hasPrefix(prefix), line.hasSuffix("'") else {
+            return nil
+        }
+
+        return String(line.dropFirst(prefix.count).dropLast())
     }
 
     private static func compactPreview(

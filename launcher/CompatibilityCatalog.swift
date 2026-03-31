@@ -54,14 +54,18 @@ struct CompatibilityCatalogSnapshot: Decodable {
         for url in candidateUrls {
             guard fileManager.fileExists(atPath: url.path) else { continue }
             do {
-                let data = try Data(contentsOf: url)
-                return try JSONDecoder().decode(CompatibilityCatalogSnapshot.self, from: data)
+                return try load(from: url)
             } catch {
                 continue
             }
         }
 
         return nil
+    }
+
+    static func load(from url: URL) throws -> CompatibilityCatalogSnapshot {
+        let data = try Data(contentsOf: url.standardizedFileURL)
+        return try JSONDecoder().decode(CompatibilityCatalogSnapshot.self, from: data)
     }
 
     private static func compatibilityCatalogCandidateUrls(

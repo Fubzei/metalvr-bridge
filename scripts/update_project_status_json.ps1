@@ -44,7 +44,7 @@ $status = [ordered]@{
     )
     nextGate = "Launcher triangle, vulkaninfo, and vkcube on Mac hardware."
     nextNonMacSteps = @(
-        "Extend the Swift launcher to preview launch-script contents and imported compatibility-catalog details from runtime bundles alongside the current setup/lint view.",
+        "Add launcher actions that reveal or export the imported runtime-bundle assets and full report text so testers can move from preview to execution faster.",
         "Keep compatibility profiles and prefix presets governed through lint and docs.",
         "Keep repo and wiki handoff docs aligned with the checked-in source of truth."
     )

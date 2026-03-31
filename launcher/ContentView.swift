@@ -344,7 +344,9 @@ struct ContentView: View {
                 if let runtimeBundleArtifactPreview = vm.runtimeBundleArtifactPreview {
                     statusCallout(title: "Checklist", message: runtimeBundleArtifactPreview.checklistSummary)
                     statusCallout(title: "Setup Scripts", message: runtimeBundleArtifactPreview.setupScriptSummary)
+                    statusCallout(title: "Launch Scripts", message: runtimeBundleArtifactPreview.launchScriptSummary)
                     statusCallout(title: "Lint", message: runtimeBundleArtifactPreview.lintSummary)
+                    statusCallout(title: "Bundle Catalog", message: runtimeBundleArtifactPreview.compatibilityCatalogSummary)
                 }
 
                 if let catalogEntry = vm.compatibilityCatalog?.entry(for: runtimePlan.selectedProfileId),
@@ -366,7 +368,9 @@ struct ContentView: View {
                 if let runtimeBundleArtifactPreview = vm.runtimeBundleArtifactPreview {
                     statusCallout(title: "Checklist", message: runtimeBundleArtifactPreview.checklistSummary)
                     statusCallout(title: "Setup Scripts", message: runtimeBundleArtifactPreview.setupScriptSummary)
+                    statusCallout(title: "Launch Scripts", message: runtimeBundleArtifactPreview.launchScriptSummary)
                     statusCallout(title: "Lint", message: runtimeBundleArtifactPreview.lintSummary)
+                    statusCallout(title: "Bundle Catalog", message: runtimeBundleArtifactPreview.compatibilityCatalogSummary)
                 }
             }
 
