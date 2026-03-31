@@ -125,6 +125,7 @@ class BridgeViewModel: ObservableObject {
     @Published var runtimeLaunchPlanSource: String = ""
     @Published var runtimeBundleManifest: RuntimeBundleManifestSnapshot?
     @Published var runtimeBundleManifestSource: String = ""
+    @Published var runtimeBundleArtifactPreview: RuntimeBundleArtifactPreview?
     @Published var bridgeStatus: BridgeStatus = .notInstalled
     @Published var testStatus: TestStatus = .idle
     @Published var testRunning: Bool = false
@@ -562,10 +563,11 @@ class BridgeViewModel: ObservableObject {
                 runtimeLaunchPlanSource = loadedRuntimePlan.sourceDescription
                 runtimeBundleManifest = nil
                 runtimeBundleManifestSource = ""
+                runtimeBundleArtifactPreview = nil
                 log(.pass, "Imported runtime plan: \(loadedRuntimePlan.snapshot.selectedDisplayName)")
                 logRuntimeLaunchPlan()
             } catch {
-                log(.error, "Failed to import runtime plan: \(error.localizedDescription)")
+                log(.error, "Failed to import runtime JSON: \(error.localizedDescription)")
             }
         }
     }
@@ -573,6 +575,7 @@ class BridgeViewModel: ObservableObject {
     func resetRuntimeLaunchPlan() {
         runtimeBundleManifest = nil
         runtimeBundleManifestSource = ""
+        runtimeBundleArtifactPreview = nil
 
         if let loadedRuntimeBundle = RuntimeBundleManifestSnapshot.loadFirstAvailable() {
             applyRuntimeBundleManifest(loadedRuntimeBundle, logSuccess: false)
@@ -622,6 +625,11 @@ class BridgeViewModel: ObservableObject {
         if let runtimeBundleManifest {
             text += "Runtime Bundle Target: \(runtimeBundleManifest.targetSummary)\n"
             text += "Runtime Bundle Source: \(runtimeBundleManifestSource)\n"
+        }
+        if let runtimeBundleArtifactPreview {
+            text += "Runtime Bundle Checklist: \(runtimeBundleArtifactPreview.checklistSummary)\n"
+            text += "Runtime Bundle Setup Scripts: \(runtimeBundleArtifactPreview.setupScriptSummary)\n"
+            text += "Runtime Bundle Lint: \(runtimeBundleArtifactPreview.lintSummary)\n"
         }
         text += String(repeating: "=", count: 72) + "\n\n"
 
@@ -709,6 +717,16 @@ class BridgeViewModel: ObservableObject {
         log(.info, "Runtime bundle assets: \(runtimeBundleManifest.assetSummary)")
     }
 
+    private func logRuntimeBundleArtifactPreview() {
+        guard let runtimeBundleArtifactPreview else {
+            return
+        }
+
+        log(.info, "Runtime bundle checklist: \(runtimeBundleArtifactPreview.checklistSummary)")
+        log(.info, "Runtime bundle setup scripts: \(runtimeBundleArtifactPreview.setupScriptSummary)")
+        log(.info, "Runtime bundle lint: \(runtimeBundleArtifactPreview.lintSummary)")
+    }
+
     private func applyRuntimeBundleManifest(
         _ loadedRuntimeBundle: LoadedRuntimeBundleManifest,
         logSuccess: Bool
@@ -720,7 +738,9 @@ class BridgeViewModel: ObservableObject {
             log(.pass, "Imported runtime bundle: \(loadedRuntimeBundle.snapshot.targetSummary)")
         }
 
-        let launchPlanUrl = URL(fileURLWithPath: loadedRuntimeBundle.snapshot.files.launchPlanJson)
+        let launchPlanUrl = loadedRuntimeBundle.resolvedFileUrl(
+            for: loadedRuntimeBundle.snapshot.files.launchPlanJson
+        )
         if let loadedRuntimePlan = try? RuntimeLaunchPlanSnapshot.load(from: launchPlanUrl) {
             runtimeLaunchPlan = loadedRuntimePlan.snapshot
             runtimeLaunchPlanSource = "Bundle manifest: \(loadedRuntimeBundle.sourceDescription)"
@@ -729,7 +749,13 @@ class BridgeViewModel: ObservableObject {
             log(.warn, "Runtime bundle imported but launch-plan.json could not be loaded from the manifest path")
         }
 
+        runtimeBundleArtifactPreview = RuntimeBundleArtifactPreview.load(from: loadedRuntimeBundle)
+        if runtimeBundleArtifactPreview == nil {
+            log(.warn, "Runtime bundle imported but setup checklist, setup scripts, and lint report were not readable from the manifest paths")
+        }
+
         logRuntimeBundleManifest()
+        logRuntimeBundleArtifactPreview()
     }
 
     private func dateStamp() -> String {

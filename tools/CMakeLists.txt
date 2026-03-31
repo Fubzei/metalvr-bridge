@@ -2,6 +2,9 @@ get_filename_component(MVRVB_TOOLS_REPO_ROOT "${CMAKE_CURRENT_LIST_DIR}/.." ABSO
 set(MVRVB_TOOLS_PROFILE_DIR "${MVRVB_TOOLS_REPO_ROOT}/profiles")
 set(MVRVB_TOOLS_VERIFY_SCRIPT "${CMAKE_CURRENT_LIST_DIR}/verify_runtime_plan_output.cmake")
 set(MVRVB_PROFILE_CATALOG_VERIFY_SCRIPT "${CMAKE_CURRENT_LIST_DIR}/verify_profile_catalog_output.cmake")
+set(MVRVB_RUNTIME_BUNDLE_VERIFY_SCRIPT "${CMAKE_CURRENT_LIST_DIR}/verify_runtime_bundle_output.cmake")
+
+find_program(MVRVB_POWERSHELL_EXECUTABLE NAMES pwsh powershell)
 
 add_executable(mvrvb_runtime_plan_preview
     runtime_plan_preview.cpp
@@ -333,4 +336,16 @@ if(MVRVB_BUILD_TESTS)
             -DEXPECTED_SUBSTRING=\$env:WINEPREFIX\ =\ 'C:/Prefixes/Overwatch'
             -P "${MVRVB_TOOLS_VERIFY_SCRIPT}"
   )
+
+  if(MVRVB_POWERSHELL_EXECUTABLE)
+    add_test(
+      NAME runtime_bundle_export_manifest
+      COMMAND "${CMAKE_COMMAND}"
+              -DPOWERSHELL_EXECUTABLE=${MVRVB_POWERSHELL_EXECUTABLE}
+              -DREPO_ROOT=${MVRVB_TOOLS_REPO_ROOT}
+              -DBUILD_DIR=${CMAKE_BINARY_DIR}
+              -DOUTPUT_DIR=${CMAKE_CURRENT_BINARY_DIR}/artifacts/runtime-bundle
+              -P "${MVRVB_RUNTIME_BUNDLE_VERIFY_SCRIPT}"
+    )
+  endif()
 endif()

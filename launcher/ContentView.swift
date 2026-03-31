@@ -341,6 +341,12 @@ struct ContentView: View {
                     statusCallout(title: "Bundle Source", message: vm.runtimeBundleManifestSource)
                 }
 
+                if let runtimeBundleArtifactPreview = vm.runtimeBundleArtifactPreview {
+                    statusCallout(title: "Checklist", message: runtimeBundleArtifactPreview.checklistSummary)
+                    statusCallout(title: "Setup Scripts", message: runtimeBundleArtifactPreview.setupScriptSummary)
+                    statusCallout(title: "Lint", message: runtimeBundleArtifactPreview.lintSummary)
+                }
+
                 if let catalogEntry = vm.compatibilityCatalog?.entry(for: runtimePlan.selectedProfileId),
                    catalogEntry.status == "planning" {
                     statusCallout(title: "Validation", message: "Planning-only preview. \(catalogEntry.notes)")
@@ -355,6 +361,12 @@ struct ContentView: View {
                     statusCallout(title: "Bundle", message: runtimeBundleManifest.bundleSummary)
                     statusCallout(title: "Bundle Assets", message: runtimeBundleManifest.assetSummary)
                     statusCallout(title: "Bundle Source", message: vm.runtimeBundleManifestSource)
+                }
+
+                if let runtimeBundleArtifactPreview = vm.runtimeBundleArtifactPreview {
+                    statusCallout(title: "Checklist", message: runtimeBundleArtifactPreview.checklistSummary)
+                    statusCallout(title: "Setup Scripts", message: runtimeBundleArtifactPreview.setupScriptSummary)
+                    statusCallout(title: "Lint", message: runtimeBundleArtifactPreview.lintSummary)
                 }
             }
 

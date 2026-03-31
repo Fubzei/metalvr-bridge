@@ -31,9 +31,21 @@ $ProfilesDir = [System.IO.Path]::GetFullPath($ProfilesDir)
 $OutputDir = [System.IO.Path]::GetFullPath($OutputDir)
 New-Item -ItemType Directory -Force -Path $OutputDir | Out-Null
 
-$launchPlanJson = Join-Path $OutputDir "launch-plan.json"
-$catalogJson = Join-Path $OutputDir "compatibility-catalog.json"
-$lintReport = Join-Path $OutputDir "profile-lint.txt"
+$launchPlanJsonName = "launch-plan.json"
+$launchPlanReportName = "launch-plan.txt"
+$setupChecklistName = "launch-plan.md"
+$bashSetupScriptName = "launch-plan.setup.sh"
+$powerShellSetupScriptName = "launch-plan.setup.ps1"
+$bashLaunchScriptName = "launch-plan.sh"
+$powerShellLaunchScriptName = "launch-plan.ps1"
+$catalogJsonName = "compatibility-catalog.json"
+$catalogReportName = "compatibility-catalog.txt"
+$catalogMarkdownName = "compatibility-catalog.md"
+$lintReportName = "profile-lint.txt"
+
+$launchPlanJson = Join-Path $OutputDir $launchPlanJsonName
+$catalogJson = Join-Path $OutputDir $catalogJsonName
+$lintReport = Join-Path $OutputDir $lintReportName
 $manifestPath = Join-Path $OutputDir "bundle-manifest.json"
 
 & (Join-Path $repoRoot "scripts\export_runtime_plan.ps1") `
@@ -76,17 +88,17 @@ $manifest = [ordered]@{
     prefixPath = $PrefixPath
     profilesDir = $ProfilesDir
     files = [ordered]@{
-        launchPlanJson = $launchPlanJson
-        launchPlanReport = [System.IO.Path]::GetFullPath((Join-Path $OutputDir "launch-plan.txt"))
-        setupChecklist = [System.IO.Path]::GetFullPath((Join-Path $OutputDir "launch-plan.md"))
-        bashSetupScript = [System.IO.Path]::GetFullPath((Join-Path $OutputDir "launch-plan.setup.sh"))
-        powershellSetupScript = [System.IO.Path]::GetFullPath((Join-Path $OutputDir "launch-plan.setup.ps1"))
-        bashLaunchScript = [System.IO.Path]::GetFullPath((Join-Path $OutputDir "launch-plan.sh"))
-        powershellLaunchScript = [System.IO.Path]::GetFullPath((Join-Path $OutputDir "launch-plan.ps1"))
-        compatibilityCatalogJson = $catalogJson
-        compatibilityCatalogReport = [System.IO.Path]::GetFullPath((Join-Path $OutputDir "compatibility-catalog.txt"))
-        compatibilityCatalogMarkdown = [System.IO.Path]::GetFullPath((Join-Path $OutputDir "compatibility-catalog.md"))
-        profileLintReport = $lintReport
+        launchPlanJson = $launchPlanJsonName
+        launchPlanReport = $launchPlanReportName
+        setupChecklist = $setupChecklistName
+        bashSetupScript = $bashSetupScriptName
+        powershellSetupScript = $powerShellSetupScriptName
+        bashLaunchScript = $bashLaunchScriptName
+        powershellLaunchScript = $powerShellLaunchScriptName
+        compatibilityCatalogJson = $catalogJsonName
+        compatibilityCatalogReport = $catalogReportName
+        compatibilityCatalogMarkdown = $catalogMarkdownName
+        profileLintReport = $lintReportName
     }
 }
 

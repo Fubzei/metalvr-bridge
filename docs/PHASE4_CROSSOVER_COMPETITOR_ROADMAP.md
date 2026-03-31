@@ -184,8 +184,14 @@ The first checked-in Phase 4 deliverables are:
 - `launcher/RuntimeBundleManifest.swift`
   - launcher-side runtime-bundle preview that consumes `bundle-manifest.json`
     exports and loads their referenced launch-plan payload for in-app inspection
+- `launcher/RuntimeBundleArtifactPreview.swift`
+  - launcher-side preview of setup checklist, setup-script, and lint summaries
+    referenced by imported runtime-bundle manifests
 - `scripts/update_ai_handoff_doc.ps1` and `scripts/export_ai_handoff_bundle.ps1`
   - direct update and export path for a carry-forward AI handoff package
+- `scripts/export_runtime_bundle.ps1`
+  - runtime-bundle manifests now record portable relative asset paths so the
+    exported bundle can move between machines without rewriting the manifest
 - persisted launch-plan JSON now round-trips through the shared runtime-plan layer,
   so future launcher/runtime code can consume exported bundles directly
 - the persisted launch-plan JSON contract is now schema-versioned for future

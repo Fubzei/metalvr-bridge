@@ -3,6 +3,34 @@ import Foundation
 struct LoadedRuntimeBundleManifest {
     let snapshot: RuntimeBundleManifestSnapshot
     let sourceDescription: String
+    let manifestUrl: URL
+
+    var bundleDirectoryUrl: URL {
+        manifestUrl.deletingLastPathComponent()
+    }
+
+    func resolvedFileUrl(for manifestPath: String) -> URL {
+        if manifestPath.isEmpty {
+            return bundleDirectoryUrl
+        }
+
+        if (manifestPath as NSString).isAbsolutePath || isWindowsAbsolutePath(manifestPath) {
+            return URL(fileURLWithPath: manifestPath).standardizedFileURL
+        }
+
+        return bundleDirectoryUrl
+            .appendingPathComponent(manifestPath)
+            .standardizedFileURL
+    }
+
+    private func isWindowsAbsolutePath(_ path: String) -> Bool {
+        guard path.count >= 2 else {
+            return false
+        }
+
+        let colonIndex = path.index(after: path.startIndex)
+        return path[colonIndex] == ":"
+    }
 }
 
 struct RuntimeBundleManifestSnapshot: Decodable {
@@ -81,7 +109,11 @@ struct RuntimeBundleManifestSnapshot: Decodable {
             for: standardizedUrl,
             fileManager: fileManager
         )
-        return LoadedRuntimeBundleManifest(snapshot: snapshot, sourceDescription: sourceDescription)
+        return LoadedRuntimeBundleManifest(
+            snapshot: snapshot,
+            sourceDescription: sourceDescription,
+            manifestUrl: standardizedUrl
+        )
     }
 
     private static func runtimeBundleManifestCandidateUrls(
