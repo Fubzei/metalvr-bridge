@@ -42,5 +42,6 @@ RuntimeLaunchPlanResult buildRuntimeLaunchPlanFromDirectory(
     const std::filesystem::path& root,
     const CompatibilityProfileQuery& query);
 std::string summarizeRuntimeLaunchPlan(const RuntimeLaunchPlan& plan);
+std::string runtimeLaunchPlanToJson(const RuntimeLaunchPlan& plan);
 
 }  // namespace mvrvb

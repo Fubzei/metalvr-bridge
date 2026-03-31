@@ -38,7 +38,8 @@ Windows game
   can consume.
 - A checked-in developer preview tool now lives in `tools/` so those runtime
   plans can be resolved and inspected locally before the launcher wiring is
-  complete.
+  complete, including a machine-readable JSON export for future runtime or
+  launcher integration.
 - First-pass runtime observability logs now cover instance, device, pipeline,
   swapchain, submit, present, command-replay boundaries, draw/dispatch
   state-flush summaries, transfer/secondary-command breadcrumbs, and

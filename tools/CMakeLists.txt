@@ -30,4 +30,17 @@ if(MVRVB_BUILD_TESTS)
   set_tests_properties(runtime_plan_preview_overwatch PROPERTIES
     PASS_REGULAR_EXPRESSION "Selected profile: overwatch-2"
   )
+
+  add_test(
+    NAME runtime_plan_preview_overwatch_json
+    COMMAND mvrvb_runtime_plan_preview
+            --profiles-dir "${MVRVB_TOOLS_PROFILE_DIR}"
+            --exe "C:/Games/Overwatch/Overwatch.exe"
+            --launcher "Battle.net"
+            --store "battlenet"
+            --json
+  )
+  set_tests_properties(runtime_plan_preview_overwatch_json PROPERTIES
+    PASS_REGULAR_EXPRESSION "\"selectedProfileId\":\"overwatch-2\""
+  )
 endif()

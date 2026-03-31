@@ -81,5 +81,25 @@ TEST(RuntimeLaunchPlan, SummaryIncludesCoreDecisionFields) {
     EXPECT_NE(summary.find("Match score: 175"), std::string::npos);
 }
 
+TEST(RuntimeLaunchPlan, JsonIncludesMachineReadableFields) {
+    const auto result = buildRuntimeLaunchPlanFromDirectory(
+        repoRoot() / "profiles",
+        CompatibilityProfileQuery{
+            .executable = R"(C:\Games\Overwatch\Overwatch.exe)",
+            .launcher = "Battle.net",
+            .store = "battlenet",
+        });
+
+    ASSERT_TRUE(result) << result.errorMessage;
+    const std::string json = runtimeLaunchPlanToJson(result.plan);
+
+    EXPECT_NE(json.find("\"selectedProfileId\":\"overwatch-2\""), std::string::npos);
+    EXPECT_NE(json.find("\"backend\":\"dxvk\""), std::string::npos);
+    EXPECT_NE(json.find("\"syncMode\":\"msync\""), std::string::npos);
+    EXPECT_NE(json.find("\"antiCheatRisk\":\"blocking\""), std::string::npos);
+    EXPECT_NE(json.find("\"d3d11\":\"native,builtin\""), std::string::npos);
+    EXPECT_NE(json.find("\"launchArgs\":[\"--fullscreen\"]"), std::string::npos);
+}
+
 }  // namespace
 }  // namespace mvrvb

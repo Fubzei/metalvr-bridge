@@ -88,6 +88,8 @@ These items are now checked in and verified in CI:
    - `tools/mvrvb_runtime_plan_preview` now resolves and prints that launch plan
      from the command line so product/runtime policy can be exercised without
      waiting on launcher wiring or Mac hardware
+   - the same preview tool now has a machine-readable JSON mode so future
+     launcher/runtime code can consume the shared launch-plan contract directly
    - GitHub now has a dedicated game-compatibility report template
 
 ## Exit Criteria

@@ -6,6 +6,65 @@
 namespace mvrvb {
 namespace {
 
+std::string jsonEscape(std::string_view value) {
+    std::string out;
+    out.reserve(value.size() + 8);
+    for (const char ch : value) {
+        switch (ch) {
+            case '\\': out += "\\\\"; break;
+            case '"': out += "\\\""; break;
+            case '\b': out += "\\b"; break;
+            case '\f': out += "\\f"; break;
+            case '\n': out += "\\n"; break;
+            case '\r': out += "\\r"; break;
+            case '\t': out += "\\t"; break;
+            default:
+                if (static_cast<unsigned char>(ch) < 0x20u) {
+                    std::ostringstream code;
+                    code << "\\u" << std::hex << std::uppercase;
+                    code.width(4);
+                    code.fill('0');
+                    code << static_cast<int>(static_cast<unsigned char>(ch));
+                    out += code.str();
+                } else {
+                    out += ch;
+                }
+                break;
+        }
+    }
+    return out;
+}
+
+void appendJsonString(std::ostringstream* out, std::string_view value) {
+    if (!out) return;
+    *out << '"' << jsonEscape(value) << '"';
+}
+
+template <typename T, typename Writer>
+void appendJsonArray(std::ostringstream* out, const std::vector<T>& values, Writer writeValue) {
+    if (!out) return;
+    *out << '[';
+    for (size_t i = 0; i < values.size(); ++i) {
+        if (i != 0) *out << ',';
+        writeValue(out, values[i]);
+    }
+    *out << ']';
+}
+
+void appendJsonStringMap(std::ostringstream* out,
+                         const std::map<std::string, std::string>& values) {
+    if (!out) return;
+    *out << '{';
+    size_t i = 0;
+    for (const auto& [key, value] : values) {
+        if (i++ != 0) *out << ',';
+        appendJsonString(out, key);
+        *out << ':';
+        appendJsonString(out, value);
+    }
+    *out << '}';
+}
+
 void appendUniqueString(std::vector<std::string>* items, const std::string& value) {
     if (!items || value.empty()) return;
     if (std::find(items->begin(), items->end(), value) == items->end()) {
@@ -168,6 +227,53 @@ std::string summarizeRuntimeLaunchPlan(const RuntimeLaunchPlan& plan) {
     out << "\n";
     out << "Environment entries: " << plan.environment.size() << "\n";
     out << "DLL override entries: " << plan.dllOverrides.size();
+    return out.str();
+}
+
+std::string runtimeLaunchPlanToJson(const RuntimeLaunchPlan& plan) {
+    std::ostringstream out;
+    out << '{';
+
+    out << "\"selectedProfileId\":";
+    appendJsonString(&out, plan.selectedProfileId);
+    out << ",\"selectedDisplayName\":";
+    appendJsonString(&out, plan.selectedDisplayName);
+    out << ",\"appliedProfileIds\":";
+    appendJsonArray(&out, plan.appliedProfileIds, [](std::ostringstream* stream, const std::string& value) {
+        appendJsonString(stream, value);
+    });
+    out << ",\"matchScore\":" << plan.matchScore;
+    out << ",\"backend\":";
+    appendJsonString(&out, rendererBackendName(plan.backend));
+    out << ",\"fallbackBackends\":";
+    appendJsonArray(
+        &out,
+        plan.fallbackBackends,
+        [](std::ostringstream* stream, RendererBackend backend) {
+            appendJsonString(stream, rendererBackendName(backend));
+        });
+    out << ",\"runtime\":{";
+    out << "\"windowsVersion\":";
+    appendJsonString(&out, plan.windowsVersion);
+    out << ",\"syncMode\":";
+    appendJsonString(&out, syncModeName(plan.syncMode));
+    out << ",\"highResolutionMode\":" << (plan.highResolutionMode ? "true" : "false");
+    out << ",\"metalFxUpscaling\":" << (plan.metalFxUpscaling ? "true" : "false");
+    out << '}';
+    out << ",\"latencySensitive\":" << (plan.latencySensitive ? "true" : "false");
+    out << ",\"competitive\":" << (plan.competitive ? "true" : "false");
+    out << ",\"antiCheatRisk\":";
+    appendJsonString(&out, antiCheatRiskName(plan.antiCheatRisk));
+    out << ",\"launchArgs\":";
+    appendJsonArray(&out, plan.launchArgs, [](std::ostringstream* stream, const std::string& value) {
+        appendJsonString(stream, value);
+    });
+    out << ",\"environment\":";
+    appendJsonStringMap(&out, plan.environment);
+    out << ",\"dllOverrides\":";
+    appendJsonStringMap(&out, plan.dllOverrides);
+    out << '}';
+
     return out.str();
 }
 

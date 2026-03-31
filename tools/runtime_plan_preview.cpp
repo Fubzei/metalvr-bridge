@@ -17,6 +17,7 @@ void printUsage(std::ostream& out) {
         << "  --launcher <name>      Launcher name, for example Steam or Battle.net\n"
         << "  --store <name>         Store identifier, for example steam or battlenet\n"
         << "  --profiles-dir <path>  Profile directory (defaults to the checked-in profiles tree)\n"
+        << "  --json                 Print the resolved launch plan as JSON\n"
         << "  --help                 Show this message\n";
 }
 
@@ -49,6 +50,7 @@ void printListSection(const char* title, const std::vector<std::string>& values)
 int main(int argc, char** argv) {
     std::filesystem::path profilesDir = MVRVB_TOOLS_PROFILE_DIR;
     mvrvb::CompatibilityProfileQuery query;
+    bool outputJson = false;
 
     for (int i = 1; i < argc; ++i) {
         const std::string_view arg = argv[i];
@@ -64,6 +66,10 @@ int main(int argc, char** argv) {
         if (arg == "--help" || arg == "-h") {
             printUsage(std::cout);
             return 0;
+        }
+        if (arg == "--json") {
+            outputJson = true;
+            continue;
         }
         if (arg == "--exe") {
             if (const char* value = requireValue("--exe")) {
@@ -109,6 +115,11 @@ int main(int argc, char** argv) {
     if (!result) {
         std::cerr << "Failed to build runtime launch plan: " << result.errorMessage << "\n";
         return 1;
+    }
+
+    if (outputJson) {
+        std::cout << mvrvb::runtimeLaunchPlanToJson(result.plan) << "\n";
+        return 0;
     }
 
     std::cout << mvrvb::summarizeRuntimeLaunchPlan(result.plan) << "\n";

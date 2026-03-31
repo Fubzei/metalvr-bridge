@@ -42,7 +42,7 @@ runtime validation.
 | Local host-side checks | IN PLACE | `host-tests/CMakeLists.txt` and `scripts/run_host_checks.ps1` run the Apple-free unit surface on Windows/LLVM |
 | Compatibility profile validation | IN PLACE | Checked-in profile parser, runtime knobs, sample profiles, and auto-selection helper are covered in CI |
 | Runtime launch-plan builder | IN PLACE | `src/common/runtime_launch_plan.*` resolves profiles into backend/env/args/runtime policy and is covered in host tests |
-| Runtime plan preview tool | IN PLACE | `tools/mvrvb_runtime_plan_preview` resolves a profile query into a concrete launch summary without Mac hardware |
+| Runtime plan preview tool | IN PLACE | `tools/mvrvb_runtime_plan_preview` resolves a profile query into a concrete launch summary or JSON launch-plan payload without Mac hardware |
 | Runtime observability | IN PLACE | Instance, device, pipeline, swapchain, submit, present, replay-boundary, state-flush summary, transfer/secondary replay, and synchronization/unsupported-op logs are checked in |
 | Mac runtime runbook | IN PLACE | `docs/MAC_RUNTIME_SMOKE_TEST.md` and `scripts/mac_runtime_smoke_test.sh` define the first hardware validation pass |
 | CI build artifacts | IN PLACE | Green macOS runs publish a portable ICD tarball and launcher installer artifact |

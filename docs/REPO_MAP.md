@@ -127,6 +127,8 @@ That subtree exists in the repo, but it is not currently added by the root
 - host-safe developer tooling
 - `mvrvb_runtime_plan_preview` resolves a checked-in compatibility profile
   selection into backend, env, DLL override, and launch-argument output
+- supports both human-readable summaries and machine-readable JSON output for
+  future launcher/runtime consumption
 
 ### `shaders`
 
