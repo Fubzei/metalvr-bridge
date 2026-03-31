@@ -41,6 +41,10 @@ struct CompatibilityCatalogSnapshot: Decodable {
         return titles.prefix(2).joined(separator: ", ")
     }
 
+    func entry(for profileId: String) -> Entry? {
+        entries.first { $0.profileId == profileId }
+    }
+
     static func load(
         fileManager: FileManager = .default,
         bundle: Bundle = .main

@@ -35,6 +35,7 @@ Then:
    - BridgeViewModel.swift
    - ProjectStatus.swift
    - CompatibilityCatalog.swift
+   - RuntimeLaunchPlan.swift
 
 2. Open Terminal, cd to that folder
 
@@ -49,4 +50,7 @@ phase snapshot so the launcher can display the next gate and project readiness
 status. If `GAME_COMPATIBILITY_CATALOG.json`, `../GAME_COMPATIBILITY_CATALOG.json`,
 or `../docs/GAME_COMPATIBILITY_CATALOG.json` is present, it also bundles the
 checked-in compatibility snapshot so the launcher can summarize known profiles.
-If those files are missing, the app still works for the Metal hardware test.
+If `launch-plan.json`, `RUNTIME_PLAN_PREVIEW.json`, or their repo-root variants
+are present, it also bundles a runtime-plan preview so the launcher can inspect
+an exported launch policy without rerunning tools. If those files are missing,
+the app still works for the Metal hardware test.

@@ -121,6 +121,9 @@ struct ContentView: View {
                 // Project Status Card
                 projectStatusCard
 
+                // Runtime Plan Card
+                runtimePlanCard
+
                 // System Info Card
                 systemInfoCard
 
@@ -307,6 +310,98 @@ struct ContentView: View {
     }
 
     // MARK: - System Info Card
+
+    private var runtimePlanCard: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack {
+                Image(systemName: "shippingbox")
+                    .font(.system(size: 13, weight: .bold))
+                    .foregroundColor(Color(hex: "38bdf8"))
+                Text("Runtime Plan")
+                    .font(.system(size: 13, weight: .bold, design: .monospaced))
+                    .foregroundColor(.white)
+            }
+
+            if let runtimePlan = vm.runtimeLaunchPlan {
+                VStack(alignment: .leading, spacing: 7) {
+                    statusRow(label: "Profile", value: runtimePlan.selectedDisplayName)
+                    statusRow(label: "Backend", value: runtimePlan.backendSummary)
+                    statusRow(label: "Prefix", value: runtimePlan.appliedPrefixPresetDisplayName)
+                    statusRow(label: "Runtime", value: runtimePlan.runtimeSummary)
+                    statusRow(label: "Risk", value: runtimePlan.antiCheatRiskLabel)
+                }
+
+                statusCallout(title: "Setup", message: runtimePlan.installSummary)
+                statusCallout(title: "Launch", message: runtimePlan.launchSummary)
+                statusCallout(title: "Source", message: vm.runtimeLaunchPlanSource)
+
+                if let catalogEntry = vm.compatibilityCatalog?.entry(for: runtimePlan.selectedProfileId),
+                   catalogEntry.status == "planning" {
+                    statusCallout(title: "Validation", message: "Planning-only preview. \(catalogEntry.notes)")
+                }
+            } else {
+                Text("Import a launch-plan JSON exported by scripts/export_runtime_plan.ps1 or scripts/export_runtime_bundle.ps1 to preview backend, setup, and launch policy in the launcher.")
+                    .font(.system(size: 11))
+                    .foregroundColor(Color(hex: "94a3b8"))
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+
+            HStack(spacing: 8) {
+                Button(action: { vm.importRuntimeLaunchPlan() }) {
+                    HStack(spacing: 6) {
+                        Image(systemName: "square.and.arrow.down")
+                            .font(.system(size: 10))
+                        Text("Import Plan")
+                            .font(.system(size: 10, weight: .semibold, design: .monospaced))
+                    }
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 8)
+                    .background(
+                        RoundedRectangle(cornerRadius: 8)
+                            .fill(Color(hex: "0d0d14"))
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 8)
+                                    .stroke(Color(hex: "1e2030"), lineWidth: 1)
+                            )
+                    )
+                    .foregroundColor(Color(hex: "cbd5e1"))
+                }
+                .buttonStyle(.plain)
+
+                if vm.runtimeLaunchPlan != nil {
+                    Button(action: { vm.resetRuntimeLaunchPlan() }) {
+                        HStack(spacing: 6) {
+                            Image(systemName: "arrow.clockwise")
+                                .font(.system(size: 10))
+                            Text("Reset")
+                                .font(.system(size: 10, weight: .semibold, design: .monospaced))
+                        }
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 8)
+                        .background(
+                            RoundedRectangle(cornerRadius: 8)
+                                .fill(Color(hex: "0d0d14"))
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 8)
+                                        .stroke(Color(hex: "1e2030"), lineWidth: 1)
+                                )
+                        )
+                        .foregroundColor(Color(hex: "94a3b8"))
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+        }
+        .padding(14)
+        .background(
+            RoundedRectangle(cornerRadius: 10)
+                .fill(Color(hex: "111118"))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 10)
+                        .stroke(Color(hex: "1e2030"), lineWidth: 1)
+                )
+        )
+    }
 
     private var systemInfoCard: some View {
         VStack(alignment: .leading, spacing: 10) {

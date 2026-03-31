@@ -38,7 +38,7 @@ fi
 
 # Check for required source files
 MISSING=0
-for f in MetalVRBridgeApp.swift ContentView.swift BridgeViewModel.swift ProjectStatus.swift CompatibilityCatalog.swift; do
+for f in MetalVRBridgeApp.swift ContentView.swift BridgeViewModel.swift ProjectStatus.swift CompatibilityCatalog.swift RuntimeLaunchPlan.swift; do
     if [ ! -f "$f" ]; then
         echo "ERROR: Missing $f - make sure all .swift files are in this folder."
         MISSING=1
@@ -70,6 +70,7 @@ swiftc \
     BridgeViewModel.swift \
     ProjectStatus.swift \
     CompatibilityCatalog.swift \
+    RuntimeLaunchPlan.swift \
     2>&1
 
 echo "[2/6] Creating app bundle..."
@@ -195,6 +196,20 @@ if [ -n "$CATALOG_SOURCE" ]; then
     echo "  Bundled compatibility catalog snapshot from: $CATALOG_SOURCE"
 else
     echo "  Compatibility catalog snapshot not found (launcher catalog summary will be limited)"
+fi
+
+RUNTIME_PLAN_SOURCE=""
+for path in "./launch-plan.json" "./RUNTIME_PLAN_PREVIEW.json" "../launch-plan.json" "../RUNTIME_PLAN_PREVIEW.json"; do
+    if [ -z "$RUNTIME_PLAN_SOURCE" ] && [ -f "$path" ]; then
+        RUNTIME_PLAN_SOURCE="$path"
+    fi
+done
+
+if [ -n "$RUNTIME_PLAN_SOURCE" ]; then
+    cp "$RUNTIME_PLAN_SOURCE" "$APP/Contents/Resources/launch-plan.json"
+    echo "  Bundled runtime plan preview from: $RUNTIME_PLAN_SOURCE"
+else
+    echo "  Runtime plan preview not found (launcher plan card can still import JSON at runtime)"
 fi
 
 echo "[5/6] Creating distributable zip..."

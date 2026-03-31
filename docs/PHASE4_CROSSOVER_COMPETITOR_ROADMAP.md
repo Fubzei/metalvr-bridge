@@ -178,6 +178,9 @@ The first checked-in Phase 4 deliverables are:
 - `launcher/CompatibilityCatalog.swift`
   - launcher-side consumer for the bundled compatibility snapshot so the app can
     summarize known checked-in profile coverage without rerunning tools
+- `launcher/RuntimeLaunchPlan.swift`
+  - launcher-side runtime-plan preview that consumes exported `launch-plan.json`
+    files from the shared tooling without needing runtime glue first
 - `scripts/update_ai_handoff_doc.ps1` and `scripts/export_ai_handoff_bundle.ps1`
   - direct update and export path for a carry-forward AI handoff package
 - persisted launch-plan JSON now round-trips through the shared runtime-plan layer,

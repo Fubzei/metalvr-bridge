@@ -121,6 +121,8 @@ class BridgeViewModel: ObservableObject {
     @Published var systemInfo: SystemInfo
     @Published var projectStatus: ProjectStatusSnapshot?
     @Published var compatibilityCatalog: CompatibilityCatalogSnapshot?
+    @Published var runtimeLaunchPlan: RuntimeLaunchPlanSnapshot?
+    @Published var runtimeLaunchPlanSource: String = ""
     @Published var bridgeStatus: BridgeStatus = .notInstalled
     @Published var testStatus: TestStatus = .idle
     @Published var testRunning: Bool = false
@@ -134,9 +136,14 @@ class BridgeViewModel: ObservableObject {
         self.systemInfo = SystemInfo.gather()
         self.projectStatus = ProjectStatusSnapshot.load()
         self.compatibilityCatalog = CompatibilityCatalogSnapshot.load()
+        if let loadedRuntimePlan = RuntimeLaunchPlanSnapshot.loadFirstAvailable() {
+            self.runtimeLaunchPlan = loadedRuntimePlan.snapshot
+            self.runtimeLaunchPlanSource = loadedRuntimePlan.sourceDescription
+        }
         checkInstallation()
         logProjectStatus()
         logCompatibilityCatalog()
+        logRuntimeLaunchPlan()
     }
 
     // MARK: - Installation Check
@@ -528,6 +535,42 @@ class BridgeViewModel: ObservableObject {
         }
     }
 
+    func importRuntimeLaunchPlan() {
+        let panel = NSOpenPanel()
+        panel.canChooseDirectories = false
+        panel.canChooseFiles = true
+        panel.allowsMultipleSelection = false
+        panel.allowedFileTypes = ["json"]
+        panel.title = "Import Runtime Launch Plan"
+        panel.message = "Choose a launch-plan.json file exported by MetalVR Bridge tooling."
+
+        if panel.runModal() == .OK, let url = panel.url {
+            do {
+                let loadedRuntimePlan = try RuntimeLaunchPlanSnapshot.load(from: url)
+                runtimeLaunchPlan = loadedRuntimePlan.snapshot
+                runtimeLaunchPlanSource = loadedRuntimePlan.sourceDescription
+                log(.pass, "Imported runtime plan: \(loadedRuntimePlan.snapshot.selectedDisplayName)")
+                logRuntimeLaunchPlan()
+            } catch {
+                log(.error, "Failed to import runtime plan: \(error.localizedDescription)")
+            }
+        }
+    }
+
+    func resetRuntimeLaunchPlan() {
+        if let loadedRuntimePlan = RuntimeLaunchPlanSnapshot.loadFirstAvailable() {
+            runtimeLaunchPlan = loadedRuntimePlan.snapshot
+            runtimeLaunchPlanSource = loadedRuntimePlan.sourceDescription
+            log(.info, "Reloaded bundled runtime plan preview")
+            logRuntimeLaunchPlan()
+            return
+        }
+
+        runtimeLaunchPlan = nil
+        runtimeLaunchPlanSource = ""
+        log(.info, "Cleared runtime plan preview")
+    }
+
     // MARK: - Export Log
 
     func exportLog() -> String {
@@ -548,6 +591,12 @@ class BridgeViewModel: ObservableObject {
             text += "Catalog Profiles: \(compatibilityCatalog.summary.totalProfiles)\n"
             text += "Catalog Competitive Profiles: \(compatibilityCatalog.summary.competitiveProfiles)\n"
             text += "Catalog Planning Profiles: \(compatibilityCatalog.planningProfileCount)\n"
+        }
+        if let runtimeLaunchPlan {
+            text += "Runtime Plan Profile: \(runtimeLaunchPlan.selectedDisplayName)\n"
+            text += "Runtime Plan Backend: \(runtimeLaunchPlan.backend)\n"
+            text += "Runtime Plan Prefix: \(runtimeLaunchPlan.appliedPrefixPresetDisplayName)\n"
+            text += "Runtime Plan Source: \(runtimeLaunchPlanSource)\n"
         }
         text += String(repeating: "=", count: 72) + "\n\n"
 
@@ -611,6 +660,17 @@ class BridgeViewModel: ObservableObject {
         if let preview = compatibilityCatalog.knownTitlePreview {
             log(.info, "Known profile preview: \(preview)")
         }
+    }
+
+    private func logRuntimeLaunchPlan() {
+        guard let runtimeLaunchPlan else {
+            log(.warn, "Runtime launch plan preview not loaded - import launch-plan.json to preview backend and setup policy")
+            return
+        }
+
+        log(.info, "Runtime plan profile: \(runtimeLaunchPlan.selectedDisplayName) via \(runtimeLaunchPlan.backend)")
+        log(.info, "Runtime plan prefix: \(runtimeLaunchPlan.appliedPrefixPresetDisplayName), source: \(runtimeLaunchPlanSource)")
+        log(.info, "Runtime plan launch surface: \(runtimeLaunchPlan.launchSummary)")
     }
 
     private func dateStamp() -> String {

@@ -106,6 +106,10 @@ These items are now checked in and verified in CI:
      and `launcher/ContentView.swift` now surface that same compatibility snapshot
      inside the macOS launcher UI and exported diagnostics when the bundle
      includes `GAME_COMPATIBILITY_CATALOG.json`
+   - `launcher/RuntimeLaunchPlan.swift`, `launcher/BridgeViewModel.swift`, and
+     `launcher/ContentView.swift` now import or surface bundled `launch-plan.json`
+     previews exported from the shared runtime-plan tooling, so the launcher can
+     inspect backend, setup, and launch policy without waiting on runtime glue
    - `profiles/` now holds defaults, templates, and planning profiles
    - `tests/unit/compatibility_profile_tests.cpp` validates the parser and the
      checked-in profile files

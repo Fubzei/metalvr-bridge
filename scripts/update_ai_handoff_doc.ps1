@@ -34,6 +34,8 @@ MetalVR Bridge.
   Mac app reflects the same current phase and next gate tracked in the repo docs.
 - The launcher now also consumes the bundled `docs/GAME_COMPATIBILITY_CATALOG.json`
   snapshot so the app can summarize checked-in profile coverage without rerunning tools.
+- The launcher now imports or consumes bundled `launch-plan.json` previews exported
+  from the shared runtime-plan tooling, so product policy can be inspected in-app.
 - A tester/runtime handoff bundle can be exported locally without Mac hardware.
 
 ## Not Yet Proven
@@ -85,8 +87,8 @@ bash scripts/mac_runtime_smoke_test.sh
 
 ## Best Next Non-Mac Priorities
 
-1. Extend the Swift launcher to consume the shared runtime-plan, prefix-preset, lint,
-   and bundle surfaces beyond the checked-in project-status and compatibility snapshots.
+1. Extend the Swift launcher to consume exported runtime-bundle manifests, setup-script
+   previews, and lint surfaces beyond the checked-in snapshots and runtime-plan preview.
 2. Keep the compatibility profile and prefix-preset governance strong as more games or
    templates are added.
 3. Keep the repo and generated docs aligned whenever the product/runtime surface changes.

@@ -95,7 +95,9 @@ Windows game
   synchronization/unsupported-op breadcrumbs.
 - The launcher now includes an in-app triangle test, a bundled project-status
   card sourced from `docs/PROJECT_STATUS.json`, a bundled compatibility summary
-  sourced from `docs/GAME_COMPATIBILITY_CATALOG.json`, and diagnostic log export.
+  sourced from `docs/GAME_COMPATIBILITY_CATALOG.json`, an imported or bundled
+  runtime-plan preview sourced from `export_runtime_plan.ps1` output, and
+  diagnostic log export.
 - `scripts/mac_runtime_smoke_test.sh` now automates the first hardware smoke-test
   bundle so Mac-side validation is easier to execute and report.
 - Green macOS CI runs now publish downloadable ICD and launcher installer artifacts.
