@@ -126,6 +126,8 @@ The first checked-in Phase 4 deliverables are:
   - CI-validated parser plus auto-selection helpers for runtime compatibility profiles
 - `src/common/runtime_launch_plan.*`
   - host-safe launch-plan builder that resolves backend/env/args/runtime policy from profiles
+- `tools/mvrvb_runtime_plan_preview`
+  - host-safe preview entry point for inspecting merged launch decisions without Mac hardware
 - `profiles/`
   - checked-in defaults, templates, and planning profiles with runtime-policy knobs
 - `tests/unit/compatibility_profile_tests.cpp`

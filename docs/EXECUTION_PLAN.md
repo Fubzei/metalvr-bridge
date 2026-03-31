@@ -85,6 +85,9 @@ These items are now checked in and verified in CI:
    - `src/common/runtime_launch_plan.*` now turns those profiles into a concrete
      launch plan with backend, fallbacks, env vars, DLL overrides, launch args,
      and runtime-policy settings
+   - `tools/mvrvb_runtime_plan_preview` now resolves and prints that launch plan
+     from the command line so product/runtime policy can be exercised without
+     waiting on launcher wiring or Mac hardware
    - GitHub now has a dedicated game-compatibility report template
 
 ## Exit Criteria

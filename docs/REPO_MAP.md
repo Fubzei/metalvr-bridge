@@ -15,6 +15,7 @@ scripts/
 shaders/
 src/
 tests/
+tools/
 CMakeLists.txt
 README.md
 CONTRIBUTING.md
@@ -54,14 +55,9 @@ That subtree exists in the repo, but it is not currently added by the root
   - non-Apple CMake entrypoint for running the Apple-free test surface locally
 - `profiles/`
   - checked-in compatibility profiles for future runtime and launcher policy
-
-## Directories Not Currently Checked In
-
-The root build still has an optional hook for:
-
 - `tools/`
-
-Do not describe that directory as present unless it is added in the same change.
+  - checked-in host-safe preview tool for resolving runtime launch plans from
+    profile inputs
 
 ## Module Map
 
@@ -123,7 +119,14 @@ Do not describe that directory as present unless it is added in the same change.
 
 - dedicated CMake entrypoint for non-Apple local checks
 - builds `src/common`, pure shader-translation modules, format-table helpers,
-  transfer helpers, and the shared GoogleTest unit surface without the Metal ICD target
+  transfer helpers, the runtime-plan preview tool, and the shared GoogleTest unit
+  surface without the Metal ICD target
+
+### `tools`
+
+- host-safe developer tooling
+- `mvrvb_runtime_plan_preview` resolves a checked-in compatibility profile
+  selection into backend, env, DLL override, and launch-argument output
 
 ### `shaders`
 

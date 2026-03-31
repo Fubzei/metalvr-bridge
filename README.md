@@ -36,6 +36,9 @@ Windows game
   `src/common/runtime_launch_plan.*`, turning those profiles into backend,
   fallback, env, DLL-override, and launch-argument decisions that a launcher
   can consume.
+- A checked-in developer preview tool now lives in `tools/` so those runtime
+  plans can be resolved and inspected locally before the launcher wiring is
+  complete.
 - First-pass runtime observability logs now cover instance, device, pipeline,
   swapchain, submit, present, command-replay boundaries, draw/dispatch
   state-flush summaries, transfer/secondary-command breadcrumbs, and

@@ -68,6 +68,9 @@ Sections:
 Right now this directory exists to let the project begin expressing per-title
 policy before the full runtime product layer is in place.
 
+The checked-in `tools/mvrvb_runtime_plan_preview` tool can resolve these files
+into a concrete backend/env/launch-argument plan without Mac hardware.
+
 ## Auto-Match Rules
 
 - `allow_auto_match = true`

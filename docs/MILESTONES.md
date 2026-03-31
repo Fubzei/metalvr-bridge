@@ -26,7 +26,7 @@ runtime validation.
 | # | Milestone | Repo Status | Canonical Paths | Notes |
 |---|-----------|-------------|-----------------|-------|
 | 13 | Compatibility profile system | STARTED | `src/common/compatibility_profile.*`, `profiles/`, `tests/unit/compatibility_profile_tests.cpp` | Parser, runtime knobs, and auto-selection helper are checked in |
-| 14 | Runtime launcher/product integration | STARTED | `src/common/runtime_launch_plan.*`, `launcher/`, future runtime glue | Launch-plan builder is checked in; launcher wiring is next |
+| 14 | Runtime launcher/product integration | STARTED | `src/common/runtime_launch_plan.*`, `tools/`, `launcher/`, future runtime glue | Launch-plan builder and preview tool are checked in; launcher wiring is next |
 | 15 | Backend breadth and fallback strategy | PLANNED | future runtime/backend glue | DXVK, VKD3D-Proton, and fallback selection story |
 | 16 | Compatibility database and installer flow | PLANNED | `profiles/`, launcher, future runtime tooling | Per-title policy and evidence-backed compatibility states |
 | 17 | Performance and latency tuning | PLANNED | runtime + renderer hot paths | Frametime stability and low-latency work |
@@ -42,6 +42,7 @@ runtime validation.
 | Local host-side checks | IN PLACE | `host-tests/CMakeLists.txt` and `scripts/run_host_checks.ps1` run the Apple-free unit surface on Windows/LLVM |
 | Compatibility profile validation | IN PLACE | Checked-in profile parser, runtime knobs, sample profiles, and auto-selection helper are covered in CI |
 | Runtime launch-plan builder | IN PLACE | `src/common/runtime_launch_plan.*` resolves profiles into backend/env/args/runtime policy and is covered in host tests |
+| Runtime plan preview tool | IN PLACE | `tools/mvrvb_runtime_plan_preview` resolves a profile query into a concrete launch summary without Mac hardware |
 | Runtime observability | IN PLACE | Instance, device, pipeline, swapchain, submit, present, replay-boundary, state-flush summary, transfer/secondary replay, and synchronization/unsupported-op logs are checked in |
 | Mac runtime runbook | IN PLACE | `docs/MAC_RUNTIME_SMOKE_TEST.md` and `scripts/mac_runtime_smoke_test.sh` define the first hardware validation pass |
 | CI build artifacts | IN PLACE | Green macOS runs publish a portable ICD tarball and launcher installer artifact |

@@ -6,6 +6,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_C_STANDARD 11)
 
 set(MVRVB_REPO_ROOT "${CMAKE_CURRENT_LIST_DIR}/.." CACHE PATH "MetalVR Bridge repository root")
+set(MVRVB_BUILD_TESTS ON)
 
 include(FetchContent)
 
@@ -30,4 +31,5 @@ add_subdirectory("${MVRVB_REPO_ROOT}/src/shader_translator" src/shader_translato
 add_subdirectory("${MVRVB_REPO_ROOT}/src/vulkan_layer" src/vulkan_layer)
 
 enable_testing()
+add_subdirectory("${MVRVB_REPO_ROOT}/tools" tools)
 add_subdirectory("${MVRVB_REPO_ROOT}/tests" tests)

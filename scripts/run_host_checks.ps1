@@ -30,8 +30,8 @@ if ($LASTEXITCODE -ne 0) {
     throw "Host-check configure failed with exit code $LASTEXITCODE"
 }
 
-Write-Host "Building mvrvb_unit_tests"
-& $cmake.Source --build $BuildDir --target mvrvb_unit_tests
+Write-Host "Building host-side targets"
+& $cmake.Source --build $BuildDir
 if ($LASTEXITCODE -ne 0) {
     throw "Host-check build failed with exit code $LASTEXITCODE"
 }
