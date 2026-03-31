@@ -48,6 +48,10 @@ TEST(RuntimeLaunchCommand, MaterializesWineCommandFromLaunchPlan) {
     EXPECT_EQ(result.command.environment.at("MVRVB_SYNC_MODE"), "msync");
     EXPECT_EQ(result.command.environment.at("MVRVB_HIGH_RESOLUTION_MODE"), "1");
     EXPECT_EQ(result.command.environment.at("MVRVB_SELECTED_PROFILE"), "overwatch-2");
+    EXPECT_EQ(result.command.environment.at("MVRVB_PREFIX_PRESET"), "battlenet-shooter");
+    EXPECT_EQ(result.command.environment.at("MVRVB_INSTALL_PACKAGES"), "dxvk,battle.net");
+    EXPECT_EQ(result.command.environment.at("MVRVB_INSTALL_WINETRICKS"), "corefonts,vcrun2022");
+    EXPECT_EQ(result.command.environment.at("MVRVB_REQUIRES_LAUNCHER"), "1");
     ASSERT_EQ(result.warnings.size(), 1u);
     EXPECT_NE(result.warnings.front().find("Anti-cheat risk is blocking"), std::string::npos);
 }
@@ -65,6 +69,7 @@ TEST(RuntimeLaunchCommand, BashScriptIncludesExportsAndExecInvocation) {
     const std::string script = renderRuntimeLaunchCommandBash(result.command);
 
     EXPECT_NE(script.find("export WINEPREFIX='C:\\Prefixes\\Overwatch'"), std::string::npos);
+    EXPECT_NE(script.find("export MVRVB_PREFIX_PRESET='battlenet-shooter'"), std::string::npos);
     EXPECT_NE(script.find("export WINEDLLOVERRIDES='d3d11=native,builtin;dxgi=native,builtin'"),
               std::string::npos);
     EXPECT_NE(script.find("cd 'C:\\Games\\Overwatch'"), std::string::npos);
@@ -85,6 +90,7 @@ TEST(RuntimeLaunchCommand, PowerShellScriptIncludesEnvironmentAndInvocation) {
     const std::string script = renderRuntimeLaunchCommandPowerShell(result.command);
 
     EXPECT_NE(script.find("$env:MVRVB_RENDERER_BACKEND = 'dxvk'"), std::string::npos);
+    EXPECT_NE(script.find("$env:MVRVB_INSTALL_PACKAGES = 'dxvk,battle.net'"), std::string::npos);
     EXPECT_NE(script.find("$env:WINEDLLOVERRIDES = 'd3d11=native,builtin;dxgi=native,builtin'"),
               std::string::npos);
     EXPECT_NE(script.find("Set-Location -LiteralPath 'C:\\Games\\Overwatch'"), std::string::npos);

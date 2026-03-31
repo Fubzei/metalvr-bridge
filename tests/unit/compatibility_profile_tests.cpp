@@ -31,6 +31,13 @@ sync_mode = msync
 high_resolution_mode = true
 metalfx_upscaling = true
 
+[install]
+prefix_preset = shooter-prefix
+packages = dxvk, battle.net
+winetricks = corefonts, vcrun2022
+requires_launcher = true
+notes = Install launcher first
+
 [match]
 executables = Arena.exe, Arena-Win64-Shipping.exe
 launchers = Steam
@@ -68,6 +75,15 @@ args = --fullscreen, --novid
     EXPECT_EQ(result.profile.runtime.syncMode, SyncMode::MSync);
     EXPECT_TRUE(result.profile.runtime.highResolutionMode);
     EXPECT_TRUE(result.profile.runtime.metalFxUpscaling);
+    EXPECT_EQ(result.profile.install.prefixPreset, "shooter-prefix");
+    ASSERT_EQ(result.profile.install.packages.size(), 2u);
+    EXPECT_EQ(result.profile.install.packages[0], "dxvk");
+    EXPECT_EQ(result.profile.install.packages[1], "battle.net");
+    ASSERT_EQ(result.profile.install.winetricks.size(), 2u);
+    EXPECT_EQ(result.profile.install.winetricks[0], "corefonts");
+    EXPECT_EQ(result.profile.install.winetricks[1], "vcrun2022");
+    EXPECT_TRUE(result.profile.install.requiresLauncher);
+    EXPECT_EQ(result.profile.install.notes, "Install launcher first");
     ASSERT_EQ(result.profile.match.executables.size(), 2u);
     EXPECT_EQ(result.profile.match.executables[0], "Arena.exe");
     EXPECT_EQ(result.profile.match.executables[1], "Arena-Win64-Shipping.exe");
@@ -139,6 +155,11 @@ TEST(CompatibilityProfile, CheckedInOverwatchProfileIsPlanningOnly) {
     EXPECT_EQ(result.profile.antiCheatRisk, AntiCheatRisk::Blocking);
     EXPECT_EQ(result.profile.runtime.syncMode, SyncMode::MSync);
     EXPECT_TRUE(result.profile.runtime.highResolutionMode);
+    EXPECT_EQ(result.profile.install.prefixPreset, "battlenet-shooter");
+    EXPECT_TRUE(result.profile.install.requiresLauncher);
+    ASSERT_EQ(result.profile.install.packages.size(), 2u);
+    EXPECT_EQ(result.profile.install.packages[0], "battle.net");
+    EXPECT_EQ(result.profile.install.packages[1], "dxvk");
     ASSERT_EQ(result.profile.match.launchers.size(), 1u);
     EXPECT_EQ(result.profile.match.launchers[0], "Battle.net");
 }

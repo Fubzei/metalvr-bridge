@@ -30,6 +30,10 @@ Generated from checked-in `.mvrvb-profile` files.
 - Sync mode: `default`
 - High resolution mode: `false`
 - MetalFX upscaling: `false`
+- Prefix preset: `general-game`
+- Requires launcher: `false`
+- Install packages: `dxvk`
+- Winetricks verbs: `corefonts`
 - Launch args: `(none)`
 - Environment entries: `1`
 - DLL override entries: `0`
@@ -40,6 +44,10 @@ Generated from checked-in `.mvrvb-profile` files.
 - Sync mode: `msync`
 - High resolution mode: `true`
 - MetalFX upscaling: `false`
+- Prefix preset: `competitive-shooter`
+- Requires launcher: `false`
+- Install packages: `dxvk`
+- Winetricks verbs: `corefonts`, `vcrun2022`
 - Launch args: `--fullscreen`
 - Environment entries: `2`
 - DLL override entries: `2`
@@ -50,6 +58,10 @@ Generated from checked-in `.mvrvb-profile` files.
 - Sync mode: `msync`
 - High resolution mode: `true`
 - MetalFX upscaling: `false`
+- Prefix preset: `battlenet-shooter`
+- Requires launcher: `true`
+- Install packages: `battle.net`, `dxvk`
+- Winetricks verbs: `corefonts`, `vcrun2022`
 - Launch args: `--fullscreen`
 - Environment entries: `2`
 - DLL override entries: `2`

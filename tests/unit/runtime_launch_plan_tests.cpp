@@ -29,6 +29,11 @@ TEST(RuntimeLaunchPlan, FallsBackToGlobalDefaultsForUnknownGames) {
     EXPECT_EQ(result.plan.windowsVersion, "win11");
     EXPECT_EQ(result.plan.syncMode, SyncMode::Default);
     EXPECT_EQ(result.plan.environment.at("MVRVB_PROFILE"), "global-defaults");
+    EXPECT_EQ(result.plan.install.prefixPreset, "general-game");
+    ASSERT_EQ(result.plan.install.packages.size(), 1u);
+    EXPECT_EQ(result.plan.install.packages[0], "dxvk");
+    ASSERT_EQ(result.plan.install.winetricks.size(), 1u);
+    EXPECT_EQ(result.plan.install.winetricks[0], "corefonts");
     ASSERT_EQ(result.plan.fallbackBackends.size(), 3u);
     EXPECT_EQ(result.plan.fallbackBackends[0], RendererBackend::DXVK);
     EXPECT_EQ(result.plan.fallbackBackends[1], RendererBackend::D3DMetal);
@@ -60,6 +65,14 @@ TEST(RuntimeLaunchPlan, MergesMatchedGameProfileOverGlobalDefaults) {
     EXPECT_EQ(result.plan.antiCheatRisk, AntiCheatRisk::Blocking);
     EXPECT_EQ(result.plan.environment.at("MVRVB_PROFILE"), "overwatch-2");
     EXPECT_EQ(result.plan.dllOverrides.at("d3d11"), "native,builtin");
+    EXPECT_EQ(result.plan.install.prefixPreset, "battlenet-shooter");
+    EXPECT_TRUE(result.plan.install.requiresLauncher);
+    ASSERT_EQ(result.plan.install.packages.size(), 2u);
+    EXPECT_EQ(result.plan.install.packages[0], "dxvk");
+    EXPECT_EQ(result.plan.install.packages[1], "battle.net");
+    ASSERT_EQ(result.plan.install.winetricks.size(), 2u);
+    EXPECT_EQ(result.plan.install.winetricks[0], "corefonts");
+    EXPECT_EQ(result.plan.install.winetricks[1], "vcrun2022");
     ASSERT_EQ(result.plan.launchArgs.size(), 1u);
     EXPECT_EQ(result.plan.launchArgs[0], "--fullscreen");
 }
@@ -79,6 +92,7 @@ TEST(RuntimeLaunchPlan, SummaryIncludesCoreDecisionFields) {
     EXPECT_NE(summary.find("Selected profile: overwatch-2"), std::string::npos);
     EXPECT_NE(summary.find("Backend: dxvk"), std::string::npos);
     EXPECT_NE(summary.find("Sync mode: msync"), std::string::npos);
+    EXPECT_NE(summary.find("Install prefix preset: battlenet-shooter"), std::string::npos);
     EXPECT_NE(summary.find("Match score: 175"), std::string::npos);
 }
 
@@ -98,6 +112,9 @@ TEST(RuntimeLaunchPlan, DetailedReportIncludesEnvironmentAndArguments) {
     EXPECT_NE(report.find("MVRVB_PROFILE=overwatch-2"), std::string::npos);
     EXPECT_NE(report.find("DLL overrides:"), std::string::npos);
     EXPECT_NE(report.find("d3d11=native,builtin"), std::string::npos);
+    EXPECT_NE(report.find("Install policy:"), std::string::npos);
+    EXPECT_NE(report.find("prefix_preset=battlenet-shooter"), std::string::npos);
+    EXPECT_NE(report.find("battle.net"), std::string::npos);
     EXPECT_NE(report.find("Launch arguments:"), std::string::npos);
     EXPECT_NE(report.find("--fullscreen"), std::string::npos);
 }
@@ -119,6 +136,8 @@ TEST(RuntimeLaunchPlan, JsonIncludesMachineReadableFields) {
     EXPECT_NE(json.find("\"backend\":\"dxvk\""), std::string::npos);
     EXPECT_NE(json.find("\"syncMode\":\"msync\""), std::string::npos);
     EXPECT_NE(json.find("\"antiCheatRisk\":\"blocking\""), std::string::npos);
+    EXPECT_NE(json.find("\"prefixPreset\":\"battlenet-shooter\""), std::string::npos);
+    EXPECT_NE(json.find("\"requiresLauncher\":true"), std::string::npos);
     EXPECT_NE(json.find("\"d3d11\":\"native,builtin\""), std::string::npos);
     EXPECT_NE(json.find("\"launchArgs\":[\"--fullscreen\"]"), std::string::npos);
 }
@@ -158,6 +177,8 @@ TEST(RuntimeLaunchPlan, WritesJsonAndReportFiles) {
     EXPECT_EQ(loaded.plan.selectedProfileId, "overwatch-2");
     EXPECT_EQ(loaded.plan.backend, RendererBackend::DXVK);
     EXPECT_EQ(loaded.plan.syncMode, SyncMode::MSync);
+    EXPECT_EQ(loaded.plan.install.prefixPreset, "battlenet-shooter");
+    EXPECT_TRUE(loaded.plan.install.requiresLauncher);
 
     std::ifstream reportStream(reportPath);
     ASSERT_TRUE(reportStream.is_open());

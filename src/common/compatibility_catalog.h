@@ -24,6 +24,7 @@ struct CompatibilityCatalogEntry {
     bool competitive{false};
     AntiCheatRisk antiCheatRisk{AntiCheatRisk::Unknown};
     CompatibilityRuntimePolicy runtime;
+    CompatibilityInstallPolicy install;
     CompatibilityMatchCriteria match;
     std::vector<std::string> launchArgs;
     size_t environmentCount{0};

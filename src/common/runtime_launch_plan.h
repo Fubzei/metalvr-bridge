@@ -25,6 +25,7 @@ struct RuntimeLaunchPlan {
     bool latencySensitive{false};
     bool competitive{false};
     AntiCheatRisk antiCheatRisk{AntiCheatRisk::Unknown};
+    CompatibilityInstallPolicy install;
     std::vector<std::string> launchArgs;
     std::map<std::string, std::string> environment;
     std::map<std::string, std::string> dllOverrides;

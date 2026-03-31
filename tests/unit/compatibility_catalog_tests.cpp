@@ -47,6 +47,14 @@ TEST(CompatibilityCatalog, CapturesCheckedInProfileDetails) {
     EXPECT_TRUE(it->latencySensitive);
     EXPECT_EQ(it->runtime.syncMode, SyncMode::MSync);
     EXPECT_TRUE(it->runtime.highResolutionMode);
+    EXPECT_EQ(it->install.prefixPreset, "battlenet-shooter");
+    EXPECT_TRUE(it->install.requiresLauncher);
+    ASSERT_EQ(it->install.packages.size(), 2u);
+    EXPECT_EQ(it->install.packages[0], "battle.net");
+    EXPECT_EQ(it->install.packages[1], "dxvk");
+    ASSERT_EQ(it->install.winetricks.size(), 2u);
+    EXPECT_EQ(it->install.winetricks[0], "corefonts");
+    EXPECT_EQ(it->install.winetricks[1], "vcrun2022");
     ASSERT_EQ(it->match.launchers.size(), 1u);
     EXPECT_EQ(it->match.launchers[0], "Battle.net");
     ASSERT_EQ(it->match.executables.size(), 2u);
@@ -67,6 +75,8 @@ TEST(CompatibilityCatalog, JsonIncludesSummaryAndEntryFields) {
     EXPECT_NE(json.find("\"profileId\":\"overwatch-2\""), std::string::npos);
     EXPECT_NE(json.find("\"defaultRenderer\":\"dxvk\""), std::string::npos);
     EXPECT_NE(json.find("\"antiCheatRisk\":\"blocking\""), std::string::npos);
+    EXPECT_NE(json.find("\"prefixPreset\":\"battlenet-shooter\""), std::string::npos);
+    EXPECT_NE(json.find("\"requiresLauncher\":true"), std::string::npos);
 }
 
 TEST(CompatibilityCatalog, MarkdownIncludesMatrixAndHighlights) {
@@ -79,6 +89,7 @@ TEST(CompatibilityCatalog, MarkdownIncludesMatrixAndHighlights) {
     EXPECT_NE(markdown.find("| Overwatch 2 (`overwatch-2`)"), std::string::npos);
     EXPECT_NE(markdown.find("### Competitive Shooter (DXVK Template)"), std::string::npos);
     EXPECT_NE(markdown.find("- Sync mode: `msync`"), std::string::npos);
+    EXPECT_NE(markdown.find("- Prefix preset: `battlenet-shooter`"), std::string::npos);
 }
 
 TEST(CompatibilityCatalog, RejectsEmptyCatalogInput) {

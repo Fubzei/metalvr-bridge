@@ -133,10 +133,11 @@ The first checked-in Phase 4 deliverables are:
 
 - `src/common/compatibility_profile.*`
   - CI-validated parser plus auto-selection helpers for runtime compatibility profiles
+  - now includes install/setup policy fields for future bottle or prefix orchestration
 - `src/common/compatibility_catalog.*`
   - host-safe compatibility database builder for JSON/report export from checked-in profiles
 - `src/common/runtime_launch_plan.*`
-  - host-safe launch-plan builder that resolves backend/env/args/runtime policy from profiles
+  - host-safe launch-plan builder that resolves backend/install/env/args/runtime policy from profiles
 - `src/common/runtime_launch_command.*`
   - host-safe launch-command materializer that turns a resolved plan into runnable
     command, environment, and wrapper-script output

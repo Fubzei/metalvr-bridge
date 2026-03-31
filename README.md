@@ -31,15 +31,16 @@ Windows game
 - A checked-in compatibility profile system now lives under `profiles/`, with
   CI-backed parsing, auto-selection, and validation in
   `src/common/compatibility_profile.*` and
-  `tests/unit/compatibility_profile_tests.cpp`.
+  `tests/unit/compatibility_profile_tests.cpp`, including install/setup policy
+  alongside runtime policy.
 - A checked-in compatibility catalog layer now lives in
   `src/common/compatibility_catalog.*`, turning those checked-in profiles into a
   machine-readable and human-readable game/status database for future launcher,
   wiki, and runtime surfaces.
 - A checked-in runtime launch-plan builder now lives in
   `src/common/runtime_launch_plan.*`, turning those profiles into backend,
-  fallback, env, DLL-override, and launch-argument decisions that a launcher
-  can consume.
+  fallback, install/setup, env, DLL-override, and launch-argument decisions
+  that a launcher can consume.
 - A checked-in runtime launch-command materializer now lives in
   `src/common/runtime_launch_command.*`, turning those plans into concrete
   Wine-style command, environment, and wrapper-script output for future runtime

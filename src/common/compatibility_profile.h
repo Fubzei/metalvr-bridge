@@ -63,6 +63,14 @@ struct CompatibilityRuntimePolicy {
     bool metalFxUpscaling{false};
 };
 
+struct CompatibilityInstallPolicy {
+    std::string prefixPreset;
+    std::vector<std::string> packages;
+    std::vector<std::string> winetricks;
+    bool requiresLauncher{false};
+    std::string notes;
+};
+
 struct CompatibilityProfile {
     std::string schemaVersion{"1"};
     std::string profileId;
@@ -77,6 +85,7 @@ struct CompatibilityProfile {
     bool competitive{false};
     AntiCheatRisk antiCheatRisk{AntiCheatRisk::Unknown};
     CompatibilityRuntimePolicy runtime;
+    CompatibilityInstallPolicy install;
     CompatibilityMatchCriteria match;
     std::vector<std::string> launchArgs;
     std::map<std::string, std::string> environment;

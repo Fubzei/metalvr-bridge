@@ -109,7 +109,8 @@ That subtree exists in the repo, but it is not currently added by the root
 
 - compatibility profile defaults, templates, and planning files
 - intended to drive future runtime backend selection, launch args, env vars,
-  DLL override policy, sync mode, high-resolution mode, and MetalFX-upscaling intent
+  DLL override policy, install/setup policy, sync mode, high-resolution mode,
+  and MetalFX-upscaling intent
 - validated in CI through `src/common/compatibility_profile.*`
 
 ### `scripts`

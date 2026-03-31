@@ -17,6 +17,13 @@ sync_mode = msync
 high_resolution_mode = true
 metalfx_upscaling = false
 
+[install]
+prefix_preset = battlenet-shooter
+packages = battle.net, dxvk
+winetricks = corefonts, vcrun2022
+requires_launcher = true
+notes = Install Battle.net in the target prefix first, then install or update Overwatch 2 from the launcher before gameplay attempts.
+
 [match]
 launchers = Battle.net
 stores = battlenet

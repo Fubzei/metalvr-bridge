@@ -515,6 +515,37 @@ private:
         }
     }
 
+    bool parseInstallObject(RuntimeLaunchPlan* plan, std::string* errorMessage) {
+        if (!plan) return false;
+        if (!expect('{', errorMessage)) return false;
+        skipWhitespace();
+        if (consume('}')) return true;
+
+        while (true) {
+            std::string key;
+            if (!parseString(&key, errorMessage)) return false;
+            if (!expect(':', errorMessage)) return false;
+
+            if (key == "prefixPreset") {
+                if (!parseString(&plan->install.prefixPreset, errorMessage)) return false;
+            } else if (key == "packages") {
+                if (!parseStringArray(&plan->install.packages, errorMessage)) return false;
+            } else if (key == "winetricks") {
+                if (!parseStringArray(&plan->install.winetricks, errorMessage)) return false;
+            } else if (key == "requiresLauncher") {
+                if (!parseBool(&plan->install.requiresLauncher, errorMessage)) return false;
+            } else if (key == "notes") {
+                if (!parseString(&plan->install.notes, errorMessage)) return false;
+            } else {
+                if (!skipValue(errorMessage)) return false;
+            }
+
+            skipWhitespace();
+            if (consume('}')) return true;
+            if (!expect(',', errorMessage)) return false;
+        }
+    }
+
     bool parseTopLevelObject(RuntimeLaunchPlan* plan,
                             bool* sawSchemaVersion,
                             std::string* errorMessage) {
@@ -555,6 +586,8 @@ private:
                 if (!parseBackendArray(&plan->fallbackBackends, errorMessage)) return false;
             } else if (key == "runtime") {
                 if (!parseRuntimeObject(plan, errorMessage)) return false;
+            } else if (key == "install") {
+                if (!parseInstallObject(plan, errorMessage)) return false;
             } else if (key == "latencySensitive") {
                 if (!parseBool(&plan->latencySensitive, errorMessage)) return false;
             } else if (key == "competitive") {
@@ -638,6 +671,25 @@ void appendFallbacks(std::vector<RendererBackend>* dst,
     }
 }
 
+void mergeInstallPolicy(CompatibilityInstallPolicy* dst,
+                        const CompatibilityInstallPolicy& src,
+                        bool preferScalarFields) {
+    if (!dst) return;
+    if ((preferScalarFields || dst->prefixPreset.empty()) && !src.prefixPreset.empty()) {
+        dst->prefixPreset = src.prefixPreset;
+    }
+    for (const auto& package : src.packages) {
+        appendUniqueString(&dst->packages, package);
+    }
+    for (const auto& verb : src.winetricks) {
+        appendUniqueString(&dst->winetricks, verb);
+    }
+    dst->requiresLauncher = dst->requiresLauncher || src.requiresLauncher;
+    if ((preferScalarFields || dst->notes.empty()) && !src.notes.empty()) {
+        dst->notes = src.notes;
+    }
+}
+
 }  // namespace
 
 RuntimeLaunchPlanResult buildRuntimeLaunchPlan(
@@ -668,6 +720,7 @@ RuntimeLaunchPlanResult buildRuntimeLaunchPlan(
         mergeMaps(&result.plan.environment, globalDefaults->environment);
         mergeMaps(&result.plan.dllOverrides, globalDefaults->dllOverrides);
         mergeArgs(&result.plan.launchArgs, globalDefaults->launchArgs);
+        mergeInstallPolicy(&result.plan.install, globalDefaults->install, true);
     }
 
     if (selectedProfile != globalDefaults) {
@@ -697,6 +750,7 @@ RuntimeLaunchPlanResult buildRuntimeLaunchPlan(
     mergeMaps(&result.plan.environment, selectedProfile->environment);
     mergeMaps(&result.plan.dllOverrides, selectedProfile->dllOverrides);
     mergeArgs(&result.plan.launchArgs, selectedProfile->launchArgs);
+    mergeInstallPolicy(&result.plan.install, selectedProfile->install, true);
 
     return result;
 }
@@ -762,6 +816,20 @@ std::string summarizeRuntimeLaunchPlan(const RuntimeLaunchPlan& plan) {
     out << "Latency sensitive: " << (plan.latencySensitive ? "true" : "false") << "\n";
     out << "Competitive: " << (plan.competitive ? "true" : "false") << "\n";
     out << "Anti-cheat risk: " << antiCheatRiskName(plan.antiCheatRisk) << "\n";
+    out << "Install prefix preset: " << plan.install.prefixPreset << "\n";
+    out << "Requires launcher: " << (plan.install.requiresLauncher ? "true" : "false") << "\n";
+    out << "Install packages: ";
+    for (size_t i = 0; i < plan.install.packages.size(); ++i) {
+        if (i != 0) out << ", ";
+        out << plan.install.packages[i];
+    }
+    out << "\n";
+    out << "Winetricks verbs: ";
+    for (size_t i = 0; i < plan.install.winetricks.size(); ++i) {
+        if (i != 0) out << ", ";
+        out << plan.install.winetricks[i];
+    }
+    out << "\n";
     out << "Match score: " << plan.matchScore << "\n";
     out << "Launch args: ";
     for (size_t i = 0; i < plan.launchArgs.size(); ++i) {
@@ -793,6 +861,26 @@ std::string describeRuntimeLaunchPlan(const RuntimeLaunchPlan& plan) {
             out << "  " << key << "=" << value << "\n";
         }
     }
+    out << "Install policy:\n";
+    out << "  prefix_preset=" << plan.install.prefixPreset << "\n";
+    out << "  requires_launcher=" << (plan.install.requiresLauncher ? "true" : "false") << "\n";
+    out << "  packages:\n";
+    if (plan.install.packages.empty()) {
+        out << "    (none)\n";
+    } else {
+        for (const auto& package : plan.install.packages) {
+            out << "    " << package << "\n";
+        }
+    }
+    out << "  winetricks:\n";
+    if (plan.install.winetricks.empty()) {
+        out << "    (none)\n";
+    } else {
+        for (const auto& verb : plan.install.winetricks) {
+            out << "    " << verb << "\n";
+        }
+    }
+    out << "  notes: " << plan.install.notes << "\n";
     out << "Launch arguments:\n";
     if (plan.launchArgs.empty()) {
         out << "  (none)\n";
@@ -835,6 +923,21 @@ std::string runtimeLaunchPlanToJson(const RuntimeLaunchPlan& plan) {
     appendJsonString(&out, syncModeName(plan.syncMode));
     out << ",\"highResolutionMode\":" << (plan.highResolutionMode ? "true" : "false");
     out << ",\"metalFxUpscaling\":" << (plan.metalFxUpscaling ? "true" : "false");
+    out << '}';
+    out << ",\"install\":{";
+    out << "\"prefixPreset\":";
+    appendJsonString(&out, plan.install.prefixPreset);
+    out << ",\"packages\":";
+    appendJsonArray(&out, plan.install.packages, [](std::ostringstream* stream, const std::string& value) {
+        appendJsonString(stream, value);
+    });
+    out << ",\"winetricks\":";
+    appendJsonArray(&out, plan.install.winetricks, [](std::ostringstream* stream, const std::string& value) {
+        appendJsonString(stream, value);
+    });
+    out << ",\"requiresLauncher\":" << (plan.install.requiresLauncher ? "true" : "false");
+    out << ",\"notes\":";
+    appendJsonString(&out, plan.install.notes);
     out << '}';
     out << ",\"latencySensitive\":" << (plan.latencySensitive ? "true" : "false");
     out << ",\"competitive\":" << (plan.competitive ? "true" : "false");

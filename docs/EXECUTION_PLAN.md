@@ -76,7 +76,8 @@ These items are now checked in and verified in CI:
    - automatic profile selection by executable, launcher, and store
    - future launcher/runtime integration points for backend, env, and launch policy
    Progress:
-   - `src/common/compatibility_profile.*` now parses the profile format
+   - `src/common/compatibility_profile.*` now parses the profile format, including
+     install/setup policy for future bottle or prefix orchestration
    - `src/common/compatibility_catalog.*` now turns those checked-in profiles into
      a compatibility matrix the repo can export as JSON, a human-readable report,
      or a Markdown matrix
@@ -86,12 +87,12 @@ These items are now checked in and verified in CI:
    - `tests/unit/compatibility_catalog_tests.cpp` validates the checked-in
      compatibility catalog summary and entry data
    - the profile layer now models backend fallback, sync mode, high-resolution mode,
-     MetalFX-upscaling intent, and auto-selection rules
+     MetalFX-upscaling intent, install/setup policy, and auto-selection rules
    - `tools/mvrvb_profile_catalog` now exports the compatibility matrix from the
      same checked-in profiles the launcher/runtime layer will use
    - `src/common/runtime_launch_plan.*` now turns those profiles into a concrete
-     launch plan with backend, fallbacks, env vars, DLL overrides, launch args,
-     and runtime-policy settings
+     launch plan with backend, fallbacks, install/setup policy, env vars,
+     DLL overrides, launch args, and runtime-policy settings
    - `src/common/runtime_launch_command.*` now materializes that plan into a
      runnable Wine-style command with merged environment metadata and wrapper-script
      output for future runtime or launcher glue

@@ -116,6 +116,7 @@ CompatibilityCatalogEntry makeEntry(const CompatibilityProfile& profile) {
     entry.competitive = profile.competitive;
     entry.antiCheatRisk = profile.antiCheatRisk;
     entry.runtime = profile.runtime;
+    entry.install = profile.install;
     entry.match = profile.match;
     entry.launchArgs = profile.launchArgs;
     entry.environmentCount = profile.environment.size();
@@ -252,6 +253,25 @@ std::string describeCompatibilityCatalog(const CompatibilityCatalog& catalog) {
             << ", sync=" << syncModeName(entry.runtime.syncMode)
             << ", high-res=" << (entry.runtime.highResolutionMode ? "true" : "false")
             << ", MetalFX=" << (entry.runtime.metalFxUpscaling ? "true" : "false") << "\n";
+        out << "  install: prefix-preset=" << entry.install.prefixPreset
+            << ", requires-launcher=" << (entry.install.requiresLauncher ? "true" : "false")
+            << ", packages=";
+        for (size_t i = 0; i < entry.install.packages.size(); ++i) {
+            if (i != 0) out << ", ";
+            out << entry.install.packages[i];
+        }
+        if (entry.install.packages.empty()) {
+            out << "(none)";
+        }
+        out << ", winetricks=";
+        for (size_t i = 0; i < entry.install.winetricks.size(); ++i) {
+            if (i != 0) out << ", ";
+            out << entry.install.winetricks[i];
+        }
+        if (entry.install.winetricks.empty()) {
+            out << "(none)";
+        }
+        out << "\n";
         out << "  flags: competitive=" << (entry.competitive ? "true" : "false")
             << ", latency-sensitive=" << (entry.latencySensitive ? "true" : "false")
             << ", anti-cheat-risk=" << antiCheatRiskName(entry.antiCheatRisk) << "\n";
@@ -343,6 +363,28 @@ std::string compatibilityCatalogToJson(const CompatibilityCatalog& catalog) {
                     appendJsonString(out, value);
                 });
             *stream << '}';
+            *stream << ",\"install\":{";
+            *stream << "\"prefixPreset\":";
+            appendJsonString(stream, entry.install.prefixPreset);
+            *stream << ",\"packages\":";
+            appendJsonArray(
+                stream,
+                entry.install.packages,
+                [](std::ostringstream* out, const std::string& value) {
+                    appendJsonString(out, value);
+                });
+            *stream << ",\"winetricks\":";
+            appendJsonArray(
+                stream,
+                entry.install.winetricks,
+                [](std::ostringstream* out, const std::string& value) {
+                    appendJsonString(out, value);
+                });
+            *stream << ",\"requiresLauncher\":"
+                    << (entry.install.requiresLauncher ? "true" : "false");
+            *stream << ",\"notes\":";
+            appendJsonString(stream, entry.install.notes);
+            *stream << '}';
             *stream << ",\"launchArgs\":";
             appendJsonArray(
                 stream,
@@ -407,6 +449,29 @@ std::string compatibilityCatalogToMarkdown(const CompatibilityCatalog& catalog) 
             << "`\n";
         out << "- MetalFX upscaling: `" << (entry.runtime.metalFxUpscaling ? "true" : "false")
             << "`\n";
+        out << "- Prefix preset: `" << entry.install.prefixPreset << "`\n";
+        out << "- Requires launcher: `" << (entry.install.requiresLauncher ? "true" : "false")
+            << "`\n";
+        out << "- Install packages: ";
+        if (entry.install.packages.empty()) {
+            out << "`(none)`\n";
+        } else {
+            for (size_t i = 0; i < entry.install.packages.size(); ++i) {
+                if (i != 0) out << ", ";
+                out << "`" << entry.install.packages[i] << "`";
+            }
+            out << "\n";
+        }
+        out << "- Winetricks verbs: ";
+        if (entry.install.winetricks.empty()) {
+            out << "`(none)`\n";
+        } else {
+            for (size_t i = 0; i < entry.install.winetricks.size(); ++i) {
+                if (i != 0) out << ", ";
+                out << "`" << entry.install.winetricks[i] << "`";
+            }
+            out << "\n";
+        }
         out << "- Launch args: ";
         if (entry.launchArgs.empty()) {
             out << "`(none)`\n";

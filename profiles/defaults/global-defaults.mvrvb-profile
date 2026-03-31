@@ -17,5 +17,12 @@ sync_mode = default
 high_resolution_mode = false
 metalfx_upscaling = false
 
+[install]
+prefix_preset = general-game
+packages = dxvk
+winetricks = corefonts
+requires_launcher = false
+notes = Baseline setup intent for shared game prefixes while per-title install flows are still maturing.
+
 [env]
 MVRVB_PROFILE = global-defaults

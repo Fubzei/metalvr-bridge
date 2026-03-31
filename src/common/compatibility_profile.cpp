@@ -409,6 +409,28 @@ CompatibilityProfileParseResult parseCompatibilityProfile(std::string_view text)
         }
     }
 
+    if (const auto sectionIt = sections.find("install"); sectionIt != sections.end()) {
+        if (const auto it = sectionIt->second.find("prefix-preset"); it != sectionIt->second.end()) {
+            result.profile.install.prefixPreset = trim(it->second);
+        }
+        if (const auto it = sectionIt->second.find("packages"); it != sectionIt->second.end()) {
+            result.profile.install.packages = splitCsv(it->second);
+        }
+        if (const auto it = sectionIt->second.find("winetricks"); it != sectionIt->second.end()) {
+            result.profile.install.winetricks = splitCsv(it->second);
+        }
+        if (const auto it = sectionIt->second.find("requires-launcher");
+            it != sectionIt->second.end()) {
+            if (!parseBoolValue(it->second, &result.profile.install.requiresLauncher)) {
+                result.errorMessage = "Invalid boolean for install.requires-launcher";
+                return result;
+            }
+        }
+        if (const auto it = sectionIt->second.find("notes"); it != sectionIt->second.end()) {
+            result.profile.install.notes = trim(it->second);
+        }
+    }
+
     if (const auto sectionIt = sections.find("env"); sectionIt != sections.end()) {
         result.profile.environment = sectionIt->second;
     }

@@ -158,6 +158,13 @@ RuntimeLaunchCommandResult materializeRuntimeLaunchCommand(
         boolEnvValue(plan.metalFxUpscaling);
     result.command.environment["MVRVB_ANTI_CHEAT_RISK"] =
         antiCheatRiskName(plan.antiCheatRisk);
+    result.command.environment["MVRVB_PREFIX_PRESET"] = plan.install.prefixPreset;
+    result.command.environment["MVRVB_INSTALL_PACKAGES"] =
+        joinStrings(plan.install.packages, ",");
+    result.command.environment["MVRVB_INSTALL_WINETRICKS"] =
+        joinStrings(plan.install.winetricks, ",");
+    result.command.environment["MVRVB_REQUIRES_LAUNCHER"] =
+        boolEnvValue(plan.install.requiresLauncher);
 
     switch (plan.antiCheatRisk) {
         case AntiCheatRisk::Blocking:

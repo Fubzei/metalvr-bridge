@@ -8,6 +8,7 @@ runtime intents that can express:
 
 - the preferred renderer/backend strategy for a title
 - fallback backends
+- install/setup intent for the target prefix
 - sync-mode and high-resolution policy
 - MetalFX upscaling intent where that becomes relevant
 - latency and competitive-play sensitivity
@@ -56,6 +57,12 @@ Sections:
   - `sync_mode`
   - `high_resolution_mode`
   - `metalfx_upscaling`
+- `[install]`
+  - `prefix_preset`
+  - `packages`
+  - `winetricks`
+  - `requires_launcher`
+  - `notes`
 - `[env]`
   - arbitrary environment variables
 - `[dll_overrides]`
