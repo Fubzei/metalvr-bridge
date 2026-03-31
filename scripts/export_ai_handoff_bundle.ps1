@@ -25,6 +25,8 @@ if (-not $?) {
 if (-not $?) {
     throw "Project status JSON update failed with exit code $LASTEXITCODE"
 }
+$projectStatusPath = Join-Path $repoRoot "docs\PROJECT_STATUS.json"
+$projectStatus = Get-Content -LiteralPath $projectStatusPath -Raw | ConvertFrom-Json
 
 $docTargets = @(
     "README.md",
@@ -67,13 +69,9 @@ if (-not $?) {
 $manifestPath = Join-Path $OutputDir "handoff-manifest.json"
 $manifest = [ordered]@{
     generatedAt = (Get-Date).ToString("o")
-    currentPhase = "Between Milestone 9 and Milestone 10; real Mac runtime validation is still pending."
-    nextGate = "Launcher triangle, vulkaninfo, and vkcube on Mac hardware."
-    recommendedNextNonMacSteps = @(
-        "Wire the Swift launcher to consume shared runtime-plan and bundle surfaces.",
-        "Keep compatibility profiles and prefix presets governed through lint and docs.",
-        "Keep repo and wiki handoff docs aligned with the checked-in source of truth."
-    )
+    currentPhase = $projectStatus.currentPhase
+    nextGate = $projectStatus.nextGate
+    recommendedNextNonMacSteps = @($projectStatus.nextNonMacSteps)
     includedFiles = @(
         "README.md",
         "CONTRIBUTING.md",

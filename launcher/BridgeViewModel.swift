@@ -119,6 +119,7 @@ enum TestStatus: String {
 class BridgeViewModel: ObservableObject {
     @Published var logs: [LogEntry] = []
     @Published var systemInfo: SystemInfo
+    @Published var projectStatus: ProjectStatusSnapshot?
     @Published var bridgeStatus: BridgeStatus = .notInstalled
     @Published var testStatus: TestStatus = .idle
     @Published var testRunning: Bool = false
@@ -130,7 +131,9 @@ class BridgeViewModel: ObservableObject {
 
     init() {
         self.systemInfo = SystemInfo.gather()
+        self.projectStatus = ProjectStatusSnapshot.load()
         checkInstallation()
+        logProjectStatus()
     }
 
     // MARK: - Installation Check
@@ -532,6 +535,12 @@ class BridgeViewModel: ObservableObject {
         text += "Memory: \(systemInfo.totalMemory)\n"
         text += "Bridge Status: \(bridgeStatus.rawValue)\n"
         text += "Test Status: \(testStatus.rawValue)\n"
+        if let projectStatus {
+            text += "Project Phase: \(projectStatus.currentPhase)\n"
+            text += "Phase 2: \(projectStatus.phase2Summary)\n"
+            text += "Next Gate: \(projectStatus.nextGate)\n"
+            text += "Proven Surfaces: \(projectStatus.provenSurfaces.count)\n"
+        }
         text += String(repeating: "=", count: 72) + "\n\n"
 
         for entry in logs {
@@ -569,6 +578,18 @@ class BridgeViewModel: ObservableObject {
             self.testStatus = passed ? .passed : .failed
             self.testRunning = false
         }
+    }
+
+    private func logProjectStatus() {
+        guard let projectStatus else {
+            log(.warn, "Project status snapshot not bundled - launcher will show runtime-only diagnostics")
+            return
+        }
+
+        log(.info, "Project phase: \(projectStatus.currentPhase)")
+        log(.info, "Phase 2 status: \(projectStatus.phase2Summary)")
+        log(.info, "Next gate: \(projectStatus.nextGate)")
+        log(.info, "Proven surfaces: \(projectStatus.provenSurfaces.count), pending Mac gates: \(projectStatus.notYetProven.count)")
     }
 
     private func dateStamp() -> String {

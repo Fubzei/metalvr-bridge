@@ -93,7 +93,8 @@ Windows game
   swapchain, submit, present, command-replay boundaries, draw/dispatch
   state-flush summaries, transfer/secondary-command breadcrumbs, and
   synchronization/unsupported-op breadcrumbs.
-- The launcher includes an in-app triangle test and diagnostic log export.
+- The launcher now includes an in-app triangle test, a bundled project-status
+  card sourced from `docs/PROJECT_STATUS.json`, and diagnostic log export.
 - `scripts/mac_runtime_smoke_test.sh` now automates the first hardware smoke-test
   bundle so Mac-side validation is easier to execute and report.
 - Green macOS CI runs now publish downloadable ICD and launcher installer artifacts.

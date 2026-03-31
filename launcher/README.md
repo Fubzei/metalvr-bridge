@@ -33,6 +33,7 @@ Then:
    - MetalVRBridgeApp.swift
    - ContentView.swift
    - BridgeViewModel.swift
+   - ProjectStatus.swift
 
 2. Open Terminal, cd to that folder
 
@@ -41,4 +42,8 @@ Then:
 4. Send the resulting "MetalVR-Bridge-Installer.zip" to your buddy
 
 The script automatically finds and bundles the MetalVR Bridge ICD if it
-has been built. If not, the app still works for the Metal hardware test.
+has been built. If `PROJECT_STATUS.json`, `../PROJECT_STATUS.json`, or
+`../docs/PROJECT_STATUS.json` is present, it also bundles the current repo
+phase snapshot so the launcher can display the next gate and project readiness
+status. If those files are missing, the app still works for the Metal hardware
+test.

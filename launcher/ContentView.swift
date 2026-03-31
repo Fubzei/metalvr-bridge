@@ -118,6 +118,9 @@ struct ContentView: View {
                 // Triangle Test Card
                 testCard
 
+                // Project Status Card
+                projectStatusCard
+
                 // System Info Card
                 systemInfoCard
 
@@ -244,6 +247,49 @@ struct ContentView: View {
         }
     }
 
+    // MARK: - Project Status Card
+
+    private var projectStatusCard: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack {
+                Image(systemName: "list.clipboard")
+                    .font(.system(size: 13, weight: .bold))
+                    .foregroundColor(Color(hex: "f59e0b"))
+                Text("Project Status")
+                    .font(.system(size: 13, weight: .bold, design: .monospaced))
+                    .foregroundColor(.white)
+            }
+
+            if let projectStatus = vm.projectStatus {
+                VStack(alignment: .leading, spacing: 7) {
+                    statusRow(label: "Phase", value: projectStatus.currentPhase)
+                    statusRow(label: "Phase 2", value: projectStatus.phase2Summary)
+                    statusRow(label: "Readiness", value: projectStatus.readinessSummary)
+                }
+
+                statusCallout(title: "Next Gate", message: projectStatus.nextGate)
+
+                if let nextStep = projectStatus.firstNextNonMacStep {
+                    statusCallout(title: "Next Non-Mac", message: nextStep)
+                }
+            } else {
+                Text("No bundled project status snapshot found. Rebuild the launcher from the repo root to package PROJECT_STATUS.json into the app.")
+                    .font(.system(size: 11))
+                    .foregroundColor(Color(hex: "94a3b8"))
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+        .padding(14)
+        .background(
+            RoundedRectangle(cornerRadius: 10)
+                .fill(Color(hex: "111118"))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 10)
+                        .stroke(Color(hex: "1e2030"), lineWidth: 1)
+                )
+        )
+    }
+
     // MARK: - System Info Card
 
     private var systemInfoCard: some View {
@@ -289,6 +335,43 @@ struct ContentView: View {
                 .lineLimit(1)
                 .truncationMode(.middle)
         }
+    }
+
+    private func statusRow(label: String, value: String) -> some View {
+        HStack(alignment: .top) {
+            Text(label)
+                .font(.system(size: 10, weight: .semibold, design: .monospaced))
+                .foregroundColor(Color(hex: "64748b"))
+                .frame(width: 58, alignment: .leading)
+
+            Text(value)
+                .font(.system(size: 10, weight: .medium, design: .monospaced))
+                .foregroundColor(Color(hex: "cbd5e1"))
+                .fixedSize(horizontal: false, vertical: true)
+        }
+    }
+
+    private func statusCallout(title: String, message: String) -> some View {
+        VStack(alignment: .leading, spacing: 5) {
+            Text(title)
+                .font(.system(size: 9, weight: .bold, design: .monospaced))
+                .foregroundColor(Color(hex: "f59e0b"))
+
+            Text(message)
+                .font(.system(size: 10))
+                .foregroundColor(Color(hex: "cbd5e1"))
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .padding(10)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(
+            RoundedRectangle(cornerRadius: 8)
+                .fill(Color(hex: "0d0d14"))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 8)
+                        .stroke(Color(hex: "1e2030"), lineWidth: 1)
+                )
+        )
     }
 
     // MARK: - Steam Launch Card
