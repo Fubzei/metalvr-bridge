@@ -707,6 +707,24 @@ class BridgeViewModel: ObservableObject {
         )
     }
 
+    func copyRuntimeLaunchCommandSnippet() {
+        guard let snippet = buildRuntimeLaunchCommandSnippet() else {
+            log(.warn, "No runtime launch command snippet was available to copy")
+            return
+        }
+
+        copyTextToPasteboard(snippet, description: "runtime launch command snippet")
+    }
+
+    func copyRuntimeEnvironmentSnippet() {
+        guard let snippet = buildRuntimeEnvironmentSnippet() else {
+            log(.warn, "No runtime environment snippet was available to copy")
+            return
+        }
+
+        copyTextToPasteboard(snippet, description: "runtime environment snippet")
+    }
+
     func saveRuntimeBundleReport() {
         guard let reportText = buildRuntimeBundleReport() else {
             log(.warn, "No imported runtime bundle report is available to export")
@@ -738,6 +756,10 @@ class BridgeViewModel: ObservableObject {
             openRuntimeBundleSetupScript()
         case .openLaunchScript:
             openRuntimeBundleLaunchScript()
+        case .copyEnvironment:
+            copyRuntimeEnvironmentSnippet()
+        case .copyLaunchCommand:
+            copyRuntimeLaunchCommandSnippet()
         case .revealBundle:
             revealRuntimeBundleAssets()
         case .saveReport:
@@ -972,6 +994,76 @@ class BridgeViewModel: ObservableObject {
         }
 
         return nil
+    }
+
+    private func preferredRuntimeLaunchScriptContents() -> String? {
+        guard let loadedRuntimeBundle else {
+            return nil
+        }
+
+        let preferredPaths = [
+            loadedRuntimeBundle.snapshot.files.bashLaunchScript,
+            loadedRuntimeBundle.snapshot.files.powershellLaunchScript
+        ]
+
+        for manifestPath in preferredPaths {
+            if let contents = readRuntimeBundleTextAsset(for: manifestPath),
+               !contents.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                return contents
+            }
+        }
+
+        return nil
+    }
+
+    private func buildRuntimeLaunchCommandSnippet() -> String? {
+        guard let scriptContents = preferredRuntimeLaunchScriptContents() else {
+            return nil
+        }
+
+        let lines = scriptContents
+            .components(separatedBy: .newlines)
+            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+
+        var snippetLines: [String] = []
+
+        if let workingDirectory = lines.first(where: {
+            $0.hasPrefix("cd ") || $0.hasPrefix("Set-Location -LiteralPath ")
+        }) {
+            snippetLines.append(workingDirectory)
+        }
+
+        if let command = lines.first(where: {
+            $0.hasPrefix("exec ") || $0.hasPrefix("& ")
+        }) {
+            snippetLines.append(command)
+        }
+
+        let snippet = snippetLines.joined(separator: "\n")
+        return snippet.isEmpty ? nil : snippet
+    }
+
+    private func buildRuntimeEnvironmentSnippet() -> String? {
+        guard let scriptContents = preferredRuntimeLaunchScriptContents() else {
+            return nil
+        }
+
+        let lines = scriptContents
+            .components(separatedBy: .newlines)
+            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+            .filter {
+                $0.hasPrefix("export ") || $0.hasPrefix("$env:")
+            }
+
+        let snippet = lines.joined(separator: "\n")
+        return snippet.isEmpty ? nil : snippet
+    }
+
+    private func copyTextToPasteboard(_ text: String, description: String) {
+        let pasteboard = NSPasteboard.general
+        pasteboard.clearContents()
+        pasteboard.setString(text, forType: .string)
+        log(.info, "Copied \(description) to the clipboard")
     }
 
     private func dateStamp() -> String {

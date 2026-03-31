@@ -100,7 +100,8 @@ Windows game
   runtime-bundle manifest support sourced from `export_runtime_bundle.ps1`,
   in-app setup/checklist/lint/launch-script/catalog previews for imported
   runtime bundles, guided runtime actions sourced from the shared plan contract,
-  reveal/open/export actions for imported runtime bundles, and
+  reveal/open/export actions for imported runtime bundles, clipboard copy helpers
+  for imported launch-command and environment snippets, and
   diagnostic log export.
 - `scripts/mac_runtime_smoke_test.sh` now automates the first hardware smoke-test
   bundle so Mac-side validation is easier to execute and report.

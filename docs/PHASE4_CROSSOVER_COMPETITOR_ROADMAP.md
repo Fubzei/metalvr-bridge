@@ -189,11 +189,16 @@ The first checked-in Phase 4 deliverables are:
     and compatibility-catalog summaries referenced by imported runtime-bundle manifests
 - `launcher/BridgeViewModel.swift` and `launcher/ContentView.swift`
   - launcher-side actions that reveal imported runtime-bundle folders, open
-    imported checklist/setup/launch assets directly, and export combined
-    runtime-bundle reports from the app
+  imported checklist/setup/launch assets directly, and export combined
+  runtime-bundle reports from the app
 - `launcher/RuntimeGuidedActionPlan.swift`
   - launcher-side guided action planner that turns the shared runtime-plan
-    contract into ordered next steps and action buttons for testers
+  contract into ordered next steps and action buttons for testers
+- `launcher/BridgeViewModel.swift`, `launcher/RuntimeGuidedActionPlan.swift`,
+  and `launcher/ContentView.swift`
+  - launcher-side clipboard helpers that copy imported launch-environment and
+    launch-command snippets so testers can move from guided actions into
+    Terminal prep without reopening the exported scripts
 - `scripts/update_ai_handoff_doc.ps1` and `scripts/export_ai_handoff_bundle.ps1`
   - direct update and export path for a carry-forward AI handoff package
 - `scripts/export_runtime_bundle.ps1`

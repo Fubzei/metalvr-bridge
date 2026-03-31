@@ -102,7 +102,7 @@ That subtree exists in the repo, but it is not currently added by the root
   snapshot readers, imported or bundled runtime-plan preview reader, imported
   runtime-bundle manifest reader, imported checklist/setup/launch/lint/catalog
   preview reader, guided runtime action planner, imported bundle reveal/open/report
-  actions, and log export
+  actions, imported launch-command and environment clipboard helpers, and log export
 - packaging script
 
 ### `docs`

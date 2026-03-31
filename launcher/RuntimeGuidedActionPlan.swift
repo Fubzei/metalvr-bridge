@@ -13,6 +13,8 @@ struct RuntimeGuidedActionPlan {
         case openChecklist
         case openSetupScript
         case openLaunchScript
+        case copyEnvironment
+        case copyLaunchCommand
         case revealBundle
         case saveReport
         case runTriangleTest
@@ -160,6 +162,28 @@ struct RuntimeGuidedActionPlan {
                     tone: .ready,
                     action: .openLaunchScript,
                     actionLabel: "Open Launch"
+                )
+            )
+
+            steps.append(
+                Step(
+                    id: "copy-environment",
+                    title: "Copy Environment Snippet",
+                    detail: "Copy the exported environment block from the imported launch script so the tester can stage runtime variables in Terminal without opening the script first.",
+                    tone: .ready,
+                    action: .copyEnvironment,
+                    actionLabel: "Copy Env"
+                )
+            )
+
+            steps.append(
+                Step(
+                    id: "copy-launch-command",
+                    title: "Copy Launch Command Snippet",
+                    detail: "Copy the working directory and launch command extracted from the imported launch script so execution prep can move from the launcher straight into Terminal or issue reports.",
+                    tone: .ready,
+                    action: .copyLaunchCommand,
+                    actionLabel: "Copy Command"
                 )
             )
 

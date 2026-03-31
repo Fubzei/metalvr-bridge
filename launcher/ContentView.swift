@@ -468,6 +468,50 @@ struct ContentView: View {
                     .buttonStyle(.plain)
                 }
 
+                HStack(spacing: 8) {
+                    Button(action: { vm.copyRuntimeEnvironmentSnippet() }) {
+                        HStack(spacing: 6) {
+                            Image(systemName: "doc.on.clipboard")
+                                .font(.system(size: 10))
+                            Text("Copy Env")
+                                .font(.system(size: 10, weight: .semibold, design: .monospaced))
+                        }
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 8)
+                        .background(
+                            RoundedRectangle(cornerRadius: 8)
+                                .fill(Color(hex: "0d0d14"))
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 8)
+                                        .stroke(Color(hex: "1e2030"), lineWidth: 1)
+                                )
+                        )
+                        .foregroundColor(Color(hex: "cbd5e1"))
+                    }
+                    .buttonStyle(.plain)
+
+                    Button(action: { vm.copyRuntimeLaunchCommandSnippet() }) {
+                        HStack(spacing: 6) {
+                            Image(systemName: "terminal")
+                                .font(.system(size: 10))
+                            Text("Copy Command")
+                                .font(.system(size: 10, weight: .semibold, design: .monospaced))
+                        }
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 8)
+                        .background(
+                            RoundedRectangle(cornerRadius: 8)
+                                .fill(Color(hex: "0d0d14"))
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 8)
+                                        .stroke(Color(hex: "1e2030"), lineWidth: 1)
+                                )
+                        )
+                        .foregroundColor(Color(hex: "cbd5e1"))
+                    }
+                    .buttonStyle(.plain)
+                }
+
                 Menu {
                     Button("Open Checklist") {
                         vm.openRuntimeBundleChecklist()

@@ -48,7 +48,8 @@
                            "launcher-runtime-bundle-manifest-preview",
                            "launcher-runtime-bundle-artifact-preview",
                            "launcher-guided-runtime-actions",
-                           "launcher-runtime-bundle-asset-actions"
+                           "launcher-runtime-bundle-asset-actions",
+                           "launcher-runtime-copy-helpers"
                        ],
     "notYetProven":  [
                          "launcher-triangle-on-real-mac",
@@ -58,7 +59,7 @@
                      ],
     "nextGate":  "Launcher triangle, vulkaninfo, and vkcube on Mac hardware.",
     "nextNonMacSteps":  [
-                            "Add launcher copy/share helpers for concrete runtime commands and environment snippets so testers can move from guided actions into execution prep faster.",
+                            "Promote the shared runtime-plan contract into richer launcher-side execution-prep and handoff flows now that import, preview, guided actions, and copy helpers are in place.",
                             "Keep compatibility profiles and prefix presets governed through lint and docs.",
                             "Keep repo and wiki handoff docs aligned with the checked-in source of truth."
                         ],

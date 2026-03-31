@@ -127,6 +127,10 @@ These items are now checked in and verified in CI:
      and `launcher/ContentView.swift` now turn imported runtime plans and bundles
      into ordered next-step actions so the product layer starts behaving like a
      guided runtime rather than only a preview/export surface
+   - `launcher/BridgeViewModel.swift`, `launcher/RuntimeGuidedActionPlan.swift`,
+     and `launcher/ContentView.swift` now also copy imported launch-environment
+     and launch-command snippets to the clipboard so testers can move from the
+     guided runtime surface into Terminal prep without opening scripts first
    - `profiles/` now holds defaults, templates, and planning profiles
    - `tests/unit/compatibility_profile_tests.cpp` validates the parser and the
      checked-in profile files
