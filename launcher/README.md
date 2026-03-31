@@ -64,6 +64,6 @@ bundle folder, open the imported bundle assets directly, or export a combined
 runtime-bundle report. The launcher also builds a guided action list from the
 shared runtime-plan contract and can copy the imported environment block or
 launch command snippets to the clipboard, plus save a concise execution-prep
-sheet, so the tester sees ordered next steps and can move into Terminal prep
-faster. If those files are missing, the app still works for the Metal hardware
-test.
+sheet and preview that same execution-prep surface inline, so the tester sees
+ordered next steps and can move into Terminal prep faster. If those files are
+missing, the app still works for the Metal hardware test.

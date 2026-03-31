@@ -135,6 +135,9 @@ These items are now checked in and verified in CI:
      and `launcher/ContentView.swift` now also export concise execution-prep
      sheets so testers can hand off one focused file containing risk, setup,
      environment, and launch-command surfaces without opening the full bundle report
+   - `launcher/BridgeViewModel.swift` and `launcher/ContentView.swift` now
+     also preview that same imported execution-prep surface inline so testers
+     can inspect the env and command snippets before copying or exporting them
    - `profiles/` now holds defaults, templates, and planning profiles
    - `tests/unit/compatibility_profile_tests.cpp` validates the parser and the
      checked-in profile files

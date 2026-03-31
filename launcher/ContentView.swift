@@ -124,6 +124,9 @@ struct ContentView: View {
                 // Runtime Plan Card
                 runtimePlanCard
 
+                // Execution Prep Card
+                executionPrepCard
+
                 // Guided Action Card
                 guidedActionCard
 
@@ -651,6 +654,39 @@ struct ContentView: View {
         )
     }
 
+    private var executionPrepCard: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack {
+                Image(systemName: "terminal.fill")
+                    .font(.system(size: 13, weight: .bold))
+                    .foregroundColor(Color(hex: "22c55e"))
+                Text("Execution Prep")
+                    .font(.system(size: 13, weight: .bold, design: .monospaced))
+                    .foregroundColor(.white)
+            }
+
+            if vm.hasRuntimeExecutionPrep {
+                statusCallout(title: "Surface", message: vm.runtimeExecutionPrepSummary)
+                prepSnippetBlock(title: "Env", contents: vm.runtimeEnvironmentSnippetPreview)
+                prepSnippetBlock(title: "Command", contents: vm.runtimeLaunchCommandSnippetPreview)
+            } else {
+                Text("Import a launch-plan.json or bundle-manifest.json file to preview the concrete execution-prep surface in-app before copying or exporting it.")
+                    .font(.system(size: 11))
+                    .foregroundColor(Color(hex: "94a3b8"))
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+        .padding(14)
+        .background(
+            RoundedRectangle(cornerRadius: 10)
+                .fill(Color(hex: "111118"))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 10)
+                        .stroke(Color(hex: "1e2030"), lineWidth: 1)
+                )
+        )
+    }
+
     private func guidedActionStep(_ step: RuntimeGuidedActionPlan.Step) -> some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack(alignment: .top, spacing: 8) {
@@ -755,6 +791,30 @@ struct ContentView: View {
             Text(message)
                 .font(.system(size: 10))
                 .foregroundColor(Color(hex: "cbd5e1"))
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .padding(10)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(
+            RoundedRectangle(cornerRadius: 8)
+                .fill(Color(hex: "0d0d14"))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 8)
+                        .stroke(Color(hex: "1e2030"), lineWidth: 1)
+                )
+        )
+    }
+
+    private func prepSnippetBlock(title: String, contents: String) -> some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text(title)
+                .font(.system(size: 9, weight: .bold, design: .monospaced))
+                .foregroundColor(Color(hex: "22c55e"))
+
+            Text(contents)
+                .font(.system(size: 9, design: .monospaced))
+                .foregroundColor(Color(hex: "cbd5e1"))
+                .textSelection(.enabled)
                 .fixedSize(horizontal: false, vertical: true)
         }
         .padding(10)

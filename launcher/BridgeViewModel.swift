@@ -164,6 +164,30 @@ class BridgeViewModel: ObservableObject {
         )
     }
 
+    var hasRuntimeExecutionPrep: Bool {
+        runtimeLaunchPlan != nil || runtimeBundleManifest != nil
+    }
+
+    var runtimeExecutionPrepSummary: String {
+        if let runtimeLaunchPlan {
+            return runtimeLaunchPlan.launchSummary
+        }
+        if let runtimeBundleArtifactPreview {
+            return runtimeBundleArtifactPreview.launchScriptSummary
+        }
+        return "Import a runtime plan or runtime bundle to preview setup, environment, and launch surfaces."
+    }
+
+    var runtimeEnvironmentSnippetPreview: String {
+        buildRuntimeEnvironmentSnippet()
+            ?? "No imported launch-environment snippet is available yet. Import bundle-manifest.json to load exported launch scripts."
+    }
+
+    var runtimeLaunchCommandSnippetPreview: String {
+        buildRuntimeLaunchCommandSnippet()
+            ?? "No imported launch-command snippet is available yet. Import bundle-manifest.json to load exported launch scripts."
+    }
+
     // MARK: - Installation Check
 
     func checkInstallation() {
