@@ -101,6 +101,7 @@ That subtree exists in the repo, but it is not currently added by the root
 ### `docs`
 
 - source-of-truth repo status and execution docs
+- generated compatibility catalog doc synced from checked-in profiles
 - Mac runtime smoke-test runbook
 - CrossOver-competitor productization roadmap
 
@@ -116,6 +117,7 @@ That subtree exists in the repo, but it is not currently added by the root
 - Mac smoke-test automation and bundle collection
 - Windows/host-side local test entrypoint for Apple-free modules
 - profile-catalog export helper for JSON and human-readable compatibility reports
+- profile-catalog doc sync helper for the generated Markdown compatibility matrix
 - launch-plan export helper for JSON, human-readable reports, and wrapper scripts
 - intended to reduce ambiguity for the first dedicated hardware run
 

@@ -86,6 +86,8 @@ status. Use these files first:
   - Current two-week execution plan while Mac runtime testing is pending
 - `docs/PHASE4_CROSSOVER_COMPETITOR_ROADMAP.md`
   - Productization roadmap for the CrossOver-competitor path
+- `docs/GAME_COMPATIBILITY_CATALOG.md`
+  - Generated Markdown compatibility matrix derived from checked-in profiles
 - `docs/MAC_RUNTIME_SMOKE_TEST.md`
   - Canonical first-Mac smoke-test runbook and log-collection checklist
 - `CONTRIBUTING.md`
@@ -168,6 +170,7 @@ tests/                 Host-side unit tests for Apple-free modules
 - `docs/MILESTONES.md`
 - `docs/EXECUTION_PLAN.md`
 - `docs/PHASE4_CROSSOVER_COMPETITOR_ROADMAP.md`
+- `docs/GAME_COMPATIBILITY_CATALOG.md`
 - `docs/MAC_RUNTIME_SMOKE_TEST.md`
 - `CONTRIBUTING.md`
 - `SECURITY.md`

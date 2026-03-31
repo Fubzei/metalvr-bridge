@@ -106,6 +106,8 @@ These items are now checked in and verified in CI:
      launch-plan bundles from that same shared contract for future runtime glue
    - `scripts/export_profile_catalog.ps1` now exports the compatibility matrix as
      both JSON and a human-readable report bundle without Mac hardware
+   - `scripts/update_profile_catalog_doc.ps1` now regenerates the checked-in
+     `docs/GAME_COMPATIBILITY_CATALOG.md` file from the same profile catalog data
    - persisted JSON launch-plan bundles can now be loaded back into
      `src/common/runtime_launch_plan.*`, so future runtime or launcher glue can
      consume exported plans without re-solving compatibility profiles
