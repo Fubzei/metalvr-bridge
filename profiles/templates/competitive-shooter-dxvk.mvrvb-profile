@@ -1,0 +1,26 @@
+schema_version = 1
+profile_id = competitive-shooter-dxvk
+display_name = Competitive Shooter (DXVK Template)
+status = planning
+category = competitive-shooter
+default_renderer = dxvk
+fallback_renderers = d3dmetal, wined3d
+latency_sensitive = true
+competitive = true
+anti_cheat_risk = high
+notes = Planning template for latency-sensitive DXVK-backed titles. This is not a validated compatibility claim.
+
+[match]
+stores = battlenet, steam
+executables = Game.exe, Game-Win64-Shipping.exe
+
+[env]
+DXVK_HUD = 0
+MVRVB_PROFILE = competitive-shooter-dxvk
+
+[dll_overrides]
+d3d11 = native,builtin
+dxgi = native,builtin
+
+[launch]
+args = --fullscreen

@@ -8,6 +8,7 @@ FetchContent_Declare(
 FetchContent_MakeAvailable(googletest)
 
 add_executable(mvrvb_unit_tests
+    unit/compatibility_profile_tests.cpp
     unit/format_table_tests.cpp
     unit/icd_contract_tests.cpp
     unit/spirv_parser_tests.cpp

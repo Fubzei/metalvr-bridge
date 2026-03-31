@@ -4,6 +4,7 @@
 # Core docs and workflow
 /.github/ @Fubzei
 /docs/ @Fubzei
+/profiles/ @Fubzei
 /README.md @Fubzei
 /CONTRIBUTING.md @Fubzei
 /SECURITY.md @Fubzei

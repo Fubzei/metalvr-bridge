@@ -26,6 +26,9 @@ Windows game
 - A checked-in `tests/` harness now covers the SPIR-V parser, MSL emitter,
   format table, ICD contract checks, and extracted transfer helpers including
   range, slice, region-geometry, and transfer-format classification math.
+- A checked-in compatibility profile system now lives under `profiles/`, with
+  CI-backed parsing and validation in `src/common/compatibility_profile.*` and
+  `tests/unit/compatibility_profile_tests.cpp`.
 - First-pass runtime observability logs now cover instance, device, pipeline,
   swapchain, submit, present, command-replay boundaries, draw/dispatch
   state-flush summaries, transfer/secondary-command breadcrumbs, and
@@ -49,12 +52,16 @@ status. Use these files first:
   - Current milestone status and runtime-validation status
 - `docs/EXECUTION_PLAN.md`
   - Current two-week execution plan while Mac runtime testing is pending
+- `docs/PHASE4_CROSSOVER_COMPETITOR_ROADMAP.md`
+  - Productization roadmap for the CrossOver-competitor path
 - `docs/MAC_RUNTIME_SMOKE_TEST.md`
   - Canonical first-Mac smoke-test runbook and log-collection checklist
 - `CONTRIBUTING.md`
   - Workflow, conventions, and doc-update expectations
 - `SECURITY.md`
   - Security reporting and scope
+- `profiles/README.md`
+  - Compatibility profile vocabulary and file-format notes
 
 The GitHub Wiki is supplementary onboarding material. If the wiki and repository
 disagree, follow the repository.
@@ -115,6 +122,7 @@ src/
   vulkan_layer/        Active Vulkan ICD implementation
   vr_runtime/          Deferred VR-related code, not in active root build
 launcher/              SwiftUI macOS launcher app
+profiles/              Compatibility profile defaults, templates, and planning files
 scripts/               Mac smoke-test automation and future support scripts
 shaders/               Metal shader sources
 docs/                  Repository source-of-truth docs
@@ -126,9 +134,11 @@ tests/                 Host-side unit tests for Apple-free modules
 - `docs/REPO_MAP.md`
 - `docs/MILESTONES.md`
 - `docs/EXECUTION_PLAN.md`
+- `docs/PHASE4_CROSSOVER_COMPETITOR_ROADMAP.md`
 - `docs/MAC_RUNTIME_SMOKE_TEST.md`
 - `CONTRIBUTING.md`
 - `SECURITY.md`
+- `profiles/README.md`
 - `launcher/README.md`
 
 ## License

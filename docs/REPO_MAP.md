@@ -9,6 +9,7 @@ build surface.
 .github/
 docs/
 launcher/
+profiles/
 scripts/
 shaders/
 src/
@@ -48,6 +49,8 @@ That subtree exists in the repo, but it is not currently added by the root
   - GoogleTest-based unit coverage for parser, emitter, format-table logic,
     ICD contract checks, and extracted transfer helper logic including region geometry
     and transfer-format classification
+- `profiles/`
+  - checked-in compatibility profiles for future runtime and launcher policy
 
 ## Directories Not Currently Checked In
 
@@ -63,6 +66,7 @@ Do not describe that directory as present unless it is added in the same change.
 
 - logging
 - threading
+- compatibility-profile parser and loader
 - shared utility headers
 
 ### `src/shader_translator`
@@ -96,6 +100,14 @@ Do not describe that directory as present unless it is added in the same change.
 
 - source-of-truth repo status and execution docs
 - Mac runtime smoke-test runbook
+- CrossOver-competitor productization roadmap
+
+### `profiles`
+
+- compatibility profile defaults, templates, and planning files
+- intended to drive future runtime backend selection, launch args, env vars,
+  and DLL override policy
+- validated in CI through `src/common/compatibility_profile.*`
 
 ### `scripts`
 

@@ -18,10 +18,14 @@ Use and maintain these files as the canonical references:
   - Milestone and runtime-validation status
 - `docs/EXECUTION_PLAN.md`
   - The current short-term execution plan and ordering
+- `docs/PHASE4_CROSSOVER_COMPETITOR_ROADMAP.md`
+  - Productization roadmap for the CrossOver-competitor path
 - `docs/MAC_RUNTIME_SMOKE_TEST.md`
   - The canonical Mac smoke-test procedure and reporting bundle
 - `SECURITY.md`
   - Security policy and reporting
+- `profiles/README.md`
+  - Compatibility profile vocabulary and file-format notes
 - `launcher/README.md`
   - Launcher packaging and handoff flow
 
@@ -51,6 +55,7 @@ Examples:
 - Use `.mm` when the file talks to Metal, AppKit, CoreFoundation, or other Apple APIs.
 - Keep Swift confined to `launcher/`.
 - Keep Metal shader sources in `shaders/`.
+- Keep compatibility profiles in `profiles/`.
 - Keep smoke-test and support scripts in `scripts/`.
 - Follow the current logging macros in `src/common/logging.h`:
   - `MVRVB_LOG_TRACE`
@@ -68,8 +73,10 @@ Update docs when the matching area changes:
 - Update `docs/REPO_MAP.md` when directories, active targets, or ownership boundaries change.
 - Update `docs/MILESTONES.md` when milestone status or runtime-validation status changes.
 - Update `docs/EXECUTION_PLAN.md` when the near-term execution order changes.
+- Update `docs/PHASE4_CROSSOVER_COMPETITOR_ROADMAP.md` when productization scope or ordering changes.
 - Update `docs/MAC_RUNTIME_SMOKE_TEST.md` when the Mac validation procedure or required logs change.
 - Update `SECURITY.md` when reporting or security posture changes.
+- Update `profiles/README.md` when the compatibility profile format or vocabulary changes.
 - Update `launcher/README.md` when the launcher packaging flow changes.
 
 ## Pull Request Checklist
@@ -89,5 +96,7 @@ Before submitting a PR:
   with portable helper logic extracted into `src/vulkan_layer/commands/transfer_utils.*`.
 - `tests/` is now checked in and is intended for host-side unit coverage before
   Mac runtime validation.
+- `profiles/` is now checked in as the first product/runtime policy layer for
+  future backend selection and per-game tuning.
 - `scripts/mac_runtime_smoke_test.sh` is the canonical runnable entry point for
   the first dedicated Mac smoke-test pass.

@@ -67,6 +67,17 @@ These items are now checked in and verified in CI:
      the first-hardware report bundle
    - GitHub now has a dedicated Mac smoke-test issue template for reporting
    - green macOS CI runs now publish downloadable ICD and launcher installer artifacts
+4. Start the CrossOver-competitor product layer with host-safe pieces.
+   Scope:
+   - checked-in compatibility profiles
+   - CI validation of profile files
+   - future launcher/runtime integration points for backend, env, and launch policy
+   Progress:
+   - `src/common/compatibility_profile.*` now parses the profile format
+   - `profiles/` now holds defaults, templates, and planning profiles
+   - `tests/unit/compatibility_profile_tests.cpp` validates the parser and the
+     checked-in profile files
+   - GitHub now has a dedicated game-compatibility report template
 
 ## Exit Criteria
 

@@ -1,0 +1,27 @@
+schema_version = 1
+profile_id = overwatch-2
+display_name = Overwatch 2
+status = planning
+category = competitive-shooter
+default_renderer = dxvk
+fallback_renderers = d3dmetal, wined3d
+latency_sensitive = true
+competitive = true
+anti_cheat_risk = blocking
+notes = Planning profile only. This file captures intended runtime policy and should not be read as a current compatibility claim.
+
+[match]
+launchers = Battle.net
+stores = battlenet
+executables = Overwatch.exe, Overwatch Launcher.exe
+
+[env]
+DXVK_HUD = 0
+MVRVB_PROFILE = overwatch-2
+
+[dll_overrides]
+d3d11 = native,builtin
+dxgi = native,builtin
+
+[launch]
+args = --fullscreen
