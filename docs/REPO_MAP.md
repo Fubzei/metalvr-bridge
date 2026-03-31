@@ -8,6 +8,7 @@ build surface.
 ```text
 .github/
 docs/
+host-tests/
 launcher/
 profiles/
 scripts/
@@ -49,6 +50,8 @@ That subtree exists in the repo, but it is not currently added by the root
   - GoogleTest-based unit coverage for parser, emitter, format-table logic,
     ICD contract checks, and extracted transfer helper logic including region geometry
     and transfer-format classification
+- `host-tests/`
+  - non-Apple CMake entrypoint for running the Apple-free test surface locally
 - `profiles/`
   - checked-in compatibility profiles for future runtime and launcher policy
 
@@ -112,7 +115,14 @@ Do not describe that directory as present unless it is added in the same change.
 ### `scripts`
 
 - Mac smoke-test automation and bundle collection
+- Windows/host-side local test entrypoint for Apple-free modules
 - intended to reduce ambiguity for the first dedicated hardware run
+
+### `host-tests`
+
+- dedicated CMake entrypoint for non-Apple local checks
+- builds `src/common`, pure shader-translation modules, format-table helpers,
+  transfer helpers, and the shared GoogleTest unit surface without the Metal ICD target
 
 ### `shaders`
 

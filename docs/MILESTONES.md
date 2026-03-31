@@ -39,6 +39,7 @@ runtime validation.
 | macOS ICD CI build | PASSING | Compile and link checks are green |
 | macOS launcher CI build | PASSING | Swift launcher compiles |
 | Host-side unit tests | PASSING | Parser, emitter, format-table, ICD contract, and transfer-helper coverage including region geometry and transfer-format classification run in CI |
+| Local host-side checks | IN PLACE | `host-tests/CMakeLists.txt` and `scripts/run_host_checks.ps1` run the Apple-free unit surface on Windows/LLVM |
 | Compatibility profile validation | IN PLACE | Checked-in profile parser, runtime knobs, sample profiles, and auto-selection helper are covered in CI |
 | Runtime observability | IN PLACE | Instance, device, pipeline, swapchain, submit, present, replay-boundary, state-flush summary, transfer/secondary replay, and synchronization/unsupported-op logs are checked in |
 | Mac runtime runbook | IN PLACE | `docs/MAC_RUNTIME_SMOKE_TEST.md` and `scripts/mac_runtime_smoke_test.sh` define the first hardware validation pass |

@@ -26,6 +26,8 @@ Windows game
 - A checked-in `tests/` harness now covers the SPIR-V parser, MSL emitter,
   format table, ICD contract checks, and extracted transfer helpers including
   range, slice, region-geometry, and transfer-format classification math.
+- A checked-in `host-tests/` entrypoint plus `scripts/run_host_checks.ps1`
+  now let those Apple-free checks run locally on Windows with LLVM, CMake, and Ninja.
 - A checked-in compatibility profile system now lives under `profiles/`, with
   CI-backed parsing, auto-selection, and validation in
   `src/common/compatibility_profile.*` and
@@ -124,6 +126,7 @@ src/
   vr_runtime/          Deferred VR-related code, not in active root build
 launcher/              SwiftUI macOS launcher app
 profiles/              Compatibility profile defaults, templates, and planning files
+host-tests/            Host-only CMake entrypoint for Apple-free checks
 scripts/               Mac smoke-test automation and future support scripts
 shaders/               Metal shader sources
 docs/                  Repository source-of-truth docs

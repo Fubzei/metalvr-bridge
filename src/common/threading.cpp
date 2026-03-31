@@ -2,31 +2,35 @@
 #include "logging.h"
 
 #include <condition_variable>
+#include <cstdio>
+#include <queue>
+
+#if defined(__APPLE__)
 #include <mach/mach.h>
 #include <mach/mach_time.h>
 #include <mach/thread_act.h>
 #include <mach/thread_policy.h>
 #include <pthread.h>
-#include <queue>
 #include <sys/qos.h>
+#elif defined(_WIN32)
+#include <windows.h>
+#endif
 
 namespace mvrvb {
 
-// ── Real-time priority ───────────────────────────────────────────────────────
-
 bool setRealtimePriority(uint32_t periodNs, uint32_t computeNs, bool constrained) noexcept {
-    // Convert ns to absolute Mach time units.
+#if defined(__APPLE__)
     mach_timebase_info_data_t tb;
     mach_timebase_info(&tb);
     const double ns_per_abs = static_cast<double>(tb.numer) / static_cast<double>(tb.denom);
 
     thread_time_constraint_policy_data_t policy{};
-    policy.period      = static_cast<uint32_t>(periodNs  / ns_per_abs);
+    policy.period = static_cast<uint32_t>(periodNs / ns_per_abs);
     policy.computation = static_cast<uint32_t>(computeNs / ns_per_abs);
-    policy.constraint  = policy.computation * 2;
+    policy.constraint = policy.computation * 2;
     policy.preemptible = constrained ? TRUE : FALSE;
 
-    kern_return_t kr = thread_policy_set(
+    const kern_return_t kr = thread_policy_set(
         mach_thread_self(),
         THREAD_TIME_CONSTRAINT_POLICY,
         reinterpret_cast<thread_policy_t>(&policy),
@@ -38,27 +42,63 @@ bool setRealtimePriority(uint32_t periodNs, uint32_t computeNs, bool constrained
     }
     MVRVB_LOG_DEBUG("Thread promoted to real-time: period=%uns compute=%uns", periodNs, computeNs);
     return true;
+#else
+    (void)periodNs;
+    (void)computeNs;
+    (void)constrained;
+    MVRVB_LOG_DEBUG("setRealtimePriority is not supported on this host platform");
+    return false;
+#endif
 }
 
 bool setHighPriority(const char* name) noexcept {
+#if defined(__APPLE__)
     pthread_set_qos_class_self_np(QOS_CLASS_USER_INTERACTIVE, 0);
     setThreadName(name);
     return true;
+#elif defined(_WIN32)
+    setThreadName(name);
+    if (!SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_HIGHEST)) {
+        MVRVB_LOG_WARN("SetThreadPriority failed: error=%lu", GetLastError());
+        return false;
+    }
+    return true;
+#else
+    setThreadName(name);
+    return true;
+#endif
 }
 
 void setThreadName(const char* name) noexcept {
+#if defined(__APPLE__)
     pthread_setname_np(name);
+#elif defined(_WIN32)
+    using SetThreadDescriptionFn = HRESULT(WINAPI*)(HANDLE, PCWSTR);
+    const HMODULE kernel32 = GetModuleHandleW(L"Kernel32.dll");
+    if (!kernel32 || !name) return;
+
+    const auto setDescription =
+        reinterpret_cast<SetThreadDescriptionFn>(GetProcAddress(kernel32, "SetThreadDescription"));
+    if (!setDescription) return;
+
+    const int wideLen = MultiByteToWideChar(CP_UTF8, 0, name, -1, nullptr, 0);
+    if (wideLen <= 1) return;
+
+    std::wstring wideName(static_cast<size_t>(wideLen - 1), L'\0');
+    MultiByteToWideChar(CP_UTF8, 0, name, -1, wideName.data(), wideLen);
+    setDescription(GetCurrentThread(), wideName.c_str());
+#else
+    (void)name;
+#endif
 }
 
-// ── ThreadPool ───────────────────────────────────────────────────────────────
-
 struct ThreadPool::Impl {
-    std::mutex              mutex;
+    std::mutex mutex;
     std::condition_variable cv;
     std::condition_variable cvIdle;
     std::queue<std::function<void()>> tasks;
-    size_t                  activeTasks{0};
-    bool                    stopping{false};
+    size_t activeTasks{0};
+    bool stopping{false};
 };
 
 ThreadPool::ThreadPool(size_t numThreads, const char* namePrefix) {
@@ -67,7 +107,6 @@ ThreadPool::ThreadPool(size_t numThreads, const char* namePrefix) {
     m_threads.reserve(numThreads);
     for (size_t i = 0; i < numThreads; ++i) {
         m_threads.emplace_back([this, i, namePrefix] {
-            // Name this thread for Instruments.
             char nameBuf[32];
             std::snprintf(nameBuf, sizeof(nameBuf), "%s-%zu", namePrefix, i);
             setThreadName(nameBuf);
@@ -103,7 +142,9 @@ ThreadPool::~ThreadPool() {
         m_impl->stopping = true;
     }
     m_impl->cv.notify_all();
-    for (auto& t : m_threads) if (t.joinable()) t.join();
+    for (auto& t : m_threads) {
+        if (t.joinable()) t.join();
+    }
 }
 
 void ThreadPool::submit(std::function<void()> task) {
@@ -121,4 +162,4 @@ void ThreadPool::waitIdle() {
     });
 }
 
-} // namespace mvrvb
+}  // namespace mvrvb

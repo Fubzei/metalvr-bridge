@@ -26,8 +26,12 @@ target_link_libraries(mvrvb_unit_tests PRIVATE
 )
 
 target_compile_features(mvrvb_unit_tests PRIVATE cxx_std_20)
+set(MVRVB_TEST_SOURCE_ROOT "${CMAKE_SOURCE_DIR}")
+if(DEFINED MVRVB_REPO_ROOT)
+    set(MVRVB_TEST_SOURCE_ROOT "${MVRVB_REPO_ROOT}")
+endif()
 target_compile_definitions(mvrvb_unit_tests PRIVATE
-    MVRVB_SOURCE_ROOT="${CMAKE_SOURCE_DIR}"
+    MVRVB_SOURCE_ROOT="${MVRVB_TEST_SOURCE_ROOT}"
 )
 
 include(GoogleTest)

@@ -26,6 +26,8 @@ Use and maintain these files as the canonical references:
   - Security policy and reporting
 - `profiles/README.md`
   - Compatibility profile vocabulary and file-format notes
+- `host-tests/CMakeLists.txt`
+  - Local Apple-free test entrypoint expectations
 - `launcher/README.md`
   - Launcher packaging and handoff flow
 
@@ -77,6 +79,8 @@ Update docs when the matching area changes:
 - Update `docs/MAC_RUNTIME_SMOKE_TEST.md` when the Mac validation procedure or required logs change.
 - Update `SECURITY.md` when reporting or security posture changes.
 - Update `profiles/README.md` when the compatibility profile format or vocabulary changes.
+- Update `host-tests/CMakeLists.txt` or `scripts/run_host_checks.ps1` when the
+  Apple-free local-check flow changes.
 - Update `launcher/README.md` when the launcher packaging flow changes.
 
 ## Pull Request Checklist
@@ -98,5 +102,7 @@ Before submitting a PR:
   Mac runtime validation.
 - `profiles/` is now checked in as the first product/runtime policy layer for
   future backend selection and per-game tuning.
+- `host-tests/` is now checked in as the local non-Apple entrypoint for the
+  Apple-free unit surface.
 - `scripts/mac_runtime_smoke_test.sh` is the canonical runnable entry point for
   the first dedicated Mac smoke-test pass.

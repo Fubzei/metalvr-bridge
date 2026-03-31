@@ -57,6 +57,8 @@ These items are now checked in and verified in CI:
      same host-tested helper surface
    - transfer-format compatibility and pipeline-kind selection now shares that
      same host-tested helper surface
+   - `host-tests/CMakeLists.txt` plus `scripts/run_host_checks.ps1` now provide
+     a dedicated local Windows/LLVM entrypoint for the Apple-free unit surface
 3. Tighten the Mac smoke-test handoff where useful.
    Scope:
    - reduce ambiguity in tester instructions

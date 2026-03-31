@@ -17,9 +17,9 @@
 
 #include <atomic>
 #include <functional>
+#include <immintrin.h>
 #include <memory>
 #include <mutex>
-#include <pthread.h>
 #include <string>
 #include <thread>
 #include <vector>
@@ -53,13 +53,21 @@ public:
                 std::this_thread::yield();
                 spin = 0;
             } else {
-                __asm__ __volatile__("pause" ::: "memory");
+                relaxCpu();
             }
         }
     }
     void unlock() noexcept { m_flag.clear(std::memory_order_release); }
     bool tryLock() noexcept { return !m_flag.test_and_set(std::memory_order_acquire); }
 private:
+    static void relaxCpu() noexcept {
+#if defined(__i386__) || defined(__x86_64__) || defined(_M_IX86) || defined(_M_X64)
+        _mm_pause();
+#else
+        std::this_thread::yield();
+#endif
+    }
+
     std::atomic_flag m_flag = ATOMIC_FLAG_INIT;
 };
 
