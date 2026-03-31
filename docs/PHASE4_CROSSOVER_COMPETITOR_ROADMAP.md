@@ -206,6 +206,10 @@ The first checked-in Phase 4 deliverables are:
 - `launcher/BridgeViewModel.swift` and `launcher/ContentView.swift`
   - launcher-side execution-prep preview that surfaces imported environment and
     launch-command snippets inline before they are copied or exported
+- `launcher/BridgeViewModel.swift`, `launcher/RuntimeGuidedActionPlan.swift`,
+  and `launcher/ContentView.swift`
+  - launcher-side one-click setup and launch actions that execute imported bash
+    runtime scripts from the app and surface automation status in the UI/log
 - `scripts/update_ai_handoff_doc.ps1` and `scripts/export_ai_handoff_bundle.ps1`
   - direct update and export path for a carry-forward AI handoff package
 - `scripts/export_runtime_bundle.ps1`

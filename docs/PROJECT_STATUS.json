@@ -49,6 +49,7 @@
                            "launcher-runtime-bundle-artifact-preview",
                            "launcher-guided-runtime-actions",
                            "launcher-runtime-bundle-asset-actions",
+                           "launcher-runtime-one-click-actions",
                            "launcher-runtime-copy-helpers",
                            "launcher-runtime-prep-export",
                            "launcher-runtime-prep-preview"
@@ -61,7 +62,7 @@
                      ],
     "nextGate":  "Launcher triangle, vulkaninfo, and vkcube on Mac hardware.",
     "nextNonMacSteps":  [
-                            "Promote the shared runtime-plan contract into future launcher-side execution or wrapper flows now that import, preview, guided actions, copy helpers, prep-sheet export, and in-app prep preview are in place.",
+                            "Move from imported runtime bundles toward launcher-generated one-click onboarding for known profiles so setup does not depend on external export steps first.",
                             "Keep compatibility profiles and prefix presets governed through lint and docs.",
                             "Keep repo and wiki handoff docs aligned with the checked-in source of truth."
                         ],

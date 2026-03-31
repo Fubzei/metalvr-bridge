@@ -427,6 +427,78 @@ struct ContentView: View {
             }
 
             if vm.runtimeBundleManifest != nil {
+                statusCallout(title: "Automation", message: vm.runtimeAutomationStatus)
+
+                HStack(spacing: 8) {
+                    Button(action: { vm.runRuntimeBundleSetupScript() }) {
+                        HStack(spacing: 6) {
+                            Image(systemName: vm.runtimeAutomationRunning ? "hourglass" : "wand.and.stars")
+                                .font(.system(size: 10))
+                            Text(vm.runtimeAutomationRunning ? "Running..." : "Prepare Prefix")
+                                .font(.system(size: 10, weight: .semibold, design: .monospaced))
+                        }
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 8)
+                        .background(
+                            RoundedRectangle(cornerRadius: 8)
+                                .fill(Color(hex: "0d0d14"))
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 8)
+                                        .stroke(Color(hex: "1e2030"), lineWidth: 1)
+                                )
+                        )
+                        .foregroundColor(Color(hex: "cbd5e1"))
+                    }
+                    .buttonStyle(.plain)
+                    .disabled(!vm.canRunRuntimeBundleSetupScript || vm.runtimeAutomationRunning)
+
+                    Button(action: { vm.runRuntimeBundleLaunchScript() }) {
+                        HStack(spacing: 6) {
+                            Image(systemName: vm.runtimeAutomationRunning ? "hourglass" : "play.circle")
+                                .font(.system(size: 10))
+                            Text(vm.runtimeAutomationRunning ? "Running..." : "Run Launch")
+                                .font(.system(size: 10, weight: .semibold, design: .monospaced))
+                        }
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 8)
+                        .background(
+                            RoundedRectangle(cornerRadius: 8)
+                                .fill(Color(hex: "0d0d14"))
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 8)
+                                        .stroke(Color(hex: "1e2030"), lineWidth: 1)
+                                )
+                        )
+                        .foregroundColor(Color(hex: "cbd5e1"))
+                    }
+                    .buttonStyle(.plain)
+                    .disabled(!vm.canRunRuntimeBundleLaunchScript || vm.runtimeAutomationRunning)
+                }
+
+                if vm.runtimeAutomationRunning {
+                    Button(action: { vm.cancelRuntimeAutomation() }) {
+                        HStack(spacing: 6) {
+                            Image(systemName: "stop.circle")
+                                .font(.system(size: 10))
+                            Text("Cancel Running Action")
+                                .font(.system(size: 10, weight: .semibold, design: .monospaced))
+                        }
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 8)
+                        .background(
+                            RoundedRectangle(cornerRadius: 8)
+                                .fill(Color(hex: "180f12"))
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 8)
+                                        .stroke(Color(hex: "7f1d1d"), lineWidth: 1)
+                                )
+                        )
+                        .foregroundColor(Color(hex: "fecaca"))
+                    }
+                    .buttonStyle(.plain)
+                    .disabled(!vm.canCancelRuntimeAutomation)
+                }
+
                 HStack(spacing: 8) {
                     Button(action: { vm.revealRuntimeBundleAssets() }) {
                         HStack(spacing: 6) {
@@ -667,6 +739,7 @@ struct ContentView: View {
 
             if vm.hasRuntimeExecutionPrep {
                 statusCallout(title: "Surface", message: vm.runtimeExecutionPrepSummary)
+                statusCallout(title: "Automation", message: vm.runtimeAutomationStatus)
                 prepSnippetBlock(title: "Env", contents: vm.runtimeEnvironmentSnippetPreview)
                 prepSnippetBlock(title: "Command", contents: vm.runtimeLaunchCommandSnippetPreview)
             } else {

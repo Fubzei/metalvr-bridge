@@ -138,6 +138,10 @@ These items are now checked in and verified in CI:
    - `launcher/BridgeViewModel.swift` and `launcher/ContentView.swift` now
      also preview that same imported execution-prep surface inline so testers
      can inspect the env and command snippets before copying or exporting them
+   - `launcher/BridgeViewModel.swift`, `launcher/RuntimeGuidedActionPlan.swift`,
+     and `launcher/ContentView.swift` now also run imported bash setup and
+     launch scripts from the app so the product layer can move from preview-only
+     to actual one-click runtime actions without waiting for the full runtime wrapper
    - `profiles/` now holds defaults, templates, and planning profiles
    - `tests/unit/compatibility_profile_tests.cpp` validates the parser and the
      checked-in profile files

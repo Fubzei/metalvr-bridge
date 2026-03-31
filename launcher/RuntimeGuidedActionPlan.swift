@@ -11,8 +11,8 @@ struct RuntimeGuidedActionPlan {
     enum Action {
         case importJson
         case openChecklist
-        case openSetupScript
-        case openLaunchScript
+        case runSetupScript
+        case runLaunchScript
         case copyEnvironment
         case copyLaunchCommand
         case savePrepSheet
@@ -143,26 +143,26 @@ struct RuntimeGuidedActionPlan {
                 || !runtimeLaunchPlan.install.winetricks.isEmpty {
                 steps.append(
                     Step(
-                        id: "review-setup-script",
-                        title: "Inspect Setup Automation",
+                        id: "run-setup-script",
+                        title: "Prepare The Prefix",
                         detail: runtimeBundleArtifactPreview?.setupScriptSummary
-                            ?? "Open the generated setup script before touching the prefix.",
+                            ?? "Run the generated setup script to automate prefix/bootstrap work before launching the game.",
                         tone: .ready,
-                        action: .openSetupScript,
-                        actionLabel: "Open Setup"
+                        action: .runSetupScript,
+                        actionLabel: "Run Setup"
                     )
                 )
             }
 
             steps.append(
                 Step(
-                    id: "review-launch-script",
-                    title: "Inspect Launch Automation",
+                    id: "run-launch-script",
+                    title: "Run The Launch Flow",
                     detail: runtimeBundleArtifactPreview?.launchScriptSummary
-                        ?? "Open the generated launch script to see the working directory, environment, and command surface.",
+                        ?? "Run the generated launch script to execute the imported working directory, environment, and command surface.",
                     tone: .ready,
-                    action: .openLaunchScript,
-                    actionLabel: "Open Launch"
+                    action: .runLaunchScript,
+                    actionLabel: "Run Launch"
                 )
             )
 

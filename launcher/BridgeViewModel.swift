@@ -129,12 +129,16 @@ class BridgeViewModel: ObservableObject {
     @Published var bridgeStatus: BridgeStatus = .notInstalled
     @Published var testStatus: TestStatus = .idle
     @Published var testRunning: Bool = false
+    @Published var runtimeAutomationStatus: String = "Idle - import a runtime bundle to unlock one-click setup and launch."
+    @Published var runtimeAutomationRunning: Bool = false
     @Published var icdPath: String = ""
     @Published var triangleImageData: Data? = nil
 
     private let bridgeDylibName = "libMetalVRBridge.dylib"
     private let icdManifestName = "vulkan_icd.json"
     private var loadedRuntimeBundle: LoadedRuntimeBundleManifest?
+    private var activeRuntimeProcess: Process?
+    private var runtimeAutomationCancellationRequested = false
 
     init() {
         self.systemInfo = SystemInfo.gather()
@@ -186,6 +190,18 @@ class BridgeViewModel: ObservableObject {
     var runtimeLaunchCommandSnippetPreview: String {
         buildRuntimeLaunchCommandSnippet()
             ?? "No imported launch-command snippet is available yet. Import bundle-manifest.json to load exported launch scripts."
+    }
+
+    var canRunRuntimeBundleSetupScript: Bool {
+        preferredRuntimeSetupScriptUrl() != nil
+    }
+
+    var canRunRuntimeBundleLaunchScript: Bool {
+        preferredRuntimeLaunchScriptUrl() != nil
+    }
+
+    var canCancelRuntimeAutomation: Bool {
+        runtimeAutomationRunning && activeRuntimeProcess != nil
     }
 
     // MARK: - Installation Check
@@ -609,10 +625,19 @@ class BridgeViewModel: ObservableObject {
     }
 
     func resetRuntimeLaunchPlan() {
+        if let activeRuntimeProcess, activeRuntimeProcess.isRunning {
+            runtimeAutomationCancellationRequested = true
+            activeRuntimeProcess.terminate()
+            log(.info, "Stopped the active runtime automation while resetting the imported runtime bundle")
+        }
         runtimeBundleManifest = nil
         runtimeBundleManifestSource = ""
         runtimeBundleArtifactPreview = nil
         loadedRuntimeBundle = nil
+        runtimeAutomationStatus = "Idle - import a runtime bundle to unlock one-click setup and launch."
+        runtimeAutomationRunning = false
+        activeRuntimeProcess = nil
+        runtimeAutomationCancellationRequested = false
 
         if let loadedRuntimeBundle = RuntimeBundleManifestSnapshot.loadFirstAvailable() {
             applyRuntimeBundleManifest(loadedRuntimeBundle, logSuccess: false)
@@ -673,6 +698,7 @@ class BridgeViewModel: ObservableObject {
             text += "Runtime Bundle Lint: \(runtimeBundleArtifactPreview.lintSummary)\n"
             text += "Runtime Bundle Catalog: \(runtimeBundleArtifactPreview.compatibilityCatalogSummary)\n"
         }
+        text += "Runtime Automation: \(runtimeAutomationStatus)\n"
         text += String(repeating: "=", count: 72) + "\n\n"
 
         for entry in logs {
@@ -749,6 +775,44 @@ class BridgeViewModel: ObservableObject {
         copyTextToPasteboard(snippet, description: "runtime environment snippet")
     }
 
+    func runRuntimeBundleSetupScript() {
+        guard let scriptUrl = preferredRuntimeSetupScriptUrl() else {
+            log(.warn, "No runnable runtime setup script was available in the imported bundle")
+            runtimeAutomationStatus = "Setup script missing from the imported runtime bundle."
+            return
+        }
+
+        runRuntimeBundleShellScript(
+            displayName: "runtime setup automation",
+            scriptUrl: scriptUrl
+        )
+    }
+
+    func runRuntimeBundleLaunchScript() {
+        guard let scriptUrl = preferredRuntimeLaunchScriptUrl() else {
+            log(.warn, "No runnable runtime launch script was available in the imported bundle")
+            runtimeAutomationStatus = "Launch script missing from the imported runtime bundle."
+            return
+        }
+
+        runRuntimeBundleShellScript(
+            displayName: "runtime launch automation",
+            scriptUrl: scriptUrl
+        )
+    }
+
+    func cancelRuntimeAutomation() {
+        guard let activeRuntimeProcess, activeRuntimeProcess.isRunning else {
+            log(.warn, "No runtime automation is currently running")
+            return
+        }
+
+        runtimeAutomationCancellationRequested = true
+        runtimeAutomationStatus = "Cancelling runtime automation..."
+        activeRuntimeProcess.terminate()
+        log(.info, "Cancelling the active runtime automation")
+    }
+
     func saveRuntimeExecutionPrepSheet() {
         guard let prepText = buildRuntimeExecutionPrepSheet() else {
             log(.warn, "No runtime execution prep sheet is available to export")
@@ -797,10 +861,10 @@ class BridgeViewModel: ObservableObject {
             importRuntimeLaunchPlan()
         case .openChecklist:
             openRuntimeBundleChecklist()
-        case .openSetupScript:
-            openRuntimeBundleSetupScript()
-        case .openLaunchScript:
-            openRuntimeBundleLaunchScript()
+        case .runSetupScript:
+            runRuntimeBundleSetupScript()
+        case .runLaunchScript:
+            runRuntimeBundleLaunchScript()
         case .copyEnvironment:
             copyRuntimeEnvironmentSnippet()
         case .copyLaunchCommand:
@@ -900,6 +964,9 @@ class BridgeViewModel: ObservableObject {
         self.loadedRuntimeBundle = loadedRuntimeBundle
         runtimeBundleManifest = loadedRuntimeBundle.snapshot
         runtimeBundleManifestSource = loadedRuntimeBundle.sourceDescription
+        runtimeAutomationStatus = "Bundle ready - use Prepare Prefix or Run Launch for one-click runtime actions."
+        runtimeAutomationRunning = false
+        runtimeAutomationCancellationRequested = false
 
         if logSuccess {
             log(.pass, "Imported runtime bundle: \(loadedRuntimeBundle.snapshot.targetSummary)")
@@ -942,6 +1009,7 @@ class BridgeViewModel: ObservableObject {
             text += "Lint Summary: \(runtimeBundleArtifactPreview.lintSummary)\n"
             text += "Catalog Summary: \(runtimeBundleArtifactPreview.compatibilityCatalogSummary)\n"
         }
+        text += "Automation Status: \(runtimeAutomationStatus)\n"
         text += String(repeating: "=", count: 72) + "\n\n"
 
         appendRuntimeBundleSection(
@@ -1020,6 +1088,7 @@ class BridgeViewModel: ObservableObject {
             text += "Launch Scripts Summary: \(runtimeBundleArtifactPreview.launchScriptSummary)\n"
             text += "Lint Summary: \(runtimeBundleArtifactPreview.lintSummary)\n"
         }
+        text += "Automation Status: \(runtimeAutomationStatus)\n"
 
         if let nextGate = projectStatus?.nextGate {
             text += "Next Hardware Gate: \(nextGate)\n"
@@ -1101,24 +1170,26 @@ class BridgeViewModel: ObservableObject {
         return nil
     }
 
+    private func preferredRuntimeSetupScriptUrl() -> URL? {
+        resolvedRuntimeBundleAssetUrl(
+            for: [loadedRuntimeBundle?.snapshot.files.bashSetupScript].compactMap { $0 }
+        )
+    }
+
+    private func preferredRuntimeLaunchScriptUrl() -> URL? {
+        resolvedRuntimeBundleAssetUrl(
+            for: [loadedRuntimeBundle?.snapshot.files.bashLaunchScript].compactMap { $0 }
+        )
+    }
+
     private func preferredRuntimeLaunchScriptContents() -> String? {
-        guard let loadedRuntimeBundle else {
+        guard let scriptUrl = preferredRuntimeLaunchScriptUrl(),
+              let contents = try? String(contentsOf: scriptUrl, encoding: .utf8),
+              !contents.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
             return nil
         }
 
-        let preferredPaths = [
-            loadedRuntimeBundle.snapshot.files.bashLaunchScript,
-            loadedRuntimeBundle.snapshot.files.powershellLaunchScript
-        ]
-
-        for manifestPath in preferredPaths {
-            if let contents = readRuntimeBundleTextAsset(for: manifestPath),
-               !contents.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-                return contents
-            }
-        }
-
-        return nil
+        return contents
     }
 
     private func buildRuntimeLaunchCommandSnippet() -> String? {
@@ -1169,6 +1240,108 @@ class BridgeViewModel: ObservableObject {
         pasteboard.clearContents()
         pasteboard.setString(text, forType: .string)
         log(.info, "Copied \(description) to the clipboard")
+    }
+
+    private func runRuntimeBundleShellScript(
+        displayName: String,
+        scriptUrl: URL
+    ) {
+        guard !runtimeAutomationRunning else {
+            log(.warn, "Runtime automation is already running - wait for it to finish before starting another action")
+            return
+        }
+
+        let process = Process()
+        let standardOutput = Pipe()
+        let standardError = Pipe()
+        var standardOutputData = Data()
+        var standardErrorData = Data()
+        process.executableURL = URL(fileURLWithPath: "/bin/bash")
+        process.arguments = [scriptUrl.path]
+        process.currentDirectoryURL = scriptUrl.deletingLastPathComponent()
+        process.standardOutput = standardOutput
+        process.standardError = standardError
+
+        standardOutput.fileHandleForReading.readabilityHandler = { handle in
+            let data = handle.availableData
+            guard !data.isEmpty else {
+                handle.readabilityHandler = nil
+                return
+            }
+            standardOutputData.append(data)
+        }
+
+        standardError.fileHandleForReading.readabilityHandler = { handle in
+            let data = handle.availableData
+            guard !data.isEmpty else {
+                handle.readabilityHandler = nil
+                return
+            }
+            standardErrorData.append(data)
+        }
+
+        process.terminationHandler = { [weak self] finishedProcess in
+            standardOutput.fileHandleForReading.readabilityHandler = nil
+            standardError.fileHandleForReading.readabilityHandler = nil
+            standardOutputData.append(standardOutput.fileHandleForReading.readDataToEndOfFile())
+            standardErrorData.append(standardError.fileHandleForReading.readDataToEndOfFile())
+
+            let outputText = String(data: standardOutputData, encoding: .utf8)
+            let errorText = String(data: standardErrorData, encoding: .utf8)
+
+            Task { @MainActor in
+                self?.activeRuntimeProcess = nil
+                self?.runtimeAutomationRunning = false
+                self?.logScriptOutput(outputText, prefix: "[\(displayName)]", level: .debug)
+                self?.logScriptOutput(errorText, prefix: "[\(displayName)]", level: .warn)
+
+                if self?.runtimeAutomationCancellationRequested == true {
+                    self?.runtimeAutomationStatus = "Cancelled: \(displayName)"
+                    self?.log(.warn, "Cancelled \(displayName)")
+                } else if finishedProcess.terminationStatus == 0 {
+                    self?.runtimeAutomationStatus = "Completed: \(displayName)"
+                    self?.log(.pass, "Completed \(displayName)")
+                } else {
+                    self?.runtimeAutomationStatus = "Failed: \(displayName) (exit \(finishedProcess.terminationStatus))"
+                    self?.log(.fail, "Failed \(displayName) with exit code \(finishedProcess.terminationStatus)")
+                }
+
+                self?.runtimeAutomationCancellationRequested = false
+            }
+        }
+
+        do {
+            try process.run()
+            activeRuntimeProcess = process
+            runtimeAutomationRunning = true
+            runtimeAutomationCancellationRequested = false
+            runtimeAutomationStatus = "Running: \(displayName)"
+            log(.info, "Started \(displayName): \(scriptUrl.path)")
+        } catch {
+            runtimeAutomationStatus = "Failed to start: \(displayName)"
+            runtimeAutomationCancellationRequested = false
+            log(.error, "Failed to start \(displayName): \(error.localizedDescription)")
+        }
+    }
+
+    private func logScriptOutput(
+        _ text: String?,
+        prefix: String,
+        level: LogEntry.LogLevel
+    ) {
+        guard let text,
+              !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+            return
+        }
+
+        let lines = text.components(separatedBy: .newlines)
+        for line in lines {
+            let trimmed = line.trimmingCharacters(in: .whitespacesAndNewlines)
+            if trimmed.isEmpty {
+                continue
+            }
+            log(level, "\(prefix) \(trimmed)")
+        }
     }
 
     private func dateStamp() -> String {
