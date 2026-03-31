@@ -49,11 +49,16 @@ RuntimeLaunchPlanResult loadRuntimeLaunchPlanJson(const std::filesystem::path& p
 std::string summarizeRuntimeLaunchPlan(const RuntimeLaunchPlan& plan);
 std::string describeRuntimeLaunchPlan(const RuntimeLaunchPlan& plan);
 std::string runtimeLaunchPlanToJson(const RuntimeLaunchPlan& plan);
+std::string runtimeLaunchPlanToMarkdownChecklist(const RuntimeLaunchPlan& plan);
 bool writeRuntimeLaunchPlanReport(
     const RuntimeLaunchPlan& plan,
     const std::filesystem::path& path,
     std::string* errorMessage = nullptr);
 bool writeRuntimeLaunchPlanJson(
+    const RuntimeLaunchPlan& plan,
+    const std::filesystem::path& path,
+    std::string* errorMessage = nullptr);
+bool writeRuntimeLaunchPlanMarkdownChecklist(
     const RuntimeLaunchPlan& plan,
     const std::filesystem::path& path,
     std::string* errorMessage = nullptr);

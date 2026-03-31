@@ -125,6 +125,19 @@ if(MVRVB_BUILD_TESTS)
   )
 
   add_test(
+    NAME runtime_plan_preview_overwatch_checklist
+    COMMAND mvrvb_runtime_plan_preview
+            --profiles-dir "${MVRVB_TOOLS_PROFILE_DIR}"
+            --exe "C:/Games/Overwatch/Overwatch.exe"
+            --launcher "Battle.net"
+            --store "battlenet"
+            --checklist
+  )
+  set_tests_properties(runtime_plan_preview_overwatch_checklist PROPERTIES
+    PASS_REGULAR_EXPRESSION "Prefix preset: `battlenet-shooter`"
+  )
+
+  add_test(
     NAME runtime_plan_preview_overwatch_json_file
     COMMAND "${CMAKE_COMMAND}"
             -DTOOL=$<TARGET_FILE:mvrvb_runtime_plan_preview>
@@ -148,6 +161,20 @@ if(MVRVB_BUILD_TESTS)
             -DLAUNCHER=Battle.net
             -DSTORE=battlenet
             -DEXPECTED_SUBSTRING=Selected\ profile:\ overwatch-2
+            -P "${MVRVB_TOOLS_VERIFY_SCRIPT}"
+  )
+
+  add_test(
+    NAME runtime_plan_preview_overwatch_checklist_file
+    COMMAND "${CMAKE_COMMAND}"
+            -DTOOL=$<TARGET_FILE:mvrvb_runtime_plan_preview>
+            -DPROFILE_DIR=${MVRVB_TOOLS_PROFILE_DIR}
+            -DOUTPUT=${CMAKE_CURRENT_BINARY_DIR}/artifacts/overwatch.launch-plan.md
+            -DEXECUTABLE=C:/Games/Overwatch/Overwatch.exe
+            -DLAUNCHER=Battle.net
+            -DSTORE=battlenet
+            -DCHECKLIST=ON
+            -DEXPECTED_SUBSTRING=Prefix\ preset:\ `battlenet-shooter`
             -P "${MVRVB_TOOLS_VERIFY_SCRIPT}"
   )
 

@@ -47,14 +47,15 @@ Windows game
   or launcher glue.
 - A checked-in developer preview tool now lives in `tools/` so those runtime
   plans can be resolved and inspected locally before the launcher wiring is
-  complete, including machine-readable JSON export plus bash and PowerShell
-  wrapper-script generation for future runtime or launcher integration.
+  complete, including machine-readable JSON export, Markdown setup-checklist
+  export, and bash/PowerShell wrapper-script generation for future runtime or
+  launcher integration.
 - A checked-in compatibility catalog tool now lives in `tools/` so the repo can
   export a consistent compatibility matrix from the same checked-in profiles the
   runtime layer consumes, including JSON and Markdown views for docs/wiki reuse.
 - A checked-in export helper now lives in `scripts/export_runtime_plan.ps1` so
-  persisted JSON, human-readable reports, and wrapper scripts can be generated
-  from the same shared contract without Mac hardware.
+  persisted JSON, human-readable reports, Markdown setup checklists, and wrapper
+  scripts can be generated from the same shared contract without Mac hardware.
 - A companion export helper now lives in `scripts/export_profile_catalog.ps1` so
   JSON, report, and Markdown versions of the compatibility catalog can be generated
   without Mac hardware.

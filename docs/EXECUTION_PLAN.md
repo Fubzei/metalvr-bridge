@@ -103,8 +103,11 @@ These items are now checked in and verified in CI:
      launcher/runtime code can consume the shared launch-plan contract directly
    - the preview tool can now also emit bash or PowerShell wrapper scripts from
      either a fresh profile query or a previously exported JSON plan
-   - `scripts/export_runtime_plan.ps1` now produces persisted JSON plus human-readable
-     launch-plan bundles from that same shared contract for future runtime glue
+   - the same launch-plan layer can now emit a Markdown setup checklist so the
+     first Mac tester gets install/bootstrap guidance alongside launch details
+   - `scripts/export_runtime_plan.ps1` now produces persisted JSON, a human-readable
+     report, a Markdown setup checklist, and launch-script bundles from that same
+     shared contract for future runtime glue
    - `scripts/export_profile_catalog.ps1` now exports the compatibility matrix as
      both JSON and a human-readable report bundle without Mac hardware
    - `scripts/update_profile_catalog_doc.ps1` now regenerates the checked-in

@@ -956,6 +956,84 @@ std::string runtimeLaunchPlanToJson(const RuntimeLaunchPlan& plan) {
     return out.str();
 }
 
+std::string runtimeLaunchPlanToMarkdownChecklist(const RuntimeLaunchPlan& plan) {
+    std::ostringstream out;
+    out << "# Runtime Setup Checklist\n\n";
+    out << "Generated from the resolved MetalVR Bridge launch plan.\n\n";
+    out << "## Profile\n\n";
+    out << "- Selected profile: `" << plan.selectedProfileId << "`";
+    if (!plan.selectedDisplayName.empty()) {
+        out << " (" << plan.selectedDisplayName << ")";
+    }
+    out << "\n";
+    out << "- Backend: `" << rendererBackendName(plan.backend) << "`\n";
+    out << "- Fallback backends: ";
+    if (plan.fallbackBackends.empty()) {
+        out << "`(none)`\n";
+    } else {
+        for (size_t i = 0; i < plan.fallbackBackends.size(); ++i) {
+            if (i != 0) out << ", ";
+            out << "`" << rendererBackendName(plan.fallbackBackends[i]) << "`";
+        }
+        out << "\n";
+    }
+    out << "- Windows version intent: `" << plan.windowsVersion << "`\n";
+    out << "- Sync mode: `" << syncModeName(plan.syncMode) << "`\n";
+    out << "- High resolution mode: `" << (plan.highResolutionMode ? "true" : "false") << "`\n";
+    out << "- MetalFX upscaling: `" << (plan.metalFxUpscaling ? "true" : "false") << "`\n";
+    out << "- Anti-cheat risk: `" << antiCheatRiskName(plan.antiCheatRisk) << "`\n\n";
+
+    out << "## Setup\n\n";
+    out << "- Prefix preset: `" << plan.install.prefixPreset << "`\n";
+    out << "- Requires launcher bootstrap: `" << (plan.install.requiresLauncher ? "true" : "false")
+        << "`\n";
+    out << "- Install packages: ";
+    if (plan.install.packages.empty()) {
+        out << "`(none)`\n";
+    } else {
+        for (size_t i = 0; i < plan.install.packages.size(); ++i) {
+            if (i != 0) out << ", ";
+            out << "`" << plan.install.packages[i] << "`";
+        }
+        out << "\n";
+    }
+    out << "- Winetricks verbs: ";
+    if (plan.install.winetricks.empty()) {
+        out << "`(none)`\n";
+    } else {
+        for (size_t i = 0; i < plan.install.winetricks.size(); ++i) {
+            if (i != 0) out << ", ";
+            out << "`" << plan.install.winetricks[i] << "`";
+        }
+        out << "\n";
+    }
+    out << "- Setup notes: ";
+    if (plan.install.notes.empty()) {
+        out << "`(none)`\n\n";
+    } else {
+        out << plan.install.notes << "\n\n";
+    }
+
+    out << "## Launch Surface\n\n";
+    out << "- Launch arguments: ";
+    if (plan.launchArgs.empty()) {
+        out << "`(none)`\n";
+    } else {
+        for (size_t i = 0; i < plan.launchArgs.size(); ++i) {
+            if (i != 0) out << ", ";
+            out << "`" << plan.launchArgs[i] << "`";
+        }
+        out << "\n";
+    }
+    out << "- Environment entries: `" << plan.environment.size() << "`\n";
+    out << "- DLL override entries: `" << plan.dllOverrides.size() << "`\n\n";
+
+    out << "## Notes\n\n";
+    out << "- This checklist is planning guidance until the title is runtime-validated on Mac hardware.\n";
+    out << "- Re-export the launch plan after profile changes so setup guidance stays aligned.\n";
+    return out.str();
+}
+
 bool writeRuntimeLaunchPlanReport(const RuntimeLaunchPlan& plan,
                                   const std::filesystem::path& path,
                                   std::string* errorMessage) {
@@ -966,6 +1044,12 @@ bool writeRuntimeLaunchPlanJson(const RuntimeLaunchPlan& plan,
                                 const std::filesystem::path& path,
                                 std::string* errorMessage) {
     return writeTextFile(path, runtimeLaunchPlanToJson(plan), errorMessage);
+}
+
+bool writeRuntimeLaunchPlanMarkdownChecklist(const RuntimeLaunchPlan& plan,
+                                             const std::filesystem::path& path,
+                                             std::string* errorMessage) {
+    return writeTextFile(path, runtimeLaunchPlanToMarkdownChecklist(plan), errorMessage);
 }
 
 }  // namespace mvrvb

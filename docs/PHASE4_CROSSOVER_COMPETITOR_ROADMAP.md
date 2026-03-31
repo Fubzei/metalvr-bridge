@@ -138,6 +138,7 @@ The first checked-in Phase 4 deliverables are:
   - host-safe compatibility database builder for JSON/report export from checked-in profiles
 - `src/common/runtime_launch_plan.*`
   - host-safe launch-plan builder that resolves backend/install/env/args/runtime policy from profiles
+  - now also emits a Markdown setup checklist for tester-facing install/bootstrap guidance
 - `src/common/runtime_launch_command.*`
   - host-safe launch-command materializer that turns a resolved plan into runnable
     command, environment, and wrapper-script output

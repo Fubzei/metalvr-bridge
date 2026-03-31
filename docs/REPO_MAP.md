@@ -136,8 +136,9 @@ That subtree exists in the repo, but it is not currently added by the root
   and can emit a human-readable report, machine-readable JSON, or Markdown matrix
 - `mvrvb_runtime_plan_preview` resolves a checked-in compatibility profile
   selection into backend, env, DLL override, and launch-argument output
-- supports human-readable summaries, machine-readable JSON output, and bash/PowerShell
-  wrapper-script generation for future launcher/runtime consumption
+- supports human-readable summaries, machine-readable JSON output, Markdown setup
+  checklists, and bash/PowerShell wrapper-script generation for future
+  launcher/runtime consumption
 - verified in host-side checks for stdout, file-output, persisted-plan reload,
   and script-generation modes
 

@@ -58,6 +58,9 @@ $bashPath = [System.IO.Path]::GetFullPath(
 $powerShellPath = [System.IO.Path]::GetFullPath(
     (Join-Path $baseDirectory ($baseName + ".ps1"))
 )
+$checklistPath = [System.IO.Path]::GetFullPath(
+    (Join-Path $baseDirectory ($baseName + ".md"))
+)
 
 $commonArgs = @(
     "--profiles-dir", $ProfilesDir,
@@ -78,6 +81,11 @@ if ($LASTEXITCODE -ne 0) {
 & $toolPath @commonArgs "--out" $reportPath | Out-Null
 if ($LASTEXITCODE -ne 0) {
     throw "Report launch-plan export failed with exit code $LASTEXITCODE"
+}
+
+& $toolPath @commonArgs "--checklist" "--out" $checklistPath | Out-Null
+if ($LASTEXITCODE -ne 0) {
+    throw "Checklist launch-plan export failed with exit code $LASTEXITCODE"
 }
 
 if ([string]::IsNullOrWhiteSpace($WineBinary)) {
@@ -108,5 +116,6 @@ if ($LASTEXITCODE -ne 0) {
 
 Write-Host "JSON launch plan:  $OutputPath"
 Write-Host "Report launch plan: $reportPath"
+Write-Host "Setup checklist:   $checklistPath"
 Write-Host "Bash launch script: $bashPath"
 Write-Host "PowerShell script:  $powerShellPath"

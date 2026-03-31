@@ -142,6 +142,25 @@ TEST(RuntimeLaunchPlan, JsonIncludesMachineReadableFields) {
     EXPECT_NE(json.find("\"launchArgs\":[\"--fullscreen\"]"), std::string::npos);
 }
 
+TEST(RuntimeLaunchPlan, MarkdownChecklistIncludesSetupGuidance) {
+    const auto result = buildRuntimeLaunchPlanFromDirectory(
+        repoRoot() / "profiles",
+        CompatibilityProfileQuery{
+            .executable = R"(C:\Games\Overwatch\Overwatch.exe)",
+            .launcher = "Battle.net",
+            .store = "battlenet",
+        });
+
+    ASSERT_TRUE(result) << result.errorMessage;
+    const std::string checklist = runtimeLaunchPlanToMarkdownChecklist(result.plan);
+
+    EXPECT_NE(checklist.find("# Runtime Setup Checklist"), std::string::npos);
+    EXPECT_NE(checklist.find("- Prefix preset: `battlenet-shooter`"), std::string::npos);
+    EXPECT_NE(checklist.find("- Requires launcher bootstrap: `true`"), std::string::npos);
+    EXPECT_NE(checklist.find("`battle.net`"), std::string::npos);
+    EXPECT_NE(checklist.find("Install Battle.net in the target prefix first"), std::string::npos);
+}
+
 TEST(RuntimeLaunchPlan, WritesJsonAndReportFiles) {
     const auto result = buildRuntimeLaunchPlanFromDirectory(
         repoRoot() / "profiles",
@@ -160,12 +179,16 @@ TEST(RuntimeLaunchPlan, WritesJsonAndReportFiles) {
 
     const auto jsonPath = tempRoot / "overwatch.launch-plan.json";
     const auto reportPath = tempRoot / "overwatch.launch-plan.txt";
+    const auto checklistPath = tempRoot / "overwatch.launch-plan.md";
     std::filesystem::remove(jsonPath, ec);
     std::filesystem::remove(reportPath, ec);
+    std::filesystem::remove(checklistPath, ec);
 
     std::string errorMessage;
     ASSERT_TRUE(writeRuntimeLaunchPlanJson(result.plan, jsonPath, &errorMessage)) << errorMessage;
     ASSERT_TRUE(writeRuntimeLaunchPlanReport(result.plan, reportPath, &errorMessage)) << errorMessage;
+    ASSERT_TRUE(writeRuntimeLaunchPlanMarkdownChecklist(result.plan, checklistPath, &errorMessage))
+        << errorMessage;
 
     std::ifstream jsonStream(jsonPath);
     ASSERT_TRUE(jsonStream.is_open());
@@ -187,8 +210,16 @@ TEST(RuntimeLaunchPlan, WritesJsonAndReportFiles) {
     EXPECT_NE(report.find("Selected profile: overwatch-2"), std::string::npos);
     EXPECT_NE(report.find("Launch arguments:"), std::string::npos);
 
+    std::ifstream checklistStream(checklistPath);
+    ASSERT_TRUE(checklistStream.is_open());
+    const std::string checklist((std::istreambuf_iterator<char>(checklistStream)),
+                                std::istreambuf_iterator<char>());
+    EXPECT_NE(checklist.find("# Runtime Setup Checklist"), std::string::npos);
+    EXPECT_NE(checklist.find("battlenet-shooter"), std::string::npos);
+
     std::filesystem::remove(jsonPath, ec);
     std::filesystem::remove(reportPath, ec);
+    std::filesystem::remove(checklistPath, ec);
 }
 
 TEST(RuntimeLaunchPlan, RejectsUnknownBackendInPersistedJson) {

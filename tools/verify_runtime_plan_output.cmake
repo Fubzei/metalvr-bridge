@@ -36,6 +36,10 @@ if(DEFINED JSON AND JSON)
   list(APPEND command "--json")
 endif()
 
+if(DEFINED CHECKLIST AND CHECKLIST)
+  list(APPEND command "--checklist")
+endif()
+
 if(DEFINED BASH AND BASH)
   list(APPEND command "--bash")
 endif()

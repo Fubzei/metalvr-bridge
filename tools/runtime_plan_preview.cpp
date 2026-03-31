@@ -22,6 +22,7 @@ void printUsage(std::ostream& out) {
         << "  --working-dir <path>   Working directory for generated launch scripts\n"
         << "  --out <path>           Write the resolved launch plan to a file instead of stdout\n"
         << "  --json                 Print the resolved launch plan as JSON\n"
+        << "  --checklist            Print the resolved launch plan as a Markdown setup checklist\n"
         << "  --bash                 Print a bash launch script instead of a plan summary\n"
         << "  --powershell           Print a PowerShell launch script instead of a plan summary\n"
         << "  --help                 Show this message\n";
@@ -38,6 +39,7 @@ int main(int argc, char** argv) {
     enum class OutputMode {
         Report,
         Json,
+        Checklist,
         Bash,
         PowerShell,
     };
@@ -60,6 +62,10 @@ int main(int argc, char** argv) {
         }
         if (arg == "--json") {
             outputMode = OutputMode::Json;
+            continue;
+        }
+        if (arg == "--checklist") {
+            outputMode = OutputMode::Checklist;
             continue;
         }
         if (arg == "--bash") {
@@ -180,6 +186,12 @@ int main(int argc, char** argv) {
             case OutputMode::Json:
                 ok = mvrvb::writeRuntimeLaunchPlanJson(result.plan, outputPath, &errorMessage);
                 break;
+            case OutputMode::Checklist:
+                ok = mvrvb::writeRuntimeLaunchPlanMarkdownChecklist(
+                    result.plan,
+                    outputPath,
+                    &errorMessage);
+                break;
             case OutputMode::Bash:
                 ok = mvrvb::writeRuntimeLaunchCommandBash(
                     launchCommand.command,
@@ -207,6 +219,9 @@ int main(int argc, char** argv) {
     switch (outputMode) {
         case OutputMode::Json:
             std::cout << mvrvb::runtimeLaunchPlanToJson(result.plan) << "\n";
+            break;
+        case OutputMode::Checklist:
+            std::cout << mvrvb::runtimeLaunchPlanToMarkdownChecklist(result.plan);
             break;
         case OutputMode::Bash:
             std::cout << mvrvb::renderRuntimeLaunchCommandBash(launchCommand.command);
