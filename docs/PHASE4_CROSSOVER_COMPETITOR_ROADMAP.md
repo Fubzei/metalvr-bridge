@@ -199,6 +199,10 @@ The first checked-in Phase 4 deliverables are:
   - launcher-side clipboard helpers that copy imported launch-environment and
     launch-command snippets so testers can move from guided actions into
     Terminal prep without reopening the exported scripts
+- `launcher/BridgeViewModel.swift`, `launcher/RuntimeGuidedActionPlan.swift`,
+  and `launcher/ContentView.swift`
+  - launcher-side execution-prep export that saves a concise risk/setup/env/
+    command sheet from imported runtime bundles for tester handoff
 - `scripts/update_ai_handoff_doc.ps1` and `scripts/export_ai_handoff_bundle.ps1`
   - direct update and export path for a carry-forward AI handoff package
 - `scripts/export_runtime_bundle.ps1`

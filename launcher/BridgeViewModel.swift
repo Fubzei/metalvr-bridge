@@ -725,6 +725,27 @@ class BridgeViewModel: ObservableObject {
         copyTextToPasteboard(snippet, description: "runtime environment snippet")
     }
 
+    func saveRuntimeExecutionPrepSheet() {
+        guard let prepText = buildRuntimeExecutionPrepSheet() else {
+            log(.warn, "No runtime execution prep sheet is available to export")
+            return
+        }
+
+        let panel = NSSavePanel()
+        panel.allowedContentTypes = [.plainText]
+        panel.nameFieldStringValue = "metalvr_runtime_prep_\(dateStamp()).txt"
+        panel.begin { response in
+            if response == .OK, let url = panel.url {
+                do {
+                    try prepText.write(to: url, atomically: true, encoding: .utf8)
+                    self.log(.info, "Runtime execution prep sheet saved to \(url.path)")
+                } catch {
+                    self.log(.error, "Failed to save runtime execution prep sheet: \(error.localizedDescription)")
+                }
+            }
+        }
+    }
+
     func saveRuntimeBundleReport() {
         guard let reportText = buildRuntimeBundleReport() else {
             log(.warn, "No imported runtime bundle report is available to export")
@@ -760,6 +781,8 @@ class BridgeViewModel: ObservableObject {
             copyRuntimeEnvironmentSnippet()
         case .copyLaunchCommand:
             copyRuntimeLaunchCommandSnippet()
+        case .savePrepSheet:
+            saveRuntimeExecutionPrepSheet()
         case .revealBundle:
             revealRuntimeBundleAssets()
         case .saveReport:
@@ -935,6 +958,64 @@ class BridgeViewModel: ObservableObject {
         appendRuntimeBundleSection(
             "PowerShell Launch Script",
             contents: readRuntimeBundleTextAsset(for: loadedRuntimeBundle.snapshot.files.powershellLaunchScript),
+            to: &text
+        )
+
+        return text
+    }
+
+    private func buildRuntimeExecutionPrepSheet() -> String? {
+        guard runtimeLaunchPlan != nil || runtimeBundleManifest != nil else {
+            return nil
+        }
+
+        var text = "MetalVR Bridge - Runtime Execution Prep\n"
+        text += "Generated: \(Date())\n"
+
+        if let runtimeLaunchPlan {
+            text += "Profile: \(runtimeLaunchPlan.selectedDisplayName)\n"
+            text += "Backend: \(runtimeLaunchPlan.backendSummary)\n"
+            text += "Prefix: \(runtimeLaunchPlan.appliedPrefixPresetDisplayName)\n"
+            text += "Runtime: \(runtimeLaunchPlan.runtimeSummary)\n"
+            text += "Risk: \(runtimeLaunchPlan.antiCheatRiskLabel)\n"
+            text += "Setup Summary: \(runtimeLaunchPlan.installSummary)\n"
+            text += "Launch Summary: \(runtimeLaunchPlan.launchSummary)\n"
+            text += "Plan Source: \(runtimeLaunchPlanSource)\n"
+        }
+
+        if let runtimeBundleManifest {
+            text += "Bundle Target: \(runtimeBundleManifest.targetSummary)\n"
+            text += "Bundle Summary: \(runtimeBundleManifest.bundleSummary)\n"
+            text += "Bundle Assets: \(runtimeBundleManifest.assetSummary)\n"
+            text += "Bundle Source: \(runtimeBundleManifestSource)\n"
+        }
+
+        if let runtimeBundleArtifactPreview {
+            text += "Checklist Summary: \(runtimeBundleArtifactPreview.checklistSummary)\n"
+            text += "Setup Scripts Summary: \(runtimeBundleArtifactPreview.setupScriptSummary)\n"
+            text += "Launch Scripts Summary: \(runtimeBundleArtifactPreview.launchScriptSummary)\n"
+            text += "Lint Summary: \(runtimeBundleArtifactPreview.lintSummary)\n"
+        }
+
+        if let nextGate = projectStatus?.nextGate {
+            text += "Next Hardware Gate: \(nextGate)\n"
+        }
+
+        text += String(repeating: "=", count: 72) + "\n\n"
+
+        appendRuntimeBundleSection(
+            "Environment Snippet",
+            contents: buildRuntimeEnvironmentSnippet(),
+            to: &text
+        )
+        appendRuntimeBundleSection(
+            "Launch Command Snippet",
+            contents: buildRuntimeLaunchCommandSnippet(),
+            to: &text
+        )
+        appendRuntimeBundleSection(
+            "Setup Checklist Summary",
+            contents: runtimeBundleArtifactPreview?.checklistSummary,
             to: &text
         )
 

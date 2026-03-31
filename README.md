@@ -101,7 +101,8 @@ Windows game
   in-app setup/checklist/lint/launch-script/catalog previews for imported
   runtime bundles, guided runtime actions sourced from the shared plan contract,
   reveal/open/export actions for imported runtime bundles, clipboard copy helpers
-  for imported launch-command and environment snippets, and
+  for imported launch-command and environment snippets, concise execution-prep
+  sheet export from the launcher, and
   diagnostic log export.
 - `scripts/mac_runtime_smoke_test.sh` now automates the first hardware smoke-test
   bundle so Mac-side validation is easier to execute and report.

@@ -512,6 +512,27 @@ struct ContentView: View {
                     .buttonStyle(.plain)
                 }
 
+                Button(action: { vm.saveRuntimeExecutionPrepSheet() }) {
+                    HStack(spacing: 6) {
+                        Image(systemName: "square.and.arrow.up.on.square")
+                            .font(.system(size: 10))
+                        Text("Save Prep Sheet")
+                            .font(.system(size: 10, weight: .semibold, design: .monospaced))
+                    }
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 8)
+                    .background(
+                        RoundedRectangle(cornerRadius: 8)
+                            .fill(Color(hex: "0d0d14"))
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 8)
+                                    .stroke(Color(hex: "1e2030"), lineWidth: 1)
+                            )
+                    )
+                    .foregroundColor(Color(hex: "cbd5e1"))
+                }
+                .buttonStyle(.plain)
+
                 Menu {
                     Button("Open Checklist") {
                         vm.openRuntimeBundleChecklist()

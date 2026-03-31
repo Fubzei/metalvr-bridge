@@ -15,6 +15,7 @@ struct RuntimeGuidedActionPlan {
         case openLaunchScript
         case copyEnvironment
         case copyLaunchCommand
+        case savePrepSheet
         case revealBundle
         case saveReport
         case runTriangleTest
@@ -184,6 +185,17 @@ struct RuntimeGuidedActionPlan {
                     tone: .ready,
                     action: .copyLaunchCommand,
                     actionLabel: "Copy Command"
+                )
+            )
+
+            steps.append(
+                Step(
+                    id: "save-prep-sheet",
+                    title: "Export A Prep Sheet",
+                    detail: "Save one concise execution-prep file that combines the imported setup summary, environment surface, launch command, and current risk markers for handoff or Terminal prep.",
+                    tone: .info,
+                    action: .savePrepSheet,
+                    actionLabel: "Save Prep"
                 )
             )
 
