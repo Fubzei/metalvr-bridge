@@ -115,6 +115,8 @@ status. Use these files first:
   - Productization roadmap for the CrossOver-competitor path
 - `docs/AI_HANDOFF.md`
   - Fastest repo-native resume file for AI coding helpers
+- `docs/PROJECT_STATUS.json`
+  - Machine-readable project status snapshot for tooling and AI handoff
 - `docs/GAME_COMPATIBILITY_CATALOG.md`
   - Generated Markdown compatibility matrix derived from checked-in profiles
 - `docs/MAC_RUNTIME_SMOKE_TEST.md`

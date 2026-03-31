@@ -105,6 +105,7 @@ That subtree exists in the repo, but it is not currently added by the root
 
 - source-of-truth repo status and execution docs
 - checked-in AI handoff doc for fast coding-agent resume
+- checked-in machine-readable project status snapshot
 - generated compatibility catalog doc synced from checked-in profiles
 - Mac runtime smoke-test runbook
 - CrossOver-competitor productization roadmap
@@ -131,6 +132,7 @@ That subtree exists in the repo, but it is not currently added by the root
   and setup/bootstrap scripts
 - runtime bundle export helper for one-directory tester handoff packages
 - AI handoff doc update and bundle export helpers for coding-agent continuity
+- machine-readable project-status update helper for tooling continuity
 - intended to reduce ambiguity for the first dedicated hardware run
 
 ### `host-tests`

@@ -45,14 +45,15 @@ MetalVR Bridge.
 Read these files in order before changing code:
 
 1. `docs/MILESTONES.md`
-2. `docs/EXECUTION_PLAN.md`
-3. `docs/REPO_MAP.md`
-4. `docs/PHASE4_CROSSOVER_COMPETITOR_ROADMAP.md`
-5. `docs/GAME_COMPATIBILITY_CATALOG.md`
-6. `docs/MAC_RUNTIME_SMOKE_TEST.md`
-7. `profiles/README.md`
-8. `README.md`
-9. `CONTRIBUTING.md`
+2. `docs/PROJECT_STATUS.json`
+3. `docs/EXECUTION_PLAN.md`
+4. `docs/REPO_MAP.md`
+5. `docs/PHASE4_CROSSOVER_COMPETITOR_ROADMAP.md`
+6. `docs/GAME_COMPATIBILITY_CATALOG.md`
+7. `docs/MAC_RUNTIME_SMOKE_TEST.md`
+8. `profiles/README.md`
+9. `README.md`
+10. `CONTRIBUTING.md`
 
 ## Most Useful Commands
 

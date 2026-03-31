@@ -93,6 +93,8 @@ These items are now checked in and verified in CI:
    - `docs/AI_HANDOFF.md`, `scripts/update_ai_handoff_doc.ps1`, and
      `scripts/export_ai_handoff_bundle.ps1` now provide a canonical AI resume
      path so any coding helper can pick up from the latest checked-in repo state
+   - `docs/PROJECT_STATUS.json` plus `scripts/update_project_status_json.ps1`
+     now provide the same state in machine-readable form for tooling or AI consumers
    - `profiles/` now holds defaults, templates, and planning profiles
    - `tests/unit/compatibility_profile_tests.cpp` validates the parser and the
      checked-in profile files

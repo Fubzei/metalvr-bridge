@@ -168,6 +168,8 @@ The first checked-in Phase 4 deliverables are:
   compatibility catalog, lint report, and manifest
 - `docs/AI_HANDOFF.md`
   - canonical checked-in resume brief for any AI coding helper
+- `docs/PROJECT_STATUS.json`
+  - machine-readable status snapshot for tooling and AI handoff
 - `scripts/update_ai_handoff_doc.ps1` and `scripts/export_ai_handoff_bundle.ps1`
   - direct update and export path for a carry-forward AI handoff package
 - persisted launch-plan JSON now round-trips through the shared runtime-plan layer,

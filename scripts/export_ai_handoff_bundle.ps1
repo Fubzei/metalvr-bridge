@@ -21,12 +21,17 @@ New-Item -ItemType Directory -Force -Path $OutputDir | Out-Null
 if (-not $?) {
     throw "AI handoff doc update failed with exit code $LASTEXITCODE"
 }
+& (Join-Path $repoRoot "scripts\update_project_status_json.ps1")
+if (-not $?) {
+    throw "Project status JSON update failed with exit code $LASTEXITCODE"
+}
 
 $docTargets = @(
     "README.md",
     "CONTRIBUTING.md",
     "SECURITY.md",
     "docs\AI_HANDOFF.md",
+    "docs\PROJECT_STATUS.json",
     "docs\REPO_MAP.md",
     "docs\MILESTONES.md",
     "docs\EXECUTION_PLAN.md",
@@ -74,6 +79,7 @@ $manifest = [ordered]@{
         "CONTRIBUTING.md",
         "SECURITY.md",
         "docs/AI_HANDOFF.md",
+        "docs/PROJECT_STATUS.json",
         "docs/REPO_MAP.md",
         "docs/MILESTONES.md",
         "docs/EXECUTION_PLAN.md",
