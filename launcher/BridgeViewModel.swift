@@ -154,6 +154,16 @@ class BridgeViewModel: ObservableObject {
         logRuntimeLaunchPlan()
     }
 
+    var guidedRuntimeActionPlan: RuntimeGuidedActionPlan {
+        RuntimeGuidedActionPlan.build(
+            projectStatus: projectStatus,
+            runtimeLaunchPlan: runtimeLaunchPlan,
+            runtimeBundleManifest: runtimeBundleManifest,
+            runtimeBundleArtifactPreview: runtimeBundleArtifactPreview,
+            compatibilityCatalogEntry: runtimeLaunchPlan.flatMap { compatibilityCatalog?.entry(for: $0.selectedProfileId) }
+        )
+    }
+
     // MARK: - Installation Check
 
     func checkInstallation() {
@@ -715,6 +725,25 @@ class BridgeViewModel: ObservableObject {
                     self.log(.error, "Failed to save runtime bundle report: \(error.localizedDescription)")
                 }
             }
+        }
+    }
+
+    func performGuidedRuntimeAction(_ action: RuntimeGuidedActionPlan.Action) {
+        switch action {
+        case .importJson:
+            importRuntimeLaunchPlan()
+        case .openChecklist:
+            openRuntimeBundleChecklist()
+        case .openSetupScript:
+            openRuntimeBundleSetupScript()
+        case .openLaunchScript:
+            openRuntimeBundleLaunchScript()
+        case .revealBundle:
+            revealRuntimeBundleAssets()
+        case .saveReport:
+            saveRuntimeBundleReport()
+        case .runTriangleTest:
+            runTriangleTest()
         }
     }
 

@@ -35,6 +35,7 @@ $status = [ordered]@{
         "launcher-runtime-plan-preview",
         "launcher-runtime-bundle-manifest-preview",
         "launcher-runtime-bundle-artifact-preview",
+        "launcher-guided-runtime-actions",
         "launcher-runtime-bundle-asset-actions"
     )
     notYetProven = @(
@@ -45,7 +46,7 @@ $status = [ordered]@{
     )
     nextGate = "Launcher triangle, vulkaninfo, and vkcube on Mac hardware."
     nextNonMacSteps = @(
-        "Seed future launcher execution flows from the shared runtime-plan contract so the product layer can graduate from preview/export tooling into guided runtime actions.",
+        "Add launcher copy/share helpers for concrete runtime commands and environment snippets so testers can move from guided actions into execution prep faster.",
         "Keep compatibility profiles and prefix presets governed through lint and docs.",
         "Keep repo and wiki handoff docs aligned with the checked-in source of truth."
     )

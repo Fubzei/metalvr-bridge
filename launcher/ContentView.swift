@@ -124,6 +124,9 @@ struct ContentView: View {
                 // Runtime Plan Card
                 runtimePlanCard
 
+                // Guided Action Card
+                guidedActionCard
+
                 // System Info Card
                 systemInfoCard
 
@@ -550,6 +553,117 @@ struct ContentView: View {
                 .foregroundColor(Color(hex: "cbd5e1"))
                 .lineLimit(1)
                 .truncationMode(.middle)
+        }
+    }
+
+    private var guidedActionCard: some View {
+        let plan = vm.guidedRuntimeActionPlan
+
+        return VStack(alignment: .leading, spacing: 12) {
+            HStack {
+                Image(systemName: "list.bullet.rectangle")
+                    .font(.system(size: 13, weight: .bold))
+                    .foregroundColor(Color(hex: "f97316"))
+                Text("Guided Path")
+                    .font(.system(size: 13, weight: .bold, design: .monospaced))
+                    .foregroundColor(.white)
+            }
+
+            statusCallout(title: "Headline", message: plan.headline)
+
+            ForEach(plan.steps) { step in
+                guidedActionStep(step)
+            }
+        }
+        .padding(14)
+        .background(
+            RoundedRectangle(cornerRadius: 10)
+                .fill(Color(hex: "111118"))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 10)
+                        .stroke(Color(hex: "1e2030"), lineWidth: 1)
+                )
+        )
+    }
+
+    private func guidedActionStep(_ step: RuntimeGuidedActionPlan.Step) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(alignment: .top, spacing: 8) {
+                Circle()
+                    .fill(guidedActionToneColor(step.tone))
+                    .frame(width: 8, height: 8)
+                    .padding(.top, 5)
+
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(step.title)
+                        .font(.system(size: 10, weight: .bold, design: .monospaced))
+                        .foregroundColor(.white)
+
+                    Text(step.detail)
+                        .font(.system(size: 10))
+                        .foregroundColor(Color(hex: "cbd5e1"))
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
+
+            if let action = step.action, let actionLabel = step.actionLabel {
+                Button(action: { vm.performGuidedRuntimeAction(action) }) {
+                    HStack(spacing: 6) {
+                        Image(systemName: guidedActionSymbol(step.tone))
+                            .font(.system(size: 10))
+                        Text(actionLabel)
+                            .font(.system(size: 10, weight: .semibold, design: .monospaced))
+                    }
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 8)
+                    .background(
+                        RoundedRectangle(cornerRadius: 8)
+                            .fill(Color(hex: "0d0d14"))
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 8)
+                                    .stroke(guidedActionToneColor(step.tone).opacity(0.35), lineWidth: 1)
+                            )
+                    )
+                    .foregroundColor(guidedActionToneColor(step.tone))
+                }
+                .buttonStyle(.plain)
+            }
+        }
+        .padding(10)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(
+            RoundedRectangle(cornerRadius: 8)
+                .fill(Color(hex: "0d0d14"))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 8)
+                        .stroke(Color(hex: "1e2030"), lineWidth: 1)
+                )
+        )
+    }
+
+    private func guidedActionToneColor(_ tone: RuntimeGuidedActionPlan.StepTone) -> Color {
+        switch tone {
+        case .ready:
+            return Color(hex: "22c55e")
+        case .attention:
+            return Color(hex: "f59e0b")
+        case .blocked:
+            return Color(hex: "ef4444")
+        case .info:
+            return Color(hex: "38bdf8")
+        }
+    }
+
+    private func guidedActionSymbol(_ tone: RuntimeGuidedActionPlan.StepTone) -> String {
+        switch tone {
+        case .ready:
+            return "checkmark.circle"
+        case .attention:
+            return "exclamationmark.triangle"
+        case .blocked:
+            return "xmark.circle"
+        case .info:
+            return "arrow.right.circle"
         }
     }
 

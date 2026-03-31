@@ -123,6 +123,10 @@ These items are now checked in and verified in CI:
      imported runtime-bundle folders in Finder, open checklist/setup/launch
      assets directly, and export combined runtime-bundle reports so testers can
      move from preview to action inside the app
+   - `launcher/RuntimeGuidedActionPlan.swift`, `launcher/BridgeViewModel.swift`,
+     and `launcher/ContentView.swift` now turn imported runtime plans and bundles
+     into ordered next-step actions so the product layer starts behaving like a
+     guided runtime rather than only a preview/export surface
    - `profiles/` now holds defaults, templates, and planning profiles
    - `tests/unit/compatibility_profile_tests.cpp` validates the parser and the
      checked-in profile files

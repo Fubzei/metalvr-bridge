@@ -38,6 +38,7 @@ Then:
    - RuntimeLaunchPlan.swift
    - RuntimeBundleManifest.swift
    - RuntimeBundleArtifactPreview.swift
+   - RuntimeGuidedActionPlan.swift
 
 2. Open Terminal, cd to that folder
 
@@ -60,5 +61,6 @@ file exported by `scripts/export_runtime_bundle.ps1`. Imported runtime bundles
 now also surface their checklist, setup-script, launch-script, lint, and
 compatibility-catalog previews in the app, and the launcher can reveal the
 bundle folder, open the imported bundle assets directly, or export a combined
-runtime-bundle report. If those files are missing, the app still works for the
-Metal hardware test.
+runtime-bundle report. The launcher also builds a guided action list from the
+shared runtime-plan contract so the tester sees ordered next steps. If those
+files are missing, the app still works for the Metal hardware test.

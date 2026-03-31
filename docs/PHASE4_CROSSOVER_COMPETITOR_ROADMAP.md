@@ -191,6 +191,9 @@ The first checked-in Phase 4 deliverables are:
   - launcher-side actions that reveal imported runtime-bundle folders, open
     imported checklist/setup/launch assets directly, and export combined
     runtime-bundle reports from the app
+- `launcher/RuntimeGuidedActionPlan.swift`
+  - launcher-side guided action planner that turns the shared runtime-plan
+    contract into ordered next steps and action buttons for testers
 - `scripts/update_ai_handoff_doc.ps1` and `scripts/export_ai_handoff_bundle.ps1`
   - direct update and export path for a carry-forward AI handoff package
 - `scripts/export_runtime_bundle.ps1`

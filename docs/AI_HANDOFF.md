@@ -31,7 +31,8 @@ MetalVR Bridge.
 - The launcher now also imports `bundle-manifest.json` exports from the shared
   runtime-bundle tooling, follows them to the referenced launch-plan payload,
   previews checklist/setup/launch/lint/catalog surfaces from the same bundle,
-  and can reveal, open, or export the imported bundle assets from the app.
+  can reveal, open, or export the imported bundle assets from the app, and
+  now derives guided runtime actions from the same shared plan contract.
 - A tester/runtime handoff bundle can be exported locally without Mac hardware.
 
 ## Not Yet Proven
@@ -83,8 +84,8 @@ bash scripts/mac_runtime_smoke_test.sh
 
 ## Best Next Non-Mac Priorities
 
-1. Seed future launcher execution flows from the shared runtime-plan contract so
-   the product layer can graduate from preview/export tooling into guided runtime actions.
+1. Add launcher copy/share helpers for concrete runtime commands and environment
+   snippets so testers can move from guided actions into execution prep faster.
 2. Keep the compatibility profile and prefix-preset governance strong as more games or
    templates are added.
 3. Keep the repo and generated docs aligned whenever the product/runtime surface changes.
