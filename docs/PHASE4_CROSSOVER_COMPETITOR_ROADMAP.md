@@ -165,7 +165,11 @@ The first checked-in Phase 4 deliverables are:
   - direct helper for validating profile and prefix-preset policy without a full host test run
 - `scripts/export_runtime_bundle.ps1`
   - one-command tester handoff bundle containing the launch plan, setup scripts,
-    compatibility catalog, lint report, and manifest
+  compatibility catalog, lint report, and manifest
+- `docs/AI_HANDOFF.md`
+  - canonical checked-in resume brief for any AI coding helper
+- `scripts/update_ai_handoff_doc.ps1` and `scripts/export_ai_handoff_bundle.ps1`
+  - direct update and export path for a carry-forward AI handoff package
 - persisted launch-plan JSON now round-trips through the shared runtime-plan layer,
   so future launcher/runtime code can consume exported bundles directly
 - the persisted launch-plan JSON contract is now schema-versioned for future

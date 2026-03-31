@@ -90,6 +90,9 @@ These items are now checked in and verified in CI:
    - `scripts/export_runtime_bundle.ps1` now packages launch-plan output,
      setup scripts, compatibility catalog exports, and lint results into one
      handoff directory for testers or future launcher/runtime glue
+   - `docs/AI_HANDOFF.md`, `scripts/update_ai_handoff_doc.ps1`, and
+     `scripts/export_ai_handoff_bundle.ps1` now provide a canonical AI resume
+     path so any coding helper can pick up from the latest checked-in repo state
    - `profiles/` now holds defaults, templates, and planning profiles
    - `tests/unit/compatibility_profile_tests.cpp` validates the parser and the
      checked-in profile files

@@ -80,6 +80,10 @@ Windows game
   `scripts/export_runtime_bundle.ps1`, packaging the launch plan, setup scripts,
   compatibility catalog, and lint report into one handoff directory for tester
   or future launcher/runtime flows.
+- A dedicated AI handoff bundle helper now lives in
+  `scripts/export_ai_handoff_bundle.ps1`, packaging the canonical repo docs,
+  lint output, and compatibility catalog into one carry-forward bundle for the
+  next coding agent.
 - Those persisted JSON plans can now also be loaded back through the shared
   launch-plan layer, so future runtime or launcher glue can consume exported
   plans without re-solving profiles.
@@ -109,6 +113,8 @@ status. Use these files first:
   - Current two-week execution plan while Mac runtime testing is pending
 - `docs/PHASE4_CROSSOVER_COMPETITOR_ROADMAP.md`
   - Productization roadmap for the CrossOver-competitor path
+- `docs/AI_HANDOFF.md`
+  - Fastest repo-native resume file for AI coding helpers
 - `docs/GAME_COMPATIBILITY_CATALOG.md`
   - Generated Markdown compatibility matrix derived from checked-in profiles
 - `docs/MAC_RUNTIME_SMOKE_TEST.md`
@@ -193,6 +199,7 @@ tests/                 Host-side unit tests for Apple-free modules
 - `docs/MILESTONES.md`
 - `docs/EXECUTION_PLAN.md`
 - `docs/PHASE4_CROSSOVER_COMPETITOR_ROADMAP.md`
+- `docs/AI_HANDOFF.md`
 - `docs/GAME_COMPATIBILITY_CATALOG.md`
 - `docs/MAC_RUNTIME_SMOKE_TEST.md`
 - `CONTRIBUTING.md`

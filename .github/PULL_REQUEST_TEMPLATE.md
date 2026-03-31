@@ -7,6 +7,7 @@ Describe what changed and why.
 - [ ] `README.md` updated if the high-level story, setup, or repo reality changed
 - [ ] `docs/REPO_MAP.md` updated if structure or active build surface changed
 - [ ] `docs/MILESTONES.md` updated if milestone or runtime status changed
+- [ ] `docs/AI_HANDOFF.md` updated if the current phase or next-step order changed
 - [ ] `CONTRIBUTING.md` updated if workflow or conventions changed
 - [ ] `SECURITY.md` updated if security posture or reporting changed
 - [ ] No source-of-truth doc updates were needed

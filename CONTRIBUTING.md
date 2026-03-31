@@ -20,6 +20,8 @@ Use and maintain these files as the canonical references:
   - The current short-term execution plan and ordering
 - `docs/PHASE4_CROSSOVER_COMPETITOR_ROADMAP.md`
   - Productization roadmap for the CrossOver-competitor path
+- `docs/AI_HANDOFF.md`
+  - Fast resume brief for future AI coding sessions
 - `docs/MAC_RUNTIME_SMOKE_TEST.md`
   - The canonical Mac smoke-test procedure and reporting bundle
 - `SECURITY.md`
@@ -76,12 +78,15 @@ Update docs when the matching area changes:
 - Update `docs/MILESTONES.md` when milestone status or runtime-validation status changes.
 - Update `docs/EXECUTION_PLAN.md` when the near-term execution order changes.
 - Update `docs/PHASE4_CROSSOVER_COMPETITOR_ROADMAP.md` when productization scope or ordering changes.
+- Update `docs/AI_HANDOFF.md` when the current phase, proven surface, or next-step order changes.
 - Update `docs/MAC_RUNTIME_SMOKE_TEST.md` when the Mac validation procedure or required logs change.
 - Update `SECURITY.md` when reporting or security posture changes.
 - Update `profiles/README.md` when the compatibility profile format or vocabulary changes.
 - Update `host-tests/CMakeLists.txt` or `scripts/run_host_checks.ps1` when the
   Apple-free local-check flow changes.
 - Update `scripts/run_profile_lint.ps1` when the direct profile-governance flow changes.
+- Update `scripts/update_ai_handoff_doc.ps1` or `scripts/export_ai_handoff_bundle.ps1`
+  when the AI handoff flow changes.
 - Update `launcher/README.md` when the launcher packaging flow changes.
 
 ## Pull Request Checklist
@@ -105,6 +110,8 @@ Before submitting a PR:
   future backend selection and per-game tuning.
 - `scripts/run_profile_lint.ps1` is the direct local entry point for profile
   and prefix-preset governance checks when you do not need the full host suite.
+- `docs/AI_HANDOFF.md` plus `scripts/export_ai_handoff_bundle.ps1` are the
+  preferred carry-forward surface for future AI coding sessions.
 - `src/common/runtime_launch_plan.*` is now the host-safe bridge from checked-in
   profiles to concrete launch decisions; keep it aligned with profile schema changes.
 - `host-tests/` is now checked in as the local non-Apple entrypoint for the
