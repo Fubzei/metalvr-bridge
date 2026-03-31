@@ -76,10 +76,12 @@ Windows game
 - A companion lint helper now lives in `scripts/run_profile_lint.ps1` so the
   checked-in profile and prefix-preset policy can be validated directly without
   waiting for the full host test suite.
-- A higher-level runtime bundle helper now lives in
-  `scripts/export_runtime_bundle.ps1`, packaging the launch plan, setup scripts,
-  compatibility catalog, and lint report into one handoff directory for tester
-  or future launcher/runtime flows.
+- A cross-platform runtime bundle builder now lives in
+  `tools/mvrvb_runtime_bundle_builder`, and `scripts/export_runtime_bundle.ps1`
+  now wraps that builder so launch plans, setup scripts, compatibility catalog,
+  and lint output can be packaged into one handoff directory for tester or
+  future launcher/runtime flows. When no prefix path is supplied, the exported
+  bundle now defaults to a portable self-contained `prefix/` directory.
 - A dedicated AI handoff bundle helper now lives in
   `scripts/export_ai_handoff_bundle.ps1`, packaging the canonical repo docs,
   lint output, and compatibility catalog into one carry-forward bundle for the

@@ -66,5 +66,8 @@ The launcher also builds a guided action list from the shared runtime-plan
 contract and can copy the imported environment block or launch command snippets
 to the clipboard, plus save a concise execution-prep sheet and preview that
 same execution-prep surface inline, so the tester sees ordered next steps and
-can move into Terminal prep faster. If those files are missing, the app still
-works for the Metal hardware test.
+can move into Terminal prep faster. Those exported bundles can now be generated
+through the cross-platform `mvrvb_runtime_bundle_builder` tool, and when no
+explicit prefix path is supplied they default to a portable self-contained
+`prefix/` directory inside the bundle. If those files are missing, the app
+still works for the Metal hardware test.

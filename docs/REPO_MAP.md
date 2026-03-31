@@ -159,6 +159,10 @@ That subtree exists in the repo, but it is not currently added by the root
   missing references, duplicate IDs, and ambiguous auto-match rules
 - `mvrvb_runtime_plan_preview` resolves a checked-in compatibility profile
   selection into backend, env, DLL override, and launch-argument output
+- `mvrvb_runtime_bundle_builder` packages launch-plan, setup-script,
+  compatibility-catalog, lint, and manifest output directly from the host-safe
+  C++ tooling layer, with a portable default `prefix/` directory for
+  self-contained runtime bundles
 - supports human-readable summaries, machine-readable JSON output, Markdown setup
   checklists, bash/PowerShell launch-script generation, and bash/PowerShell
   setup-script generation for future launcher/runtime consumption

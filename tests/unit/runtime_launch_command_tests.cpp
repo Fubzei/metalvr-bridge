@@ -40,7 +40,7 @@ TEST(RuntimeLaunchCommand, MaterializesWineCommandFromLaunchPlan) {
     ASSERT_EQ(result.command.arguments.size(), 2u);
     EXPECT_EQ(result.command.arguments[0], R"(C:\Games\Overwatch\Overwatch.exe)");
     EXPECT_EQ(result.command.arguments[1], "--fullscreen");
-    EXPECT_EQ(result.command.workingDirectory, R"(C:\Games\Overwatch)");
+    EXPECT_EQ(result.command.workingDirectory, ".");
     EXPECT_EQ(result.command.environment.at("WINEPREFIX"), R"(C:\Prefixes\Overwatch)");
     EXPECT_EQ(result.command.environment.at("WINEDLLOVERRIDES"),
               "d3d11=native,builtin;dxgi=native,builtin");
@@ -73,9 +73,21 @@ TEST(RuntimeLaunchCommand, BashScriptIncludesExportsAndExecInvocation) {
     EXPECT_NE(script.find("export MVRVB_PREFIX_PRESET='battlenet-shooter'"), std::string::npos);
     EXPECT_NE(script.find("export WINEDLLOVERRIDES='d3d11=native,builtin;dxgi=native,builtin'"),
               std::string::npos);
-    EXPECT_NE(script.find("cd 'C:\\Games\\Overwatch'"), std::string::npos);
+    EXPECT_NE(script.find("cd '.'"), std::string::npos);
     EXPECT_NE(script.find("exec 'wine' 'C:\\Games\\Overwatch\\Overwatch.exe' '--fullscreen'"),
               std::string::npos);
+}
+
+TEST(RuntimeLaunchCommand, PosixExecutableUsesParentAsWorkingDirectory) {
+    const RuntimeLaunchPlan plan = buildOverwatchPlan();
+    const auto result = materializeRuntimeLaunchCommand(
+        plan,
+        RuntimeLaunchRequest{
+            .executablePath = "/Games/Overwatch/Overwatch.exe",
+        });
+
+    ASSERT_TRUE(result) << result.errorMessage;
+    EXPECT_EQ(result.command.workingDirectory, "/Games/Overwatch");
 }
 
 TEST(RuntimeLaunchCommand, PowerShellScriptIncludesEnvironmentAndInvocation) {

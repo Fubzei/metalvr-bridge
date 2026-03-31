@@ -166,6 +166,10 @@ The first checked-in Phase 4 deliverables are:
 - `scripts/export_runtime_bundle.ps1`
   - one-command tester handoff bundle containing the launch plan, setup scripts,
   compatibility catalog, lint report, and manifest
+- `tools/mvrvb_runtime_bundle_builder`
+  - cross-platform runtime-bundle builder that generates the same bundle
+    directly from the host-safe tooling layer and defaults to a portable
+    self-contained `prefix/` path when none is supplied
 - `docs/AI_HANDOFF.md`
   - canonical checked-in resume brief for any AI coding helper
 - `docs/PROJECT_STATUS.json`
@@ -215,6 +219,10 @@ The first checked-in Phase 4 deliverables are:
 - `scripts/export_runtime_bundle.ps1`
   - runtime-bundle manifests now record portable relative asset paths so the
     exported bundle can move between machines without rewriting the manifest
+- `src/common/runtime_launch_command.*`
+  - now falls back to `.` instead of shell-invalid Windows `cd` targets when the
+    launch request starts from a Windows-style executable path and no explicit
+    host working directory is supplied
 - persisted launch-plan JSON now round-trips through the shared runtime-plan layer,
   so future launcher/runtime code can consume exported bundles directly
 - the persisted launch-plan JSON contract is now schema-versioned for future

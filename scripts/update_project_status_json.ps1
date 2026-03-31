@@ -28,6 +28,7 @@ $status = [ordered]@{
         "runtime-launch-plan-generation",
         "runtime-launch-command-generation",
         "runtime-setup-command-generation",
+        "runtime-bundle-builder",
         "runtime-bundle-export",
         "ai-handoff-doc-and-bundle",
         "launcher-project-status-snapshot",

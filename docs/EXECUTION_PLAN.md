@@ -87,9 +87,11 @@ These items are now checked in and verified in CI:
    - `src/common/profile_lint.*` plus `tools/mvrvb_profile_lint` now catch
      missing preset references, duplicate IDs, and ambiguous auto-match rules
      before runtime work depends on them
-   - `scripts/export_runtime_bundle.ps1` now packages launch-plan output,
-     setup scripts, compatibility catalog exports, and lint results into one
-     handoff directory for testers or future launcher/runtime glue
+   - `tools/mvrvb_runtime_bundle_builder` plus `scripts/export_runtime_bundle.ps1`
+     now package launch-plan output, setup scripts, compatibility catalog
+     exports, and lint results into one handoff directory for testers or future
+     launcher/runtime glue, with a portable default `prefix/` directory when no
+     explicit prefix path is supplied
    - `docs/AI_HANDOFF.md`, `scripts/update_ai_handoff_doc.ps1`, and
      `scripts/export_ai_handoff_bundle.ps1` now provide a canonical AI resume
      path so any coding helper can pick up from the latest checked-in repo state
@@ -142,6 +144,9 @@ These items are now checked in and verified in CI:
      and `launcher/ContentView.swift` now also run imported bash setup and
      launch scripts from the app so the product layer can move from preview-only
      to actual one-click runtime actions without waiting for the full runtime wrapper
+   - `src/common/runtime_launch_command.*` now avoids emitting shell-invalid
+     `cd C:\...` steps when a launch request starts from a Windows-style
+     executable path and no explicit host working directory is supplied
    - `profiles/` now holds defaults, templates, and planning profiles
    - `tests/unit/compatibility_profile_tests.cpp` validates the parser and the
      checked-in profile files

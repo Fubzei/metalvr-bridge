@@ -42,6 +42,18 @@ target_compile_definitions(mvrvb_profile_lint PRIVATE
     MVRVB_TOOLS_PROFILE_DIR="${MVRVB_TOOLS_PROFILE_DIR}"
 )
 
+add_executable(mvrvb_runtime_bundle_builder
+    runtime_bundle_builder.cpp
+)
+
+target_link_libraries(mvrvb_runtime_bundle_builder PRIVATE mvrvb_common)
+
+target_compile_features(mvrvb_runtime_bundle_builder PRIVATE cxx_std_20)
+
+target_compile_definitions(mvrvb_runtime_bundle_builder PRIVATE
+    MVRVB_TOOLS_PROFILE_DIR="${MVRVB_TOOLS_PROFILE_DIR}"
+)
+
 if(MVRVB_BUILD_TESTS)
   add_test(
     NAME profile_lint_help
@@ -126,6 +138,11 @@ if(MVRVB_BUILD_TESTS)
   add_test(
     NAME runtime_plan_preview_help
     COMMAND mvrvb_runtime_plan_preview --help
+  )
+
+  add_test(
+    NAME runtime_bundle_builder_help
+    COMMAND mvrvb_runtime_bundle_builder --help
   )
 
   add_test(
@@ -348,4 +365,14 @@ if(MVRVB_BUILD_TESTS)
               -P "${MVRVB_RUNTIME_BUNDLE_VERIFY_SCRIPT}"
     )
   endif()
+
+  add_test(
+    NAME runtime_bundle_builder_manifest
+    COMMAND "${CMAKE_COMMAND}"
+            -DTOOL=$<TARGET_FILE:mvrvb_runtime_bundle_builder>
+            -DPROFILE_DIR=${MVRVB_TOOLS_PROFILE_DIR}
+            -DOUTPUT_DIR=${CMAKE_CURRENT_BINARY_DIR}/artifacts/runtime-bundle-direct
+            -DEXPECTED_PREFIX=prefix
+            -P "${MVRVB_RUNTIME_BUNDLE_VERIFY_SCRIPT}"
+  )
 endif()

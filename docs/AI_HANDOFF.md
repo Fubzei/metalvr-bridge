@@ -20,8 +20,8 @@ MetalVR Bridge.
 - SPIR-V parser, MSL emitter, format-table logic, ICD contract checks, and extracted
   transfer helpers are covered in host-side tests.
 - Compatibility profiles, prefix presets, compatibility catalog export, launch-plan
-  generation, launch/setup script generation, and policy lint are all checked in and
-  host-verified.
+  generation, launch/setup script generation, runtime-bundle building, and policy
+  lint are all checked in and host-verified.
 - The launcher now consumes the bundled `docs/PROJECT_STATUS.json` snapshot so the
   Mac app reflects the same current phase and next gate tracked in the repo docs.
 - The launcher now also consumes the bundled `docs/GAME_COMPATIBILITY_CATALOG.json`
@@ -76,7 +76,7 @@ Compatibility/runtime exports:
 ```powershell
 powershell -ExecutionPolicy Bypass -File scripts\export_profile_catalog.ps1
 powershell -ExecutionPolicy Bypass -File scripts\export_runtime_plan.ps1 -Executable "C:/Games/Overwatch/Overwatch.exe" -Launcher "Battle.net" -Store "battlenet" -PrefixPath "C:/Prefixes/Overwatch"
-powershell -ExecutionPolicy Bypass -File scripts\export_runtime_bundle.ps1 -Executable "C:/Games/Overwatch/Overwatch.exe" -Launcher "Battle.net" -Store "battlenet" -PrefixPath "C:/Prefixes/Overwatch"
+powershell -ExecutionPolicy Bypass -File scripts\export_runtime_bundle.ps1 -Executable "C:/Games/Overwatch/Overwatch.exe" -Launcher "Battle.net" -Store "battlenet"
 ```
 
 Mac-side runtime validation when hardware is available:

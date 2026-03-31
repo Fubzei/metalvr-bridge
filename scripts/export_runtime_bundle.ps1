@@ -31,78 +31,36 @@ $ProfilesDir = [System.IO.Path]::GetFullPath($ProfilesDir)
 $OutputDir = [System.IO.Path]::GetFullPath($OutputDir)
 New-Item -ItemType Directory -Force -Path $OutputDir | Out-Null
 
-$launchPlanJsonName = "launch-plan.json"
-$launchPlanReportName = "launch-plan.txt"
-$setupChecklistName = "launch-plan.md"
-$bashSetupScriptName = "launch-plan.setup.sh"
-$powerShellSetupScriptName = "launch-plan.setup.ps1"
-$bashLaunchScriptName = "launch-plan.sh"
-$powerShellLaunchScriptName = "launch-plan.ps1"
-$catalogJsonName = "compatibility-catalog.json"
-$catalogReportName = "compatibility-catalog.txt"
-$catalogMarkdownName = "compatibility-catalog.md"
-$lintReportName = "profile-lint.txt"
-
-$launchPlanJson = Join-Path $OutputDir $launchPlanJsonName
-$catalogJson = Join-Path $OutputDir $catalogJsonName
-$lintReport = Join-Path $OutputDir $lintReportName
-$manifestPath = Join-Path $OutputDir "bundle-manifest.json"
-
-& (Join-Path $repoRoot "scripts\export_runtime_plan.ps1") `
-    -Executable $Executable `
-    -Launcher $Launcher `
-    -Store $Store `
-    -PrefixPath $PrefixPath `
-    -ProfilesDir $ProfilesDir `
-    -BuildDir $BuildDir `
-    -OutputPath $launchPlanJson
-if ($LASTEXITCODE -ne 0) {
-    throw "Runtime-plan bundle export failed with exit code $LASTEXITCODE"
-}
-
-& (Join-Path $repoRoot "scripts\export_profile_catalog.ps1") `
-    -ProfilesDir $ProfilesDir `
-    -BuildDir $BuildDir `
-    -OutputPath $catalogJson
-if ($LASTEXITCODE -ne 0) {
-    throw "Compatibility-catalog bundle export failed with exit code $LASTEXITCODE"
-}
-
-$lintArgs = @(
-    "-ExecutionPolicy", "Bypass",
-    "-File", (Join-Path $repoRoot "scripts\run_profile_lint.ps1"),
-    "-ProfilesDir", $ProfilesDir,
-    "-BuildDir", $BuildDir
-)
-$lintOutput = & powershell @lintArgs 2>&1
-if ($LASTEXITCODE -ne 0) {
-    throw "Profile lint bundle export failed with exit code $LASTEXITCODE"
-}
-$lintOutput | Set-Content -LiteralPath $lintReport
-
-$manifest = [ordered]@{
-    generatedAt = (Get-Date).ToString("o")
-    executable = $Executable
-    launcher = $Launcher
-    store = $Store
-    prefixPath = $PrefixPath
-    profilesDir = $ProfilesDir
-    files = [ordered]@{
-        launchPlanJson = $launchPlanJsonName
-        launchPlanReport = $launchPlanReportName
-        setupChecklist = $setupChecklistName
-        bashSetupScript = $bashSetupScriptName
-        powershellSetupScript = $powerShellSetupScriptName
-        bashLaunchScript = $bashLaunchScriptName
-        powershellLaunchScript = $powerShellLaunchScriptName
-        compatibilityCatalogJson = $catalogJsonName
-        compatibilityCatalogReport = $catalogReportName
-        compatibilityCatalogMarkdown = $catalogMarkdownName
-        profileLintReport = $lintReportName
+$toolPath = Join-Path $BuildDir "tools\mvrvb_runtime_bundle_builder.exe"
+if (-not (Test-Path $toolPath)) {
+    Write-Host "Runtime bundle builder not found; building host checks first..."
+    & (Join-Path $repoRoot "scripts\run_host_checks.ps1") -BuildDir $BuildDir
+    if ($LASTEXITCODE -ne 0) {
+        throw "Host-check build failed with exit code $LASTEXITCODE"
     }
 }
 
-$manifest | ConvertTo-Json -Depth 4 | Set-Content -LiteralPath $manifestPath
+$toolArgs = @(
+    "--profiles-dir", $ProfilesDir,
+    "--exe", $Executable,
+    "--out-dir", $OutputDir
+)
+if (-not [string]::IsNullOrWhiteSpace($Launcher)) {
+    $toolArgs += @("--launcher", $Launcher)
+}
+if (-not [string]::IsNullOrWhiteSpace($Store)) {
+    $toolArgs += @("--store", $Store)
+}
+if (-not [string]::IsNullOrWhiteSpace($PrefixPath)) {
+    $toolArgs += @("--prefix", $PrefixPath)
+}
+
+& $toolPath @toolArgs
+if ($LASTEXITCODE -ne 0) {
+    throw "Runtime bundle export failed with exit code $LASTEXITCODE"
+}
+
+$manifestPath = Join-Path $OutputDir "bundle-manifest.json"
 
 Write-Host "Runtime bundle directory: $OutputDir"
 Write-Host "Bundle manifest:         $manifestPath"

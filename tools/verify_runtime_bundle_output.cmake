@@ -1,15 +1,3 @@
-if(NOT DEFINED POWERSHELL_EXECUTABLE)
-  message(FATAL_ERROR "POWERSHELL_EXECUTABLE is required")
-endif()
-
-if(NOT DEFINED REPO_ROOT)
-  message(FATAL_ERROR "REPO_ROOT is required")
-endif()
-
-if(NOT DEFINED BUILD_DIR)
-  message(FATAL_ERROR "BUILD_DIR is required")
-endif()
-
 if(NOT DEFINED OUTPUT_DIR)
   message(FATAL_ERROR "OUTPUT_DIR is required")
 endif()
@@ -17,21 +5,51 @@ endif()
 file(REMOVE_RECURSE "${OUTPUT_DIR}")
 file(MAKE_DIRECTORY "${OUTPUT_DIR}")
 
-set(EXPORT_SCRIPT "${REPO_ROOT}/scripts/export_runtime_bundle.ps1")
-execute_process(
-  COMMAND "${POWERSHELL_EXECUTABLE}"
-          -ExecutionPolicy Bypass
-          -File "${EXPORT_SCRIPT}"
-          -Executable "C:/Games/Overwatch/Overwatch.exe"
-          -Launcher "Battle.net"
-          -Store "battlenet"
-          -PrefixPath "C:/Prefixes/Overwatch"
-          -BuildDir "${BUILD_DIR}"
-          -OutputDir "${OUTPUT_DIR}"
-  RESULT_VARIABLE export_result
-  OUTPUT_VARIABLE export_stdout
-  ERROR_VARIABLE export_stderr
-)
+if(DEFINED TOOL)
+  if(NOT DEFINED PROFILE_DIR)
+    message(FATAL_ERROR "PROFILE_DIR is required when TOOL is used")
+  endif()
+
+  execute_process(
+    COMMAND "${TOOL}"
+            --profiles-dir "${PROFILE_DIR}"
+            --exe "C:/Games/Overwatch/Overwatch.exe"
+            --launcher "Battle.net"
+            --store "battlenet"
+            --out-dir "${OUTPUT_DIR}"
+    RESULT_VARIABLE export_result
+    OUTPUT_VARIABLE export_stdout
+    ERROR_VARIABLE export_stderr
+  )
+else()
+  if(NOT DEFINED POWERSHELL_EXECUTABLE)
+    message(FATAL_ERROR "POWERSHELL_EXECUTABLE is required when TOOL is not set")
+  endif()
+
+  if(NOT DEFINED REPO_ROOT)
+    message(FATAL_ERROR "REPO_ROOT is required when TOOL is not set")
+  endif()
+
+  if(NOT DEFINED BUILD_DIR)
+    message(FATAL_ERROR "BUILD_DIR is required when TOOL is not set")
+  endif()
+
+  set(EXPORT_SCRIPT "${REPO_ROOT}/scripts/export_runtime_bundle.ps1")
+  execute_process(
+    COMMAND "${POWERSHELL_EXECUTABLE}"
+            -ExecutionPolicy Bypass
+            -File "${EXPORT_SCRIPT}"
+            -Executable "C:/Games/Overwatch/Overwatch.exe"
+            -Launcher "Battle.net"
+            -Store "battlenet"
+            -PrefixPath "C:/Prefixes/Overwatch"
+            -BuildDir "${BUILD_DIR}"
+            -OutputDir "${OUTPUT_DIR}"
+    RESULT_VARIABLE export_result
+    OUTPUT_VARIABLE export_stdout
+    ERROR_VARIABLE export_stderr
+  )
+endif()
 
 if(NOT export_result EQUAL 0)
   message(FATAL_ERROR
@@ -47,6 +65,21 @@ if(NOT EXISTS "${MANIFEST_PATH}")
 endif()
 
 file(READ "${MANIFEST_PATH}" manifest_contents)
+
+if(DEFINED EXPECTED_PREFIX)
+  string(
+    REGEX MATCH
+    "\"prefixPath\"[ \t\r\n]*:[ \t\r\n]*\"${EXPECTED_PREFIX}\""
+    matched_prefix
+    "${manifest_contents}"
+  )
+  if(NOT matched_prefix)
+    message(FATAL_ERROR
+      "Manifest did not contain the expected prefixPath value ${EXPECTED_PREFIX}\n"
+      "Manifest contents:\n${manifest_contents}"
+    )
+  endif()
+endif()
 
 set(expected_pairs
   "launchPlanJson|launch-plan.json"

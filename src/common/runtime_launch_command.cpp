@@ -1,5 +1,6 @@
 #include "runtime_launch_command.h"
 
+#include <cctype>
 #include <fstream>
 #include <sstream>
 #include <string_view>
@@ -69,8 +70,22 @@ std::string boolEnvValue(bool value) {
     return value ? "1" : "0";
 }
 
+bool looksLikeWindowsAbsolutePath(std::string_view value) {
+    if (value.size() >= 3 &&
+        std::isalpha(static_cast<unsigned char>(value[0])) &&
+        value[1] == ':' &&
+        (value[2] == '\\' || value[2] == '/')) {
+        return true;
+    }
+
+    return value.size() >= 2 && value[0] == '\\' && value[1] == '\\';
+}
+
 std::string defaultWorkingDirectoryForExecutable(std::string_view executablePath) {
     if (executablePath.empty()) return ".";
+    if (looksLikeWindowsAbsolutePath(executablePath)) {
+        return ".";
+    }
     const auto parent = std::filesystem::path(executablePath).parent_path();
     if (parent.empty()) return ".";
     return parent.string();
