@@ -74,11 +74,11 @@ also emit the same decision as JSON plus bash or PowerShell wrapper scripts for
 future launcher/runtime consumption.
 The checked-in `tools/mvrvb_profile_catalog` tool can also turn the whole
 profiles tree into a compatibility matrix so the repo can export one consistent
-JSON/report view of current planning, experimental, and validated states.
+JSON/report/Markdown view of current planning, experimental, and validated states.
 The companion `scripts/export_runtime_plan.ps1` helper can persist that plan as
 JSON, a human-readable report, and wrapper scripts on disk.
 The companion `scripts/export_profile_catalog.ps1` helper can persist the
-catalog as JSON plus a human-readable report on disk.
+catalog as JSON, a human-readable report, and a Markdown matrix on disk.
 Those JSON plans can now also be loaded back by the shared runtime-launch-plan
 layer, so exported bundles can become an input to future launcher/runtime flows.
 That persisted JSON contract is schema-versioned so future consumers can reject

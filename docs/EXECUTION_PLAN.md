@@ -78,7 +78,8 @@ These items are now checked in and verified in CI:
    Progress:
    - `src/common/compatibility_profile.*` now parses the profile format
    - `src/common/compatibility_catalog.*` now turns those checked-in profiles into
-     a compatibility matrix the repo can export as JSON or a human-readable report
+     a compatibility matrix the repo can export as JSON, a human-readable report,
+     or a Markdown matrix
    - `profiles/` now holds defaults, templates, and planning profiles
    - `tests/unit/compatibility_profile_tests.cpp` validates the parser and the
      checked-in profile files

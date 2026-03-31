@@ -60,11 +60,16 @@ CompatibilityCatalogResult buildCompatibilityCatalogFromDirectory(
 std::string summarizeCompatibilityCatalog(const CompatibilityCatalog& catalog);
 std::string describeCompatibilityCatalog(const CompatibilityCatalog& catalog);
 std::string compatibilityCatalogToJson(const CompatibilityCatalog& catalog);
+std::string compatibilityCatalogToMarkdown(const CompatibilityCatalog& catalog);
 bool writeCompatibilityCatalogReport(
     const CompatibilityCatalog& catalog,
     const std::filesystem::path& path,
     std::string* errorMessage = nullptr);
 bool writeCompatibilityCatalogJson(
+    const CompatibilityCatalog& catalog,
+    const std::filesystem::path& path,
+    std::string* errorMessage = nullptr);
+bool writeCompatibilityCatalogMarkdown(
     const CompatibilityCatalog& catalog,
     const std::filesystem::path& path,
     std::string* errorMessage = nullptr);

@@ -358,6 +358,71 @@ std::string compatibilityCatalogToJson(const CompatibilityCatalog& catalog) {
     return out.str();
 }
 
+std::string compatibilityCatalogToMarkdown(const CompatibilityCatalog& catalog) {
+    std::ostringstream out;
+    out << "# Compatibility Catalog\n\n";
+    out << "Generated from checked-in `.mvrvb-profile` files.\n\n";
+    out << "## Summary\n\n";
+    out << "- Total profiles: " << catalog.summary.totalProfiles << "\n";
+    out << "- Auto-match profiles: " << catalog.summary.autoMatchProfiles << "\n";
+    out << "- Template/manual profiles: " << catalog.summary.templateProfiles << "\n";
+    out << "- Competitive profiles: " << catalog.summary.competitiveProfiles << "\n";
+    out << "- Latency-sensitive profiles: " << catalog.summary.latencySensitiveProfiles << "\n\n";
+
+    out << "## Matrix\n\n";
+    out << "| Profile | Status | Category | Auto Match | Renderer | Stores/Launchers | Anti-Cheat | Notes |\n";
+    out << "|---|---|---|---|---|---|---|---|\n";
+    for (const auto& entry : catalog.entries) {
+        std::ostringstream identity;
+        bool first = true;
+        for (const auto& store : entry.match.stores) {
+            if (!first) identity << ", ";
+            identity << store;
+            first = false;
+        }
+        for (const auto& launcher : entry.match.launchers) {
+            if (!first) identity << ", ";
+            identity << launcher;
+            first = false;
+        }
+        if (first) {
+            identity << "(none)";
+        }
+
+        out << "| " << entry.displayName << " (`" << entry.profileId << "`)"
+            << " | " << profileStatusName(entry.status)
+            << " | " << (entry.category.empty() ? "uncategorized" : entry.category)
+            << " | " << (entry.allowAutoMatch ? "yes" : "no")
+            << " | " << rendererBackendName(entry.defaultRenderer)
+            << " | " << identity.str()
+            << " | " << antiCheatRiskName(entry.antiCheatRisk)
+            << " | " << entry.notes << " |\n";
+    }
+    out << "\n## Runtime Highlights\n\n";
+    for (const auto& entry : catalog.entries) {
+        out << "### " << entry.displayName << "\n\n";
+        out << "- Profile ID: `" << entry.profileId << "`\n";
+        out << "- Sync mode: `" << syncModeName(entry.runtime.syncMode) << "`\n";
+        out << "- High resolution mode: `" << (entry.runtime.highResolutionMode ? "true" : "false")
+            << "`\n";
+        out << "- MetalFX upscaling: `" << (entry.runtime.metalFxUpscaling ? "true" : "false")
+            << "`\n";
+        out << "- Launch args: ";
+        if (entry.launchArgs.empty()) {
+            out << "`(none)`\n";
+        } else {
+            for (size_t i = 0; i < entry.launchArgs.size(); ++i) {
+                if (i != 0) out << ", ";
+                out << "`" << entry.launchArgs[i] << "`";
+            }
+            out << "\n";
+        }
+        out << "- Environment entries: `" << entry.environmentCount << "`\n";
+        out << "- DLL override entries: `" << entry.dllOverrideCount << "`\n\n";
+    }
+    return out.str();
+}
+
 bool writeCompatibilityCatalogReport(const CompatibilityCatalog& catalog,
                                      const std::filesystem::path& path,
                                      std::string* errorMessage) {
@@ -368,6 +433,12 @@ bool writeCompatibilityCatalogJson(const CompatibilityCatalog& catalog,
                                    const std::filesystem::path& path,
                                    std::string* errorMessage) {
     return writeTextFile(path, compatibilityCatalogToJson(catalog), errorMessage);
+}
+
+bool writeCompatibilityCatalogMarkdown(const CompatibilityCatalog& catalog,
+                                       const std::filesystem::path& path,
+                                       std::string* errorMessage) {
+    return writeTextFile(path, compatibilityCatalogToMarkdown(catalog), errorMessage);
 }
 
 }  // namespace mvrvb

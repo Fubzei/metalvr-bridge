@@ -41,7 +41,7 @@ runtime validation.
 | Host-side unit tests | PASSING | Parser, emitter, format-table, ICD contract, and transfer-helper coverage including region geometry and transfer-format classification run in CI |
 | Local host-side checks | IN PLACE | `host-tests/CMakeLists.txt` and `scripts/run_host_checks.ps1` run the Apple-free unit surface on Windows/LLVM |
 | Compatibility profile validation | IN PLACE | Checked-in profile parser, runtime knobs, sample profiles, and auto-selection helper are covered in CI |
-| Compatibility catalog | IN PLACE | `src/common/compatibility_catalog.*`, `tools/mvrvb_profile_catalog`, and `scripts/export_profile_catalog.ps1` turn checked-in profiles into JSON/report compatibility outputs without Mac hardware |
+| Compatibility catalog | IN PLACE | `src/common/compatibility_catalog.*`, `tools/mvrvb_profile_catalog`, and `scripts/export_profile_catalog.ps1` turn checked-in profiles into JSON/report/Markdown compatibility outputs without Mac hardware |
 | Runtime launch-plan builder | IN PLACE | `src/common/runtime_launch_plan.*` resolves profiles into backend/env/args/runtime policy, can persist and reload schema-versioned JSON plans, and is covered in host tests |
 | Runtime launch-command materializer | IN PLACE | `src/common/runtime_launch_command.*` turns a resolved plan into a Wine-style command, environment block, and bash/PowerShell wrapper scripts without Mac hardware |
 | Runtime plan preview tool | IN PLACE | `tools/mvrvb_runtime_plan_preview` resolves a profile query into a concrete launch summary, JSON launch-plan payload, or bash/PowerShell wrapper script, can persist those outputs to disk, and can reload exported JSON plans without Mac hardware |

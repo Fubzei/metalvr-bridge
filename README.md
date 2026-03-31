@@ -50,13 +50,13 @@ Windows game
   wrapper-script generation for future runtime or launcher integration.
 - A checked-in compatibility catalog tool now lives in `tools/` so the repo can
   export a consistent compatibility matrix from the same checked-in profiles the
-  runtime layer consumes.
+  runtime layer consumes, including JSON and Markdown views for docs/wiki reuse.
 - A checked-in export helper now lives in `scripts/export_runtime_plan.ps1` so
   persisted JSON, human-readable reports, and wrapper scripts can be generated
   from the same shared contract without Mac hardware.
 - A companion export helper now lives in `scripts/export_profile_catalog.ps1` so
-  JSON and report versions of the compatibility catalog can be generated without
-  Mac hardware.
+  JSON, report, and Markdown versions of the compatibility catalog can be generated
+  without Mac hardware.
 - Those persisted JSON plans can now also be loaded back through the shared
   launch-plan layer, so future runtime or launcher glue can consume exported
   plans without re-solving profiles.

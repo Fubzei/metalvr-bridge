@@ -69,6 +69,18 @@ TEST(CompatibilityCatalog, JsonIncludesSummaryAndEntryFields) {
     EXPECT_NE(json.find("\"antiCheatRisk\":\"blocking\""), std::string::npos);
 }
 
+TEST(CompatibilityCatalog, MarkdownIncludesMatrixAndHighlights) {
+    const auto result = buildCompatibilityCatalogFromDirectory(repoRoot() / "profiles");
+
+    ASSERT_TRUE(result) << result.errorMessage;
+    const std::string markdown = compatibilityCatalogToMarkdown(result.catalog);
+
+    EXPECT_NE(markdown.find("# Compatibility Catalog"), std::string::npos);
+    EXPECT_NE(markdown.find("| Overwatch 2 (`overwatch-2`)"), std::string::npos);
+    EXPECT_NE(markdown.find("### Competitive Shooter (DXVK Template)"), std::string::npos);
+    EXPECT_NE(markdown.find("- Sync mode: `msync`"), std::string::npos);
+}
+
 TEST(CompatibilityCatalog, RejectsEmptyCatalogInput) {
     const auto result = buildCompatibilityCatalog({});
 

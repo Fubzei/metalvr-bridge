@@ -13,6 +13,7 @@ void printUsage(std::ostream& out) {
         << "  --profiles-dir <path>  Profile directory (defaults to the checked-in profiles tree)\n"
         << "  --out <path>           Write the catalog to a file instead of stdout\n"
         << "  --json                 Print the catalog as JSON\n"
+        << "  --markdown             Print the catalog as Markdown\n"
         << "  --help                 Show this message\n";
 }
 
@@ -21,7 +22,12 @@ void printUsage(std::ostream& out) {
 int main(int argc, char** argv) {
     std::filesystem::path profilesDir = MVRVB_TOOLS_PROFILE_DIR;
     std::filesystem::path outputPath;
-    bool jsonOutput = false;
+    enum class OutputMode {
+        Report,
+        Json,
+        Markdown,
+    };
+    OutputMode outputMode = OutputMode::Report;
 
     for (int i = 1; i < argc; ++i) {
         const std::string_view arg = argv[i];
@@ -39,7 +45,11 @@ int main(int argc, char** argv) {
             return 0;
         }
         if (arg == "--json") {
-            jsonOutput = true;
+            outputMode = OutputMode::Json;
+            continue;
+        }
+        if (arg == "--markdown") {
+            outputMode = OutputMode::Markdown;
             continue;
         }
         if (arg == "--out") {
@@ -71,9 +81,24 @@ int main(int argc, char** argv) {
     std::string errorMessage;
     if (!outputPath.empty()) {
         outputPath = std::filesystem::absolute(outputPath);
-        const bool ok = jsonOutput
-            ? mvrvb::writeCompatibilityCatalogJson(result.catalog, outputPath, &errorMessage)
-            : mvrvb::writeCompatibilityCatalogReport(result.catalog, outputPath, &errorMessage);
+        bool ok = false;
+        switch (outputMode) {
+            case OutputMode::Json:
+                ok = mvrvb::writeCompatibilityCatalogJson(result.catalog, outputPath, &errorMessage);
+                break;
+            case OutputMode::Markdown:
+                ok = mvrvb::writeCompatibilityCatalogMarkdown(
+                    result.catalog,
+                    outputPath,
+                    &errorMessage);
+                break;
+            case OutputMode::Report:
+                ok = mvrvb::writeCompatibilityCatalogReport(
+                    result.catalog,
+                    outputPath,
+                    &errorMessage);
+                break;
+        }
         if (!ok) {
             std::cerr << "Failed to write compatibility catalog: " << errorMessage << "\n";
             return 1;
@@ -82,10 +107,16 @@ int main(int argc, char** argv) {
         return 0;
     }
 
-    if (jsonOutput) {
-        std::cout << mvrvb::compatibilityCatalogToJson(result.catalog) << "\n";
-    } else {
-        std::cout << mvrvb::describeCompatibilityCatalog(result.catalog);
+    switch (outputMode) {
+        case OutputMode::Json:
+            std::cout << mvrvb::compatibilityCatalogToJson(result.catalog) << "\n";
+            break;
+        case OutputMode::Markdown:
+            std::cout << mvrvb::compatibilityCatalogToMarkdown(result.catalog);
+            break;
+        case OutputMode::Report:
+            std::cout << mvrvb::describeCompatibilityCatalog(result.catalog);
+            break;
     }
     return 0;
 }

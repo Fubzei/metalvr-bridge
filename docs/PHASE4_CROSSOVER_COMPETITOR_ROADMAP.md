@@ -86,7 +86,7 @@ Progress checked in so far:
 - `src/common/compatibility_catalog.*`
   - host-safe compatibility matrix builder derived from checked-in profile files
 - `tools/mvrvb_profile_catalog`
-  - export path for JSON or report-style compatibility outputs
+  - export path for JSON, report, or Markdown compatibility outputs
 - `scripts/export_profile_catalog.ps1`
   - host-safe helper for generating compatibility-catalog bundles on disk
 

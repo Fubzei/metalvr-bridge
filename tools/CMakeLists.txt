@@ -53,6 +53,16 @@ if(MVRVB_BUILD_TESTS)
   )
 
   add_test(
+    NAME profile_catalog_markdown
+    COMMAND mvrvb_profile_catalog
+            --profiles-dir "${MVRVB_TOOLS_PROFILE_DIR}"
+            --markdown
+  )
+  set_tests_properties(profile_catalog_markdown PROPERTIES
+    PASS_REGULAR_EXPRESSION "# Compatibility Catalog"
+  )
+
+  add_test(
     NAME profile_catalog_report_file
     COMMAND "${CMAKE_COMMAND}"
             -DTOOL=$<TARGET_FILE:mvrvb_profile_catalog>
@@ -70,6 +80,17 @@ if(MVRVB_BUILD_TESTS)
             -DOUTPUT=${CMAKE_CURRENT_BINARY_DIR}/artifacts/profile-catalog.json
             -DJSON=ON
             -DEXPECTED_SUBSTRING=\"profileId\":\"overwatch-2\"
+            -P "${MVRVB_PROFILE_CATALOG_VERIFY_SCRIPT}"
+  )
+
+  add_test(
+    NAME profile_catalog_markdown_file
+    COMMAND "${CMAKE_COMMAND}"
+            -DTOOL=$<TARGET_FILE:mvrvb_profile_catalog>
+            -DPROFILE_DIR=${MVRVB_TOOLS_PROFILE_DIR}
+            -DOUTPUT=${CMAKE_CURRENT_BINARY_DIR}/artifacts/profile-catalog.md
+            -DMARKDOWN=ON
+            -DEXPECTED_SUBSTRING=\#\ Compatibility\ Catalog
             -P "${MVRVB_PROFILE_CATALOG_VERIFY_SCRIPT}"
   )
 

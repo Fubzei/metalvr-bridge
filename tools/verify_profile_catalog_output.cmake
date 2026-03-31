@@ -24,6 +24,10 @@ if(DEFINED JSON AND JSON)
   list(APPEND command "--json")
 endif()
 
+if(DEFINED MARKDOWN AND MARKDOWN)
+  list(APPEND command "--markdown")
+endif()
+
 execute_process(
   COMMAND ${command}
   RESULT_VARIABLE result

@@ -38,6 +38,9 @@ $baseName = [System.IO.Path]::GetFileNameWithoutExtension($OutputPath)
 $reportPath = [System.IO.Path]::GetFullPath(
     (Join-Path $outputDirectory ($baseName + ".txt"))
 )
+$markdownPath = [System.IO.Path]::GetFullPath(
+    (Join-Path $outputDirectory ($baseName + ".md"))
+)
 
 $commonArgs = @(
     "--profiles-dir", $ProfilesDir
@@ -53,5 +56,11 @@ if ($LASTEXITCODE -ne 0) {
     throw "Report profile-catalog export failed with exit code $LASTEXITCODE"
 }
 
+& $toolPath @commonArgs "--markdown" "--out" $markdownPath | Out-Null
+if ($LASTEXITCODE -ne 0) {
+    throw "Markdown profile-catalog export failed with exit code $LASTEXITCODE"
+}
+
 Write-Host "JSON profile catalog:  $OutputPath"
 Write-Host "Report profile catalog: $reportPath"
+Write-Host "Markdown catalog:      $markdownPath"
