@@ -124,10 +124,14 @@ The first checked-in Phase 4 deliverables are:
 
 - `src/common/compatibility_profile.*`
   - CI-validated parser plus auto-selection helpers for runtime compatibility profiles
+- `src/common/runtime_launch_plan.*`
+  - host-safe launch-plan builder that resolves backend/env/args/runtime policy from profiles
 - `profiles/`
   - checked-in defaults, templates, and planning profiles with runtime-policy knobs
 - `tests/unit/compatibility_profile_tests.cpp`
   - regression coverage for parser behavior, checked-in files, and profile selection
+- `tests/unit/runtime_launch_plan_tests.cpp`
+  - regression coverage for merged launch-plan decisions
 - `.github/ISSUE_TEMPLATE/game-compatibility-report.yml`
   - standardized reporting for game-level outcomes
 

@@ -102,6 +102,8 @@ Before submitting a PR:
   Mac runtime validation.
 - `profiles/` is now checked in as the first product/runtime policy layer for
   future backend selection and per-game tuning.
+- `src/common/runtime_launch_plan.*` is now the host-safe bridge from checked-in
+  profiles to concrete launch decisions; keep it aligned with profile schema changes.
 - `host-tests/` is now checked in as the local non-Apple entrypoint for the
   Apple-free unit surface.
 - `scripts/mac_runtime_smoke_test.sh` is the canonical runnable entry point for

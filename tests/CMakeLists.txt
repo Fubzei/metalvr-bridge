@@ -11,6 +11,7 @@ add_executable(mvrvb_unit_tests
     unit/compatibility_profile_tests.cpp
     unit/format_table_tests.cpp
     unit/icd_contract_tests.cpp
+    unit/runtime_launch_plan_tests.cpp
     unit/spirv_parser_tests.cpp
     unit/spirv_to_msl_tests.cpp
     unit/transfer_utils_tests.cpp

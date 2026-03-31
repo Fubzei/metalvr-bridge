@@ -70,6 +70,7 @@ Do not describe that directory as present unless it is added in the same change.
 - logging
 - threading
 - compatibility-profile parser, loader, and selector
+- runtime launch-plan builder for launcher/runtime consumption
 - shared utility headers
 
 ### `src/shader_translator`

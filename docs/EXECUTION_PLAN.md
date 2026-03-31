@@ -82,6 +82,9 @@ These items are now checked in and verified in CI:
      checked-in profile files
    - the profile layer now models backend fallback, sync mode, high-resolution mode,
      MetalFX-upscaling intent, and auto-selection rules
+   - `src/common/runtime_launch_plan.*` now turns those profiles into a concrete
+     launch plan with backend, fallbacks, env vars, DLL overrides, launch args,
+     and runtime-policy settings
    - GitHub now has a dedicated game-compatibility report template
 
 ## Exit Criteria

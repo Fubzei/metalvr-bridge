@@ -1,6 +1,7 @@
 add_library(mvrvb_common STATIC
     compatibility_profile.cpp
     logging.cpp
+    runtime_launch_plan.cpp
     threading.cpp
 )
 
