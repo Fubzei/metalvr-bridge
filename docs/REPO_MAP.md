@@ -67,6 +67,7 @@ That subtree exists in the repo, but it is not currently added by the root
 - threading
 - compatibility-profile parser, loader, and selector
 - runtime launch-plan builder for launcher/runtime consumption
+- runtime launch-command materializer for wrapper-script generation
 - shared utility headers
 
 ### `src/shader_translator`
@@ -113,7 +114,7 @@ That subtree exists in the repo, but it is not currently added by the root
 
 - Mac smoke-test automation and bundle collection
 - Windows/host-side local test entrypoint for Apple-free modules
-- launch-plan export helper for JSON plus human-readable report bundles
+- launch-plan export helper for JSON, human-readable reports, and wrapper scripts
 - intended to reduce ambiguity for the first dedicated hardware run
 
 ### `host-tests`
@@ -128,9 +129,10 @@ That subtree exists in the repo, but it is not currently added by the root
 - host-safe developer tooling
 - `mvrvb_runtime_plan_preview` resolves a checked-in compatibility profile
   selection into backend, env, DLL override, and launch-argument output
-- supports both human-readable summaries and machine-readable JSON output for
-  future launcher/runtime consumption
-- verified in host-side checks for stdout, file-output, and persisted-plan reload modes
+- supports human-readable summaries, machine-readable JSON output, and bash/PowerShell
+  wrapper-script generation for future launcher/runtime consumption
+- verified in host-side checks for stdout, file-output, persisted-plan reload,
+  and script-generation modes
 
 ### `shaders`
 

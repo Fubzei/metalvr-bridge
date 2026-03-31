@@ -36,13 +36,17 @@ Windows game
   `src/common/runtime_launch_plan.*`, turning those profiles into backend,
   fallback, env, DLL-override, and launch-argument decisions that a launcher
   can consume.
+- A checked-in runtime launch-command materializer now lives in
+  `src/common/runtime_launch_command.*`, turning those plans into concrete
+  Wine-style command, environment, and wrapper-script output for future runtime
+  or launcher glue.
 - A checked-in developer preview tool now lives in `tools/` so those runtime
   plans can be resolved and inspected locally before the launcher wiring is
-  complete, including a machine-readable JSON export for future runtime or
-  launcher integration.
+  complete, including machine-readable JSON export plus bash and PowerShell
+  wrapper-script generation for future runtime or launcher integration.
 - A checked-in export helper now lives in `scripts/export_runtime_plan.ps1` so
-  persisted JSON and human-readable launch-plan bundles can be generated from
-  the same shared contract without Mac hardware.
+  persisted JSON, human-readable reports, and wrapper scripts can be generated
+  from the same shared contract without Mac hardware.
 - Those persisted JSON plans can now also be loaded back through the shared
   launch-plan layer, so future runtime or launcher glue can consume exported
   plans without re-solving profiles.
@@ -52,7 +56,6 @@ Windows game
   swapchain, submit, present, command-replay boundaries, draw/dispatch
   state-flush summaries, transfer/secondary-command breadcrumbs, and
   synchronization/unsupported-op breadcrumbs.
-- There is currently no checked-in `tools/` directory.
 - The launcher includes an in-app triangle test and diagnostic log export.
 - `scripts/mac_runtime_smoke_test.sh` now automates the first hardware smoke-test
   bundle so Mac-side validation is easier to execute and report.

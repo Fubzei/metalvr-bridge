@@ -85,11 +85,16 @@ These items are now checked in and verified in CI:
    - `src/common/runtime_launch_plan.*` now turns those profiles into a concrete
      launch plan with backend, fallbacks, env vars, DLL overrides, launch args,
      and runtime-policy settings
+   - `src/common/runtime_launch_command.*` now materializes that plan into a
+     runnable Wine-style command with merged environment metadata and wrapper-script
+     output for future runtime or launcher glue
    - `tools/mvrvb_runtime_plan_preview` now resolves and prints that launch plan
      from the command line so product/runtime policy can be exercised without
      waiting on launcher wiring or Mac hardware
    - the same preview tool now has a machine-readable JSON mode so future
      launcher/runtime code can consume the shared launch-plan contract directly
+   - the preview tool can now also emit bash or PowerShell wrapper scripts from
+     either a fresh profile query or a previously exported JSON plan
    - `scripts/export_runtime_plan.ps1` now produces persisted JSON plus human-readable
      launch-plan bundles from that same shared contract for future runtime glue
    - persisted JSON launch-plan bundles can now be loaded back into
@@ -97,6 +102,8 @@ These items are now checked in and verified in CI:
      consume exported plans without re-solving compatibility profiles
    - the persisted JSON contract is now schema-versioned for safer future
      launcher/runtime integration
+   - the export helper now also emits bash and PowerShell wrapper scripts so a
+     future runtime wrapper does not need to re-implement launch-command assembly
    - GitHub now has a dedicated game-compatibility report template
 
 ## Exit Criteria

@@ -87,4 +87,60 @@ if(MVRVB_BUILD_TESTS)
             -DROUNDTRIP_EXPECTED_SUBSTRING=Selected\ profile:\ overwatch-2
             -P "${MVRVB_TOOLS_VERIFY_SCRIPT}"
   )
+
+  add_test(
+    NAME runtime_plan_preview_overwatch_bash
+    COMMAND mvrvb_runtime_plan_preview
+            --profiles-dir "${MVRVB_TOOLS_PROFILE_DIR}"
+            --exe "C:/Games/Overwatch/Overwatch.exe"
+            --launcher "Battle.net"
+            --store "battlenet"
+            --bash
+  )
+  set_tests_properties(runtime_plan_preview_overwatch_bash PROPERTIES
+    PASS_REGULAR_EXPRESSION "exec 'wine' 'C:/Games/Overwatch/Overwatch.exe' '--fullscreen'"
+  )
+
+  add_test(
+    NAME runtime_plan_preview_overwatch_powershell
+    COMMAND mvrvb_runtime_plan_preview
+            --profiles-dir "${MVRVB_TOOLS_PROFILE_DIR}"
+            --exe "C:/Games/Overwatch/Overwatch.exe"
+            --launcher "Battle.net"
+            --store "battlenet"
+            --powershell
+  )
+  set_tests_properties(runtime_plan_preview_overwatch_powershell PROPERTIES
+    PASS_REGULAR_EXPRESSION "& 'wine' 'C:/Games/Overwatch/Overwatch.exe' '--fullscreen'"
+  )
+
+  add_test(
+    NAME runtime_plan_preview_overwatch_bash_file
+    COMMAND "${CMAKE_COMMAND}"
+            -DTOOL=$<TARGET_FILE:mvrvb_runtime_plan_preview>
+            -DPROFILE_DIR=${MVRVB_TOOLS_PROFILE_DIR}
+            -DOUTPUT=${CMAKE_CURRENT_BINARY_DIR}/artifacts/overwatch.launch.sh
+            -DEXECUTABLE=C:/Games/Overwatch/Overwatch.exe
+            -DLAUNCHER=Battle.net
+            -DSTORE=battlenet
+            -DBASH=ON
+            -DPREFIX_PATH=C:/Prefixes/Overwatch
+            -DEXPECTED_SUBSTRING=export\ WINEPREFIX='C:/Prefixes/Overwatch'
+            -P "${MVRVB_TOOLS_VERIFY_SCRIPT}"
+  )
+
+  add_test(
+    NAME runtime_plan_preview_overwatch_powershell_file
+    COMMAND "${CMAKE_COMMAND}"
+            -DTOOL=$<TARGET_FILE:mvrvb_runtime_plan_preview>
+            -DPROFILE_DIR=${MVRVB_TOOLS_PROFILE_DIR}
+            -DOUTPUT=${CMAKE_CURRENT_BINARY_DIR}/artifacts/overwatch.launch.ps1
+            -DEXECUTABLE=C:/Games/Overwatch/Overwatch.exe
+            -DLAUNCHER=Battle.net
+            -DSTORE=battlenet
+            -DPOWERSHELL=ON
+            -DPREFIX_PATH=C:/Prefixes/Overwatch
+            -DEXPECTED_SUBSTRING=\$env:WINEPREFIX\ =\ 'C:/Prefixes/Overwatch'
+            -P "${MVRVB_TOOLS_VERIFY_SCRIPT}"
+  )
 endif()

@@ -36,6 +36,26 @@ if(DEFINED JSON AND JSON)
   list(APPEND command "--json")
 endif()
 
+if(DEFINED BASH AND BASH)
+  list(APPEND command "--bash")
+endif()
+
+if(DEFINED POWERSHELL AND POWERSHELL)
+  list(APPEND command "--powershell")
+endif()
+
+if(DEFINED WINE_BINARY AND NOT WINE_BINARY STREQUAL "")
+  list(APPEND command "--wine-binary" "${WINE_BINARY}")
+endif()
+
+if(DEFINED PREFIX_PATH AND NOT PREFIX_PATH STREQUAL "")
+  list(APPEND command "--prefix" "${PREFIX_PATH}")
+endif()
+
+if(DEFINED WORKING_DIR AND NOT WORKING_DIR STREQUAL "")
+  list(APPEND command "--working-dir" "${WORKING_DIR}")
+endif()
+
 execute_process(
   COMMAND ${command}
   RESULT_VARIABLE result

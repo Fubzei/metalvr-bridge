@@ -6,7 +6,10 @@ param(
     [string]$Store = "",
     [string]$ProfilesDir = "",
     [string]$BuildDir = "",
-    [string]$OutputPath = ""
+    [string]$OutputPath = "",
+    [string]$WineBinary = "wine",
+    [string]$PrefixPath = "",
+    [string]$WorkingDirectory = ""
 )
 
 $ErrorActionPreference = "Stop"
@@ -45,8 +48,15 @@ if (-not [string]::IsNullOrWhiteSpace($directory)) {
 }
 
 $baseName = [System.IO.Path]::GetFileNameWithoutExtension($OutputPath)
+$baseDirectory = Split-Path -Parent $OutputPath
 $reportPath = [System.IO.Path]::GetFullPath(
-    (Join-Path (Split-Path -Parent $OutputPath) ($baseName + ".txt"))
+    (Join-Path $baseDirectory ($baseName + ".txt"))
+)
+$bashPath = [System.IO.Path]::GetFullPath(
+    (Join-Path $baseDirectory ($baseName + ".sh"))
+)
+$powerShellPath = [System.IO.Path]::GetFullPath(
+    (Join-Path $baseDirectory ($baseName + ".ps1"))
 )
 
 $commonArgs = @(
@@ -60,15 +70,43 @@ if (-not [string]::IsNullOrWhiteSpace($Store)) {
     $commonArgs += @("--store", $Store)
 }
 
-& $toolPath @commonArgs "--json" "--out" $OutputPath
+& $toolPath @commonArgs "--json" "--out" $OutputPath | Out-Null
 if ($LASTEXITCODE -ne 0) {
     throw "JSON launch-plan export failed with exit code $LASTEXITCODE"
 }
 
-& $toolPath @commonArgs "--out" $reportPath
+& $toolPath @commonArgs "--out" $reportPath | Out-Null
 if ($LASTEXITCODE -ne 0) {
     throw "Report launch-plan export failed with exit code $LASTEXITCODE"
 }
 
+if ([string]::IsNullOrWhiteSpace($WineBinary)) {
+    throw "WineBinary cannot be empty"
+}
+
+$scriptArgs = @(
+    "--input", $OutputPath,
+    "--exe", $Executable,
+    "--wine-binary", $WineBinary
+)
+if (-not [string]::IsNullOrWhiteSpace($PrefixPath)) {
+    $scriptArgs += @("--prefix", $PrefixPath)
+}
+if (-not [string]::IsNullOrWhiteSpace($WorkingDirectory)) {
+    $scriptArgs += @("--working-dir", $WorkingDirectory)
+}
+
+& $toolPath @scriptArgs "--bash" "--out" $bashPath | Out-Null
+if ($LASTEXITCODE -ne 0) {
+    throw "Bash launch-script export failed with exit code $LASTEXITCODE"
+}
+
+& $toolPath @scriptArgs "--powershell" "--out" $powerShellPath | Out-Null
+if ($LASTEXITCODE -ne 0) {
+    throw "PowerShell launch-script export failed with exit code $LASTEXITCODE"
+}
+
 Write-Host "JSON launch plan:  $OutputPath"
 Write-Host "Report launch plan: $reportPath"
+Write-Host "Bash launch script: $bashPath"
+Write-Host "PowerShell script:  $powerShellPath"
