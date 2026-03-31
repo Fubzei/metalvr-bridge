@@ -12,6 +12,7 @@
 #include <cstdint>
 #include <filesystem>
 #include <map>
+#include <optional>
 #include <string>
 #include <string_view>
 #include <vector>
@@ -42,10 +43,24 @@ enum class AntiCheatRisk : uint8_t {
     Blocking,
 };
 
+enum class SyncMode : uint8_t {
+    Default,
+    MSync,
+    ESync,
+    Disabled,
+};
+
 struct CompatibilityMatchCriteria {
     std::vector<std::string> executables;
     std::vector<std::string> launchers;
     std::vector<std::string> stores;
+};
+
+struct CompatibilityRuntimePolicy {
+    std::string windowsVersion;
+    SyncMode syncMode{SyncMode::Default};
+    bool highResolutionMode{false};
+    bool metalFxUpscaling{false};
 };
 
 struct CompatibilityProfile {
@@ -53,6 +68,7 @@ struct CompatibilityProfile {
     std::string profileId;
     std::string displayName;
     ProfileStatus status{ProfileStatus::Planning};
+    bool allowAutoMatch{true};
     std::string category;
     std::string notes;
     RendererBackend defaultRenderer{RendererBackend::Auto};
@@ -60,6 +76,7 @@ struct CompatibilityProfile {
     bool latencySensitive{false};
     bool competitive{false};
     AntiCheatRisk antiCheatRisk{AntiCheatRisk::Unknown};
+    CompatibilityRuntimePolicy runtime;
     CompatibilityMatchCriteria match;
     std::vector<std::string> launchArgs;
     std::map<std::string, std::string> environment;
@@ -73,11 +90,33 @@ struct CompatibilityProfileParseResult {
     explicit operator bool() const noexcept { return errorMessage.empty(); }
 };
 
+struct CompatibilityProfileQuery {
+    std::string executable;
+    std::string launcher;
+    std::string store;
+};
+
+struct CompatibilityProfileBatchLoadResult {
+    std::vector<CompatibilityProfile> profiles;
+    std::vector<std::string> errorMessages;
+
+    explicit operator bool() const noexcept { return errorMessages.empty(); }
+};
+
 const char* profileStatusName(ProfileStatus status) noexcept;
 const char* rendererBackendName(RendererBackend backend) noexcept;
 const char* antiCheatRiskName(AntiCheatRisk risk) noexcept;
+const char* syncModeName(SyncMode mode) noexcept;
 
 CompatibilityProfileParseResult parseCompatibilityProfile(std::string_view text);
 CompatibilityProfileParseResult loadCompatibilityProfile(const std::filesystem::path& path);
+CompatibilityProfileBatchLoadResult loadCompatibilityProfilesFromDirectory(
+    const std::filesystem::path& root);
+int compatibilityProfileMatchScore(
+    const CompatibilityProfile& profile,
+    const CompatibilityProfileQuery& query) noexcept;
+std::optional<size_t> selectBestCompatibilityProfileIndex(
+    const std::vector<CompatibilityProfile>& profiles,
+    const CompatibilityProfileQuery& query) noexcept;
 
 }  // namespace mvrvb

@@ -8,6 +8,8 @@ runtime intents that can express:
 
 - the preferred renderer/backend strategy for a title
 - fallback backends
+- sync-mode and high-resolution policy
+- MetalFX upscaling intent where that becomes relevant
 - latency and competitive-play sensitivity
 - launcher and executable matching
 - environment variables
@@ -34,6 +36,7 @@ Top-level keys:
 - `profile_id`
 - `display_name`
 - `status`
+- `allow_auto_match`
 - `category`
 - `default_renderer`
 - `fallback_renderers`
@@ -48,6 +51,11 @@ Sections:
   - `executables`
   - `launchers`
   - `stores`
+- `[runtime]`
+  - `windows_version`
+  - `sync_mode`
+  - `high_resolution_mode`
+  - `metalfx_upscaling`
 - `[env]`
   - arbitrary environment variables
 - `[dll_overrides]`
@@ -59,3 +67,10 @@ Sections:
 
 Right now this directory exists to let the project begin expressing per-title
 policy before the full runtime product layer is in place.
+
+## Auto-Match Rules
+
+- `allow_auto_match = true`
+  - profile may be selected automatically by executable, launcher, or store
+- `allow_auto_match = false`
+  - profile is a template or manual preset and should not win automatic selection

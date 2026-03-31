@@ -71,12 +71,15 @@ These items are now checked in and verified in CI:
    Scope:
    - checked-in compatibility profiles
    - CI validation of profile files
+   - automatic profile selection by executable, launcher, and store
    - future launcher/runtime integration points for backend, env, and launch policy
    Progress:
    - `src/common/compatibility_profile.*` now parses the profile format
    - `profiles/` now holds defaults, templates, and planning profiles
    - `tests/unit/compatibility_profile_tests.cpp` validates the parser and the
      checked-in profile files
+   - the profile layer now models backend fallback, sync mode, high-resolution mode,
+     MetalFX-upscaling intent, and auto-selection rules
    - GitHub now has a dedicated game-compatibility report template
 
 ## Exit Criteria

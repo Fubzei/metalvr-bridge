@@ -41,6 +41,7 @@ Scope:
 
 - checked-in compatibility profiles
 - profile parser and validation in CI
+- auto-selection of the best profile by executable, launcher, or store identity
 - launcher/runtime plumbing for profile selection
 - install/runtime configuration model
 - issue templates and reporting flow for game outcomes
@@ -50,6 +51,12 @@ Exit criteria:
 - the repo has a validated compatibility-profile schema
 - the launcher or future runtime layer can resolve a profile by game identity
 - profile-driven env vars, DLL overrides, and launch arguments can be emitted
+- runtime policy can express at least:
+  - backend preference and fallbacks
+  - sync mode
+  - high-resolution mode
+  - Windows-version intent
+  - MetalFX upscaling intent
 
 ### 4.1 Backend Breadth
 
@@ -85,6 +92,7 @@ Scope:
 - CPU overhead reduction in hot replay paths
 - low-latency tuning for competitive titles
 - startup hitch and compile-stutter reduction
+- CrossOver-style exposed knobs such as sync mode and high-resolution policy
 
 ### 4.4 Competitive-Game Hardening
 
@@ -115,11 +123,11 @@ Scope:
 The first checked-in Phase 4 deliverables are:
 
 - `src/common/compatibility_profile.*`
-  - CI-validated parser for runtime compatibility profiles
+  - CI-validated parser plus auto-selection helpers for runtime compatibility profiles
 - `profiles/`
-  - checked-in defaults, templates, and planning profiles
+  - checked-in defaults, templates, and planning profiles with runtime-policy knobs
 - `tests/unit/compatibility_profile_tests.cpp`
-  - regression coverage for the parser and checked-in profile files
+  - regression coverage for parser behavior, checked-in files, and profile selection
 - `.github/ISSUE_TEMPLATE/game-compatibility-report.yml`
   - standardized reporting for game-level outcomes
 

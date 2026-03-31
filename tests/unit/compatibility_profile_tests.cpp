@@ -25,6 +25,12 @@ competitive = true
 anti_cheat_risk = medium
 notes = Runtime intent only
 
+[runtime]
+windows_version = win11
+sync_mode = msync
+high_resolution_mode = true
+metalfx_upscaling = true
+
 [match]
 executables = Arena.exe, Arena-Win64-Shipping.exe
 launchers = Steam
@@ -49,6 +55,7 @@ args = --fullscreen, --novid
     EXPECT_EQ(result.profile.profileId, "arena-shooter");
     EXPECT_EQ(result.profile.displayName, "Arena Shooter");
     EXPECT_EQ(result.profile.status, ProfileStatus::Experimental);
+    EXPECT_TRUE(result.profile.allowAutoMatch);
     EXPECT_EQ(result.profile.category, "competitive-shooter");
     EXPECT_EQ(result.profile.defaultRenderer, RendererBackend::DXVK);
     ASSERT_EQ(result.profile.fallbackRenderers.size(), 2u);
@@ -57,6 +64,10 @@ args = --fullscreen, --novid
     EXPECT_TRUE(result.profile.latencySensitive);
     EXPECT_TRUE(result.profile.competitive);
     EXPECT_EQ(result.profile.antiCheatRisk, AntiCheatRisk::Medium);
+    EXPECT_EQ(result.profile.runtime.windowsVersion, "win11");
+    EXPECT_EQ(result.profile.runtime.syncMode, SyncMode::MSync);
+    EXPECT_TRUE(result.profile.runtime.highResolutionMode);
+    EXPECT_TRUE(result.profile.runtime.metalFxUpscaling);
     ASSERT_EQ(result.profile.match.executables.size(), 2u);
     EXPECT_EQ(result.profile.match.executables[0], "Arena.exe");
     EXPECT_EQ(result.profile.match.executables[1], "Arena-Win64-Shipping.exe");
@@ -93,25 +104,27 @@ latency_sensitive = maybe
 )");
     EXPECT_FALSE(boolResult);
     EXPECT_EQ(boolResult.errorMessage, "Invalid boolean for latency-sensitive");
+
+    auto syncResult = parseCompatibilityProfile(R"(
+profile_id = bad-sync
+display_name = Bad Sync
+
+[runtime]
+sync_mode = impossible
+)");
+    EXPECT_FALSE(syncResult);
+    EXPECT_EQ(syncResult.errorMessage, "Invalid sync mode 'impossible'");
 }
 
 TEST(CompatibilityProfile, LoadsCheckedInProfiles) {
-    const auto profilesRoot = repoRoot() / "profiles";
-    size_t loadedProfiles = 0;
+    const auto batch = loadCompatibilityProfilesFromDirectory(repoRoot() / "profiles");
 
-    for (const auto& entry : std::filesystem::recursive_directory_iterator(profilesRoot)) {
-        if (!entry.is_regular_file() || entry.path().extension() != ".mvrvb-profile") {
-            continue;
-        }
-
-        const auto result = loadCompatibilityProfile(entry.path());
-        ASSERT_TRUE(result) << entry.path().string() << ": " << result.errorMessage;
-        EXPECT_FALSE(result.profile.profileId.empty()) << entry.path().string();
-        EXPECT_FALSE(result.profile.displayName.empty()) << entry.path().string();
-        ++loadedProfiles;
+    ASSERT_TRUE(batch) << ::testing::PrintToString(batch.errorMessages);
+    EXPECT_GE(batch.profiles.size(), 3u);
+    for (const auto& profile : batch.profiles) {
+        EXPECT_FALSE(profile.profileId.empty());
+        EXPECT_FALSE(profile.displayName.empty());
     }
-
-    EXPECT_GE(loadedProfiles, 3u);
 }
 
 TEST(CompatibilityProfile, CheckedInOverwatchProfileIsPlanningOnly) {
@@ -124,8 +137,33 @@ TEST(CompatibilityProfile, CheckedInOverwatchProfileIsPlanningOnly) {
     EXPECT_TRUE(result.profile.latencySensitive);
     EXPECT_TRUE(result.profile.competitive);
     EXPECT_EQ(result.profile.antiCheatRisk, AntiCheatRisk::Blocking);
+    EXPECT_EQ(result.profile.runtime.syncMode, SyncMode::MSync);
+    EXPECT_TRUE(result.profile.runtime.highResolutionMode);
     ASSERT_EQ(result.profile.match.launchers.size(), 1u);
     EXPECT_EQ(result.profile.match.launchers[0], "Battle.net");
+}
+
+TEST(CompatibilityProfile, AutoSelectsBestMatchingCheckedInProfile) {
+    const auto batch = loadCompatibilityProfilesFromDirectory(repoRoot() / "profiles");
+    ASSERT_TRUE(batch) << ::testing::PrintToString(batch.errorMessages);
+
+    const CompatibilityProfileQuery overwatchQuery{
+        .executable = R"(C:\Games\Overwatch\Overwatch.exe)",
+        .launcher = "Battle.net",
+        .store = "battlenet",
+    };
+    const auto overwatchIndex = selectBestCompatibilityProfileIndex(batch.profiles, overwatchQuery);
+    ASSERT_TRUE(overwatchIndex.has_value());
+    EXPECT_EQ(batch.profiles[*overwatchIndex].profileId, "overwatch-2");
+
+    const CompatibilityProfileQuery unknownGameQuery{
+        .executable = "UnknownGame.exe",
+        .launcher = "Steam",
+        .store = "steam",
+    };
+    const auto unknownIndex = selectBestCompatibilityProfileIndex(batch.profiles, unknownGameQuery);
+    ASSERT_TRUE(unknownIndex.has_value());
+    EXPECT_EQ(batch.profiles[*unknownIndex].profileId, "global-defaults");
 }
 
 }  // namespace

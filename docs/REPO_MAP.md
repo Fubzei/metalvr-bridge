@@ -66,7 +66,7 @@ Do not describe that directory as present unless it is added in the same change.
 
 - logging
 - threading
-- compatibility-profile parser and loader
+- compatibility-profile parser, loader, and selector
 - shared utility headers
 
 ### `src/shader_translator`
@@ -106,7 +106,7 @@ Do not describe that directory as present unless it is added in the same change.
 
 - compatibility profile defaults, templates, and planning files
 - intended to drive future runtime backend selection, launch args, env vars,
-  and DLL override policy
+  DLL override policy, sync mode, high-resolution mode, and MetalFX-upscaling intent
 - validated in CI through `src/common/compatibility_profile.*`
 
 ### `scripts`

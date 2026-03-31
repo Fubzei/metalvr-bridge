@@ -27,7 +27,8 @@ Windows game
   format table, ICD contract checks, and extracted transfer helpers including
   range, slice, region-geometry, and transfer-format classification math.
 - A checked-in compatibility profile system now lives under `profiles/`, with
-  CI-backed parsing and validation in `src/common/compatibility_profile.*` and
+  CI-backed parsing, auto-selection, and validation in
+  `src/common/compatibility_profile.*` and
   `tests/unit/compatibility_profile_tests.cpp`.
 - First-pass runtime observability logs now cover instance, device, pipeline,
   swapchain, submit, present, command-replay boundaries, draw/dispatch

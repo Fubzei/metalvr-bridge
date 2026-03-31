@@ -140,6 +140,53 @@ std::string sectionKey(const std::string& section, const std::string& key) {
     return section.empty() ? key : (section + "." + key);
 }
 
+std::string normalizeIdentity(std::string_view value) {
+    std::string token = trim(value);
+    std::transform(token.begin(), token.end(), token.begin(), [](unsigned char ch) {
+        return static_cast<unsigned char>(std::tolower(ch));
+    });
+    return token;
+}
+
+std::string executableBaseName(std::string_view value) {
+    const std::string trimmed = trim(value);
+    const size_t slash = trimmed.find_last_of("/\\");
+    if (slash == std::string::npos) {
+        return normalizeIdentity(trimmed);
+    }
+    return normalizeIdentity(trimmed.substr(slash + 1));
+}
+
+bool parseSyncMode(std::string_view value, SyncMode* out) {
+    const std::string token = normalizeToken(value);
+    if (token == "default" || token == "auto") {
+        *out = SyncMode::Default;
+        return true;
+    }
+    if (token == "msync") {
+        *out = SyncMode::MSync;
+        return true;
+    }
+    if (token == "esync") {
+        *out = SyncMode::ESync;
+        return true;
+    }
+    if (token == "disabled" || token == "off") {
+        *out = SyncMode::Disabled;
+        return true;
+    }
+    return false;
+}
+
+int profileStatusRank(ProfileStatus status) noexcept {
+    switch (status) {
+        case ProfileStatus::Planning: return 0;
+        case ProfileStatus::Experimental: return 1;
+        case ProfileStatus::Validated: return 2;
+        default: return 0;
+    }
+}
+
 }  // namespace
 
 const char* profileStatusName(ProfileStatus status) noexcept {
@@ -172,6 +219,16 @@ const char* antiCheatRiskName(AntiCheatRisk risk) noexcept {
         case AntiCheatRisk::High: return "high";
         case AntiCheatRisk::Blocking: return "blocking";
         default: return "unknown";
+    }
+}
+
+const char* syncModeName(SyncMode mode) noexcept {
+    switch (mode) {
+        case SyncMode::Default: return "default";
+        case SyncMode::MSync: return "msync";
+        case SyncMode::ESync: return "esync";
+        case SyncMode::Disabled: return "disabled";
+        default: return "default";
     }
 }
 
@@ -252,6 +309,12 @@ CompatibilityProfileParseResult parseCompatibilityProfile(std::string_view text)
             return result;
         }
     }
+    if (const auto it = globals.find("allow-auto-match"); it != globals.end()) {
+        if (!parseBoolValue(it->second, &result.profile.allowAutoMatch)) {
+            result.errorMessage = "Invalid boolean for " + sectionKey("", it->first);
+            return result;
+        }
+    }
 
     if (const auto it = globals.find("category"); it != globals.end()) {
         result.profile.category = trim(it->second);
@@ -319,6 +382,33 @@ CompatibilityProfileParseResult parseCompatibilityProfile(std::string_view text)
         }
     }
 
+    if (const auto sectionIt = sections.find("runtime"); sectionIt != sections.end()) {
+        if (const auto it = sectionIt->second.find("windows-version");
+            it != sectionIt->second.end()) {
+            result.profile.runtime.windowsVersion = trim(it->second);
+        }
+        if (const auto it = sectionIt->second.find("sync-mode"); it != sectionIt->second.end()) {
+            if (!parseSyncMode(it->second, &result.profile.runtime.syncMode)) {
+                result.errorMessage = "Invalid sync mode '" + it->second + "'";
+                return result;
+            }
+        }
+        if (const auto it = sectionIt->second.find("high-resolution-mode");
+            it != sectionIt->second.end()) {
+            if (!parseBoolValue(it->second, &result.profile.runtime.highResolutionMode)) {
+                result.errorMessage = "Invalid boolean for runtime.high-resolution-mode";
+                return result;
+            }
+        }
+        if (const auto it = sectionIt->second.find("metalfx-upscaling");
+            it != sectionIt->second.end()) {
+            if (!parseBoolValue(it->second, &result.profile.runtime.metalFxUpscaling)) {
+                result.errorMessage = "Invalid boolean for runtime.metalfx-upscaling";
+                return result;
+            }
+        }
+    }
+
     if (const auto sectionIt = sections.find("env"); sectionIt != sections.end()) {
         result.profile.environment = sectionIt->second;
     }
@@ -341,6 +431,100 @@ CompatibilityProfileParseResult loadCompatibilityProfile(const std::filesystem::
     std::ostringstream buffer;
     buffer << stream.rdbuf();
     return parseCompatibilityProfile(buffer.str());
+}
+
+CompatibilityProfileBatchLoadResult loadCompatibilityProfilesFromDirectory(
+    const std::filesystem::path& root) {
+    CompatibilityProfileBatchLoadResult result;
+    if (!std::filesystem::exists(root)) {
+        result.errorMessages.push_back("Compatibility profile directory does not exist: " +
+                                       root.string());
+        return result;
+    }
+
+    std::vector<std::filesystem::path> profilePaths;
+    for (const auto& entry : std::filesystem::recursive_directory_iterator(root)) {
+        if (!entry.is_regular_file() || entry.path().extension() != ".mvrvb-profile") {
+            continue;
+        }
+        profilePaths.push_back(entry.path());
+    }
+
+    std::sort(profilePaths.begin(), profilePaths.end());
+    for (const auto& path : profilePaths) {
+        const auto loadResult = loadCompatibilityProfile(path);
+        if (!loadResult) {
+            result.errorMessages.push_back(path.string() + ": " + loadResult.errorMessage);
+            continue;
+        }
+        result.profiles.push_back(loadResult.profile);
+    }
+
+    return result;
+}
+
+int compatibilityProfileMatchScore(
+    const CompatibilityProfile& profile,
+    const CompatibilityProfileQuery& query) noexcept {
+    if (!profile.allowAutoMatch) {
+        return 0;
+    }
+
+    int score = 0;
+    const std::string queryExecutable = executableBaseName(query.executable);
+    const std::string queryLauncher = normalizeIdentity(query.launcher);
+    const std::string queryStore = normalizeIdentity(query.store);
+
+    for (const auto& executable : profile.match.executables) {
+        if (!queryExecutable.empty() &&
+            executableBaseName(executable) == queryExecutable) {
+            score += 100;
+            break;
+        }
+    }
+    for (const auto& launcher : profile.match.launchers) {
+        if (!queryLauncher.empty() && normalizeIdentity(launcher) == queryLauncher) {
+            score += 50;
+            break;
+        }
+    }
+    for (const auto& store : profile.match.stores) {
+        if (!queryStore.empty() && normalizeIdentity(store) == queryStore) {
+            score += 25;
+            break;
+        }
+    }
+
+    const bool hasSpecificCriteria =
+        !profile.match.executables.empty() ||
+        !profile.match.launchers.empty() ||
+        !profile.match.stores.empty();
+
+    if (!hasSpecificCriteria) {
+        score += 1;
+    }
+
+    return score;
+}
+
+std::optional<size_t> selectBestCompatibilityProfileIndex(
+    const std::vector<CompatibilityProfile>& profiles,
+    const CompatibilityProfileQuery& query) noexcept {
+    std::optional<size_t> bestIndex;
+    int bestScore = 0;
+    int bestStatusRank = -1;
+
+    for (size_t i = 0; i < profiles.size(); ++i) {
+        const int score = compatibilityProfileMatchScore(profiles[i], query);
+        const int statusRank = profileStatusRank(profiles[i].status);
+        if (score > bestScore || (score == bestScore && score > 0 && statusRank > bestStatusRank)) {
+            bestIndex = i;
+            bestScore = score;
+            bestStatusRank = statusRank;
+        }
+    }
+
+    return bestIndex;
 }
 
 }  // namespace mvrvb
