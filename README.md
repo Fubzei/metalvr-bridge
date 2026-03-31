@@ -96,7 +96,8 @@ Windows game
 - The launcher now includes an in-app triangle test, a bundled project-status
   card sourced from `docs/PROJECT_STATUS.json`, a bundled compatibility summary
   sourced from `docs/GAME_COMPATIBILITY_CATALOG.json`, an imported or bundled
-  runtime-plan preview sourced from `export_runtime_plan.ps1` output, and
+  runtime-plan preview sourced from `export_runtime_plan.ps1` output, imported
+  runtime-bundle manifest support sourced from `export_runtime_bundle.ps1`, and
   diagnostic log export.
 - `scripts/mac_runtime_smoke_test.sh` now automates the first hardware smoke-test
   bundle so Mac-side validation is easier to execute and report.

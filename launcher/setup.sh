@@ -38,7 +38,7 @@ fi
 
 # Check for required source files
 MISSING=0
-for f in MetalVRBridgeApp.swift ContentView.swift BridgeViewModel.swift ProjectStatus.swift CompatibilityCatalog.swift RuntimeLaunchPlan.swift; do
+for f in MetalVRBridgeApp.swift ContentView.swift BridgeViewModel.swift ProjectStatus.swift CompatibilityCatalog.swift RuntimeLaunchPlan.swift RuntimeBundleManifest.swift; do
     if [ ! -f "$f" ]; then
         echo "ERROR: Missing $f - make sure all .swift files are in this folder."
         MISSING=1
@@ -71,6 +71,7 @@ swiftc \
     ProjectStatus.swift \
     CompatibilityCatalog.swift \
     RuntimeLaunchPlan.swift \
+    RuntimeBundleManifest.swift \
     2>&1
 
 echo "[2/6] Creating app bundle..."

@@ -99,7 +99,8 @@ That subtree exists in the repo, but it is not currently added by the root
 - SwiftUI app entry point
 - main UI
 - runtime checks, triangle test, bundled project-status and compatibility-catalog
-  snapshot readers, imported or bundled runtime-plan preview reader, and log export
+  snapshot readers, imported or bundled runtime-plan preview reader, imported
+  runtime-bundle manifest reader, and log export
 - packaging script
 
 ### `docs`

@@ -335,15 +335,27 @@ struct ContentView: View {
                 statusCallout(title: "Launch", message: runtimePlan.launchSummary)
                 statusCallout(title: "Source", message: vm.runtimeLaunchPlanSource)
 
+                if let runtimeBundleManifest = vm.runtimeBundleManifest {
+                    statusCallout(title: "Bundle", message: runtimeBundleManifest.bundleSummary)
+                    statusCallout(title: "Bundle Assets", message: runtimeBundleManifest.assetSummary)
+                    statusCallout(title: "Bundle Source", message: vm.runtimeBundleManifestSource)
+                }
+
                 if let catalogEntry = vm.compatibilityCatalog?.entry(for: runtimePlan.selectedProfileId),
                    catalogEntry.status == "planning" {
                     statusCallout(title: "Validation", message: "Planning-only preview. \(catalogEntry.notes)")
                 }
             } else {
-                Text("Import a launch-plan JSON exported by scripts/export_runtime_plan.ps1 or scripts/export_runtime_bundle.ps1 to preview backend, setup, and launch policy in the launcher.")
+                Text("Import a launch-plan JSON or bundle-manifest JSON exported by scripts/export_runtime_plan.ps1 or scripts/export_runtime_bundle.ps1 to preview backend, setup, and launch policy in the launcher.")
                     .font(.system(size: 11))
                     .foregroundColor(Color(hex: "94a3b8"))
                     .fixedSize(horizontal: false, vertical: true)
+
+                if let runtimeBundleManifest = vm.runtimeBundleManifest {
+                    statusCallout(title: "Bundle", message: runtimeBundleManifest.bundleSummary)
+                    statusCallout(title: "Bundle Assets", message: runtimeBundleManifest.assetSummary)
+                    statusCallout(title: "Bundle Source", message: vm.runtimeBundleManifestSource)
+                }
             }
 
             HStack(spacing: 8) {
@@ -351,7 +363,7 @@ struct ContentView: View {
                     HStack(spacing: 6) {
                         Image(systemName: "square.and.arrow.down")
                             .font(.system(size: 10))
-                        Text("Import Plan")
+                        Text("Import JSON")
                             .font(.system(size: 10, weight: .semibold, design: .monospaced))
                     }
                     .frame(maxWidth: .infinity)

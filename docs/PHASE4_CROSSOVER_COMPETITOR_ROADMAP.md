@@ -181,6 +181,9 @@ The first checked-in Phase 4 deliverables are:
 - `launcher/RuntimeLaunchPlan.swift`
   - launcher-side runtime-plan preview that consumes exported `launch-plan.json`
     files from the shared tooling without needing runtime glue first
+- `launcher/RuntimeBundleManifest.swift`
+  - launcher-side runtime-bundle preview that consumes `bundle-manifest.json`
+    exports and loads their referenced launch-plan payload for in-app inspection
 - `scripts/update_ai_handoff_doc.ps1` and `scripts/export_ai_handoff_bundle.ps1`
   - direct update and export path for a carry-forward AI handoff package
 - persisted launch-plan JSON now round-trips through the shared runtime-plan layer,

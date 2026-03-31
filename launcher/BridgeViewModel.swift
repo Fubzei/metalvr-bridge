@@ -123,6 +123,8 @@ class BridgeViewModel: ObservableObject {
     @Published var compatibilityCatalog: CompatibilityCatalogSnapshot?
     @Published var runtimeLaunchPlan: RuntimeLaunchPlanSnapshot?
     @Published var runtimeLaunchPlanSource: String = ""
+    @Published var runtimeBundleManifest: RuntimeBundleManifestSnapshot?
+    @Published var runtimeBundleManifestSource: String = ""
     @Published var bridgeStatus: BridgeStatus = .notInstalled
     @Published var testStatus: TestStatus = .idle
     @Published var testRunning: Bool = false
@@ -136,7 +138,11 @@ class BridgeViewModel: ObservableObject {
         self.systemInfo = SystemInfo.gather()
         self.projectStatus = ProjectStatusSnapshot.load()
         self.compatibilityCatalog = CompatibilityCatalogSnapshot.load()
-        if let loadedRuntimePlan = RuntimeLaunchPlanSnapshot.loadFirstAvailable() {
+        if let loadedRuntimeBundle = RuntimeBundleManifestSnapshot.loadFirstAvailable() {
+            applyRuntimeBundleManifest(loadedRuntimeBundle, logSuccess: false)
+        }
+        if runtimeLaunchPlan == nil,
+           let loadedRuntimePlan = RuntimeLaunchPlanSnapshot.loadFirstAvailable() {
             self.runtimeLaunchPlan = loadedRuntimePlan.snapshot
             self.runtimeLaunchPlanSource = loadedRuntimePlan.sourceDescription
         }
@@ -541,14 +547,21 @@ class BridgeViewModel: ObservableObject {
         panel.canChooseFiles = true
         panel.allowsMultipleSelection = false
         panel.allowedFileTypes = ["json"]
-        panel.title = "Import Runtime Launch Plan"
-        panel.message = "Choose a launch-plan.json file exported by MetalVR Bridge tooling."
+        panel.title = "Import Runtime Plan or Bundle"
+        panel.message = "Choose a launch-plan.json or bundle-manifest.json exported by MetalVR Bridge tooling."
 
         if panel.runModal() == .OK, let url = panel.url {
             do {
+                if let loadedRuntimeBundle = try? RuntimeBundleManifestSnapshot.load(from: url) {
+                    applyRuntimeBundleManifest(loadedRuntimeBundle, logSuccess: true)
+                    return
+                }
+
                 let loadedRuntimePlan = try RuntimeLaunchPlanSnapshot.load(from: url)
                 runtimeLaunchPlan = loadedRuntimePlan.snapshot
                 runtimeLaunchPlanSource = loadedRuntimePlan.sourceDescription
+                runtimeBundleManifest = nil
+                runtimeBundleManifestSource = ""
                 log(.pass, "Imported runtime plan: \(loadedRuntimePlan.snapshot.selectedDisplayName)")
                 logRuntimeLaunchPlan()
             } catch {
@@ -558,7 +571,15 @@ class BridgeViewModel: ObservableObject {
     }
 
     func resetRuntimeLaunchPlan() {
-        if let loadedRuntimePlan = RuntimeLaunchPlanSnapshot.loadFirstAvailable() {
+        runtimeBundleManifest = nil
+        runtimeBundleManifestSource = ""
+
+        if let loadedRuntimeBundle = RuntimeBundleManifestSnapshot.loadFirstAvailable() {
+            applyRuntimeBundleManifest(loadedRuntimeBundle, logSuccess: false)
+        }
+
+        if runtimeLaunchPlan == nil,
+           let loadedRuntimePlan = RuntimeLaunchPlanSnapshot.loadFirstAvailable() {
             runtimeLaunchPlan = loadedRuntimePlan.snapshot
             runtimeLaunchPlanSource = loadedRuntimePlan.sourceDescription
             log(.info, "Reloaded bundled runtime plan preview")
@@ -597,6 +618,10 @@ class BridgeViewModel: ObservableObject {
             text += "Runtime Plan Backend: \(runtimeLaunchPlan.backend)\n"
             text += "Runtime Plan Prefix: \(runtimeLaunchPlan.appliedPrefixPresetDisplayName)\n"
             text += "Runtime Plan Source: \(runtimeLaunchPlanSource)\n"
+        }
+        if let runtimeBundleManifest {
+            text += "Runtime Bundle Target: \(runtimeBundleManifest.targetSummary)\n"
+            text += "Runtime Bundle Source: \(runtimeBundleManifestSource)\n"
         }
         text += String(repeating: "=", count: 72) + "\n\n"
 
@@ -671,6 +696,40 @@ class BridgeViewModel: ObservableObject {
         log(.info, "Runtime plan profile: \(runtimeLaunchPlan.selectedDisplayName) via \(runtimeLaunchPlan.backend)")
         log(.info, "Runtime plan prefix: \(runtimeLaunchPlan.appliedPrefixPresetDisplayName), source: \(runtimeLaunchPlanSource)")
         log(.info, "Runtime plan launch surface: \(runtimeLaunchPlan.launchSummary)")
+    }
+
+    private func logRuntimeBundleManifest() {
+        guard let runtimeBundleManifest else {
+            return
+        }
+
+        log(.info, "Runtime bundle target: \(runtimeBundleManifest.targetSummary)")
+        log(.info, "Runtime bundle source: \(runtimeBundleManifestSource)")
+        log(.info, "Runtime bundle summary: \(runtimeBundleManifest.bundleSummary)")
+        log(.info, "Runtime bundle assets: \(runtimeBundleManifest.assetSummary)")
+    }
+
+    private func applyRuntimeBundleManifest(
+        _ loadedRuntimeBundle: LoadedRuntimeBundleManifest,
+        logSuccess: Bool
+    ) {
+        runtimeBundleManifest = loadedRuntimeBundle.snapshot
+        runtimeBundleManifestSource = loadedRuntimeBundle.sourceDescription
+
+        if logSuccess {
+            log(.pass, "Imported runtime bundle: \(loadedRuntimeBundle.snapshot.targetSummary)")
+        }
+
+        let launchPlanUrl = URL(fileURLWithPath: loadedRuntimeBundle.snapshot.files.launchPlanJson)
+        if let loadedRuntimePlan = try? RuntimeLaunchPlanSnapshot.load(from: launchPlanUrl) {
+            runtimeLaunchPlan = loadedRuntimePlan.snapshot
+            runtimeLaunchPlanSource = "Bundle manifest: \(loadedRuntimeBundle.sourceDescription)"
+            logRuntimeLaunchPlan()
+        } else {
+            log(.warn, "Runtime bundle imported but launch-plan.json could not be loaded from the manifest path")
+        }
+
+        logRuntimeBundleManifest()
     }
 
     private func dateStamp() -> String {

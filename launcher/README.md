@@ -36,6 +36,7 @@ Then:
    - ProjectStatus.swift
    - CompatibilityCatalog.swift
    - RuntimeLaunchPlan.swift
+   - RuntimeBundleManifest.swift
 
 2. Open Terminal, cd to that folder
 
@@ -52,5 +53,7 @@ or `../docs/GAME_COMPATIBILITY_CATALOG.json` is present, it also bundles the
 checked-in compatibility snapshot so the launcher can summarize known profiles.
 If `launch-plan.json`, `RUNTIME_PLAN_PREVIEW.json`, or their repo-root variants
 are present, it also bundles a runtime-plan preview so the launcher can inspect
-an exported launch policy without rerunning tools. If those files are missing,
-the app still works for the Metal hardware test.
+an exported launch policy without rerunning tools. At runtime, the launcher can
+also import either a direct `launch-plan.json` file or a `bundle-manifest.json`
+file exported by `scripts/export_runtime_bundle.ps1`. If those files are
+missing, the app still works for the Metal hardware test.
