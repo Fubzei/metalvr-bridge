@@ -57,7 +57,7 @@ That subtree exists in the repo, but it is not currently added by the root
   - checked-in compatibility profiles for future runtime and launcher policy
 - `tools/`
   - checked-in host-safe preview tool for resolving runtime launch plans from
-    profile inputs and writing them to disk
+    profile inputs and writing launch/setup artifacts to disk
 
 ## Module Map
 
@@ -69,6 +69,7 @@ That subtree exists in the repo, but it is not currently added by the root
 - compatibility-catalog builder for machine-readable and report-style profile indexing
 - runtime launch-plan builder for launcher/runtime consumption
 - runtime launch-command materializer for wrapper-script generation
+- runtime setup-command materializer for bootstrap/setup script generation
 - shared utility headers
 
 ### `src/shader_translator`
@@ -119,7 +120,8 @@ That subtree exists in the repo, but it is not currently added by the root
 - Windows/host-side local test entrypoint for Apple-free modules
 - profile-catalog export helper for JSON and human-readable compatibility reports
 - profile-catalog doc sync helper for the generated Markdown compatibility matrix
-- launch-plan export helper for JSON, human-readable reports, and wrapper scripts
+- launch-plan export helper for JSON, human-readable reports, launch scripts,
+  and setup/bootstrap scripts
 - intended to reduce ambiguity for the first dedicated hardware run
 
 ### `host-tests`
@@ -137,8 +139,8 @@ That subtree exists in the repo, but it is not currently added by the root
 - `mvrvb_runtime_plan_preview` resolves a checked-in compatibility profile
   selection into backend, env, DLL override, and launch-argument output
 - supports human-readable summaries, machine-readable JSON output, Markdown setup
-  checklists, and bash/PowerShell wrapper-script generation for future
-  launcher/runtime consumption
+  checklists, bash/PowerShell launch-script generation, and bash/PowerShell
+  setup-script generation for future launcher/runtime consumption
 - verified in host-side checks for stdout, file-output, persisted-plan reload,
   and script-generation modes
 

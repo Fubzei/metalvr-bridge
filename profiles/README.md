@@ -77,13 +77,14 @@ policy before the full runtime product layer is in place.
 
 The checked-in `tools/mvrvb_runtime_plan_preview` tool can resolve these files
 into a concrete backend/env/launch-argument plan without Mac hardware, and can
-also emit the same decision as JSON plus bash or PowerShell wrapper scripts for
-future launcher/runtime consumption.
+also emit the same decision as JSON, a Markdown setup checklist, plus bash or
+PowerShell launch/setup scripts for future launcher/runtime consumption.
 The checked-in `tools/mvrvb_profile_catalog` tool can also turn the whole
 profiles tree into a compatibility matrix so the repo can export one consistent
 JSON/report/Markdown view of current planning, experimental, and validated states.
 The companion `scripts/export_runtime_plan.ps1` helper can persist that plan as
-JSON, a human-readable report, and wrapper scripts on disk.
+JSON, a human-readable report, a Markdown setup checklist, launch scripts, and,
+when a prefix path is supplied, setup/bootstrap scripts on disk.
 The companion `scripts/export_profile_catalog.ps1` helper can persist the
 catalog as JSON, a human-readable report, and a Markdown matrix on disk.
 The companion `scripts/update_profile_catalog_doc.ps1` helper regenerates the

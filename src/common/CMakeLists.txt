@@ -4,6 +4,7 @@ add_library(mvrvb_common STATIC
     logging.cpp
     runtime_launch_command.cpp
     runtime_launch_plan.cpp
+    runtime_setup_command.cpp
     threading.cpp
 )
 

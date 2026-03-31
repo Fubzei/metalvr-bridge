@@ -40,6 +40,14 @@ if(DEFINED CHECKLIST AND CHECKLIST)
   list(APPEND command "--checklist")
 endif()
 
+if(DEFINED SETUP_BASH AND SETUP_BASH)
+  list(APPEND command "--setup-bash")
+endif()
+
+if(DEFINED SETUP_POWERSHELL AND SETUP_POWERSHELL)
+  list(APPEND command "--setup-powershell")
+endif()
+
 if(DEFINED BASH AND BASH)
   list(APPEND command "--bash")
 endif()
@@ -50,6 +58,14 @@ endif()
 
 if(DEFINED WINE_BINARY AND NOT WINE_BINARY STREQUAL "")
   list(APPEND command "--wine-binary" "${WINE_BINARY}")
+endif()
+
+if(DEFINED WINEBOOT_BINARY AND NOT WINEBOOT_BINARY STREQUAL "")
+  list(APPEND command "--wineboot-binary" "${WINEBOOT_BINARY}")
+endif()
+
+if(DEFINED WINETRICKS_BINARY AND NOT WINETRICKS_BINARY STREQUAL "")
+  list(APPEND command "--winetricks-binary" "${WINETRICKS_BINARY}")
 endif()
 
 if(DEFINED PREFIX_PATH AND NOT PREFIX_PATH STREQUAL "")

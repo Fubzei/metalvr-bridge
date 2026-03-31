@@ -96,6 +96,9 @@ These items are now checked in and verified in CI:
    - `src/common/runtime_launch_command.*` now materializes that plan into a
      runnable Wine-style command with merged environment metadata and wrapper-script
      output for future runtime or launcher glue
+   - `src/common/runtime_setup_command.*` now materializes install/setup policy
+     into bootstrap actions, manual follow-up notes, and generated bash/PowerShell
+     setup scripts for future prefix orchestration
    - `tools/mvrvb_runtime_plan_preview` now resolves and prints that launch plan
      from the command line so product/runtime policy can be exercised without
      waiting on launcher wiring or Mac hardware
@@ -103,6 +106,8 @@ These items are now checked in and verified in CI:
      launcher/runtime code can consume the shared launch-plan contract directly
    - the preview tool can now also emit bash or PowerShell wrapper scripts from
      either a fresh profile query or a previously exported JSON plan
+   - the preview tool can now also emit bash or PowerShell setup/bootstrap
+     scripts when given a target prefix path
    - the same launch-plan layer can now emit a Markdown setup checklist so the
      first Mac tester gets install/bootstrap guidance alongside launch details
    - `scripts/export_runtime_plan.ps1` now produces persisted JSON, a human-readable
@@ -119,6 +124,9 @@ These items are now checked in and verified in CI:
      launcher/runtime integration
    - the export helper now also emits bash and PowerShell wrapper scripts so a
      future runtime wrapper does not need to re-implement launch-command assembly
+   - when a prefix path is supplied, the export helper now also emits setup/bootstrap
+     bash and PowerShell scripts so install intent can be handed to testers or
+     future runtime glue without re-implementing the setup plan
    - GitHub now has a dedicated game-compatibility report template
 
 ## Exit Criteria

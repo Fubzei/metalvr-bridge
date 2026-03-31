@@ -138,6 +138,34 @@ if(MVRVB_BUILD_TESTS)
   )
 
   add_test(
+    NAME runtime_plan_preview_overwatch_setup_bash
+    COMMAND mvrvb_runtime_plan_preview
+            --profiles-dir "${MVRVB_TOOLS_PROFILE_DIR}"
+            --exe "C:/Games/Overwatch/Overwatch.exe"
+            --launcher "Battle.net"
+            --store "battlenet"
+            --prefix "C:/Prefixes/Overwatch"
+            --setup-bash
+  )
+  set_tests_properties(runtime_plan_preview_overwatch_setup_bash PROPERTIES
+    PASS_REGULAR_EXPRESSION "'winetricks' 'corefonts' 'vcrun2022'"
+  )
+
+  add_test(
+    NAME runtime_plan_preview_overwatch_setup_powershell
+    COMMAND mvrvb_runtime_plan_preview
+            --profiles-dir "${MVRVB_TOOLS_PROFILE_DIR}"
+            --exe "C:/Games/Overwatch/Overwatch.exe"
+            --launcher "Battle.net"
+            --store "battlenet"
+            --prefix "C:/Prefixes/Overwatch"
+            --setup-powershell
+  )
+  set_tests_properties(runtime_plan_preview_overwatch_setup_powershell PROPERTIES
+    PASS_REGULAR_EXPRESSION "& 'winetricks' 'corefonts' 'vcrun2022'"
+  )
+
+  add_test(
     NAME runtime_plan_preview_overwatch_json_file
     COMMAND "${CMAKE_COMMAND}"
             -DTOOL=$<TARGET_FILE:mvrvb_runtime_plan_preview>
@@ -175,6 +203,36 @@ if(MVRVB_BUILD_TESTS)
             -DSTORE=battlenet
             -DCHECKLIST=ON
             -DEXPECTED_SUBSTRING=Prefix\ preset:\ `battlenet-shooter`
+            -P "${MVRVB_TOOLS_VERIFY_SCRIPT}"
+  )
+
+  add_test(
+    NAME runtime_plan_preview_overwatch_setup_bash_file
+    COMMAND "${CMAKE_COMMAND}"
+            -DTOOL=$<TARGET_FILE:mvrvb_runtime_plan_preview>
+            -DPROFILE_DIR=${MVRVB_TOOLS_PROFILE_DIR}
+            -DOUTPUT=${CMAKE_CURRENT_BINARY_DIR}/artifacts/overwatch.setup.sh
+            -DEXECUTABLE=C:/Games/Overwatch/Overwatch.exe
+            -DLAUNCHER=Battle.net
+            -DSTORE=battlenet
+            -DPREFIX_PATH=C:/Prefixes/Overwatch
+            -DSETUP_BASH=ON
+            -DEXPECTED_SUBSTRING='winetricks'\ 'corefonts'\ 'vcrun2022'
+            -P "${MVRVB_TOOLS_VERIFY_SCRIPT}"
+  )
+
+  add_test(
+    NAME runtime_plan_preview_overwatch_setup_powershell_file
+    COMMAND "${CMAKE_COMMAND}"
+            -DTOOL=$<TARGET_FILE:mvrvb_runtime_plan_preview>
+            -DPROFILE_DIR=${MVRVB_TOOLS_PROFILE_DIR}
+            -DOUTPUT=${CMAKE_CURRENT_BINARY_DIR}/artifacts/overwatch.setup.ps1
+            -DEXECUTABLE=C:/Games/Overwatch/Overwatch.exe
+            -DLAUNCHER=Battle.net
+            -DSTORE=battlenet
+            -DPREFIX_PATH=C:/Prefixes/Overwatch
+            -DSETUP_POWERSHELL=ON
+            -DEXPECTED_SUBSTRING=&\ 'winetricks'\ 'corefonts'\ 'vcrun2022'
             -P "${MVRVB_TOOLS_VERIFY_SCRIPT}"
   )
 

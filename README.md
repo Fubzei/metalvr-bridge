@@ -45,17 +45,23 @@ Windows game
   `src/common/runtime_launch_command.*`, turning those plans into concrete
   Wine-style command, environment, and wrapper-script output for future runtime
   or launcher glue.
+- A checked-in runtime setup-command materializer now lives in
+  `src/common/runtime_setup_command.*`, turning install/setup policy into
+  bootstrap actions, manual follow-up notes, and generated bash/PowerShell
+  setup scripts for future prefix orchestration.
 - A checked-in developer preview tool now lives in `tools/` so those runtime
   plans can be resolved and inspected locally before the launcher wiring is
   complete, including machine-readable JSON export, Markdown setup-checklist
-  export, and bash/PowerShell wrapper-script generation for future runtime or
-  launcher integration.
+  export, launch-script generation, and setup-script generation for future
+  runtime or launcher integration.
 - A checked-in compatibility catalog tool now lives in `tools/` so the repo can
   export a consistent compatibility matrix from the same checked-in profiles the
   runtime layer consumes, including JSON and Markdown views for docs/wiki reuse.
 - A checked-in export helper now lives in `scripts/export_runtime_plan.ps1` so
   persisted JSON, human-readable reports, Markdown setup checklists, and wrapper
   scripts can be generated from the same shared contract without Mac hardware.
+  When a prefix path is supplied, the same helper now also emits setup/bootstrap
+  bash and PowerShell scripts from the install policy in the resolved plan.
 - A companion export helper now lives in `scripts/export_profile_catalog.ps1` so
   JSON, report, and Markdown versions of the compatibility catalog can be generated
   without Mac hardware.

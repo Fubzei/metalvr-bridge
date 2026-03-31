@@ -8,6 +8,8 @@ param(
     [string]$BuildDir = "",
     [string]$OutputPath = "",
     [string]$WineBinary = "wine",
+    [string]$WineBootBinary = "wineboot",
+    [string]$WinetricksBinary = "winetricks",
     [string]$PrefixPath = "",
     [string]$WorkingDirectory = ""
 )
@@ -61,6 +63,12 @@ $powerShellPath = [System.IO.Path]::GetFullPath(
 $checklistPath = [System.IO.Path]::GetFullPath(
     (Join-Path $baseDirectory ($baseName + ".md"))
 )
+$setupBashPath = [System.IO.Path]::GetFullPath(
+    (Join-Path $baseDirectory ($baseName + ".setup.sh"))
+)
+$setupPowerShellPath = [System.IO.Path]::GetFullPath(
+    (Join-Path $baseDirectory ($baseName + ".setup.ps1"))
+)
 
 $commonArgs = @(
     "--profiles-dir", $ProfilesDir,
@@ -91,6 +99,12 @@ if ($LASTEXITCODE -ne 0) {
 if ([string]::IsNullOrWhiteSpace($WineBinary)) {
     throw "WineBinary cannot be empty"
 }
+if ([string]::IsNullOrWhiteSpace($WineBootBinary)) {
+    throw "WineBootBinary cannot be empty"
+}
+if ([string]::IsNullOrWhiteSpace($WinetricksBinary)) {
+    throw "WinetricksBinary cannot be empty"
+}
 
 $scriptArgs = @(
     "--input", $OutputPath,
@@ -102,6 +116,28 @@ if (-not [string]::IsNullOrWhiteSpace($PrefixPath)) {
 }
 if (-not [string]::IsNullOrWhiteSpace($WorkingDirectory)) {
     $scriptArgs += @("--working-dir", $WorkingDirectory)
+}
+
+if (-not [string]::IsNullOrWhiteSpace($PrefixPath)) {
+    $setupArgs = @(
+        "--input", $OutputPath,
+        "--prefix", $PrefixPath,
+        "--wineboot-binary", $WineBootBinary,
+        "--winetricks-binary", $WinetricksBinary
+    )
+    if (-not [string]::IsNullOrWhiteSpace($WorkingDirectory)) {
+        $setupArgs += @("--working-dir", $WorkingDirectory)
+    }
+
+    & $toolPath @setupArgs "--setup-bash" "--out" $setupBashPath | Out-Null
+    if ($LASTEXITCODE -ne 0) {
+        throw "Bash setup-script export failed with exit code $LASTEXITCODE"
+    }
+
+    & $toolPath @setupArgs "--setup-powershell" "--out" $setupPowerShellPath | Out-Null
+    if ($LASTEXITCODE -ne 0) {
+        throw "PowerShell setup-script export failed with exit code $LASTEXITCODE"
+    }
 }
 
 & $toolPath @scriptArgs "--bash" "--out" $bashPath | Out-Null
@@ -117,5 +153,9 @@ if ($LASTEXITCODE -ne 0) {
 Write-Host "JSON launch plan:  $OutputPath"
 Write-Host "Report launch plan: $reportPath"
 Write-Host "Setup checklist:   $checklistPath"
+if (-not [string]::IsNullOrWhiteSpace($PrefixPath)) {
+    Write-Host "Bash setup script: $setupBashPath"
+    Write-Host "PowerShell setup:  $setupPowerShellPath"
+}
 Write-Host "Bash launch script: $bashPath"
 Write-Host "PowerShell script:  $powerShellPath"
