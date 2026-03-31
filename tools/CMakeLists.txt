@@ -1,6 +1,7 @@
 get_filename_component(MVRVB_TOOLS_REPO_ROOT "${CMAKE_CURRENT_LIST_DIR}/.." ABSOLUTE)
 set(MVRVB_TOOLS_PROFILE_DIR "${MVRVB_TOOLS_REPO_ROOT}/profiles")
 set(MVRVB_TOOLS_VERIFY_SCRIPT "${CMAKE_CURRENT_LIST_DIR}/verify_runtime_plan_output.cmake")
+set(MVRVB_PROFILE_CATALOG_VERIFY_SCRIPT "${CMAKE_CURRENT_LIST_DIR}/verify_profile_catalog_output.cmake")
 
 add_executable(mvrvb_runtime_plan_preview
     runtime_plan_preview.cpp
@@ -14,7 +15,64 @@ target_compile_definitions(mvrvb_runtime_plan_preview PRIVATE
     MVRVB_TOOLS_PROFILE_DIR="${MVRVB_TOOLS_PROFILE_DIR}"
 )
 
+add_executable(mvrvb_profile_catalog
+    profile_catalog.cpp
+)
+
+target_link_libraries(mvrvb_profile_catalog PRIVATE mvrvb_common)
+
+target_compile_features(mvrvb_profile_catalog PRIVATE cxx_std_20)
+
+target_compile_definitions(mvrvb_profile_catalog PRIVATE
+    MVRVB_TOOLS_PROFILE_DIR="${MVRVB_TOOLS_PROFILE_DIR}"
+)
+
 if(MVRVB_BUILD_TESTS)
+  add_test(
+    NAME profile_catalog_help
+    COMMAND mvrvb_profile_catalog --help
+  )
+
+  add_test(
+    NAME profile_catalog_report
+    COMMAND mvrvb_profile_catalog
+            --profiles-dir "${MVRVB_TOOLS_PROFILE_DIR}"
+  )
+  set_tests_properties(profile_catalog_report PROPERTIES
+    PASS_REGULAR_EXPRESSION "Total profiles: 3"
+  )
+
+  add_test(
+    NAME profile_catalog_json
+    COMMAND mvrvb_profile_catalog
+            --profiles-dir "${MVRVB_TOOLS_PROFILE_DIR}"
+            --json
+  )
+  set_tests_properties(profile_catalog_json PROPERTIES
+    PASS_REGULAR_EXPRESSION "\"profileId\":\"overwatch-2\""
+  )
+
+  add_test(
+    NAME profile_catalog_report_file
+    COMMAND "${CMAKE_COMMAND}"
+            -DTOOL=$<TARGET_FILE:mvrvb_profile_catalog>
+            -DPROFILE_DIR=${MVRVB_TOOLS_PROFILE_DIR}
+            -DOUTPUT=${CMAKE_CURRENT_BINARY_DIR}/artifacts/profile-catalog.txt
+            -DEXPECTED_SUBSTRING=Total\ profiles:\ 3
+            -P "${MVRVB_PROFILE_CATALOG_VERIFY_SCRIPT}"
+  )
+
+  add_test(
+    NAME profile_catalog_json_file
+    COMMAND "${CMAKE_COMMAND}"
+            -DTOOL=$<TARGET_FILE:mvrvb_profile_catalog>
+            -DPROFILE_DIR=${MVRVB_TOOLS_PROFILE_DIR}
+            -DOUTPUT=${CMAKE_CURRENT_BINARY_DIR}/artifacts/profile-catalog.json
+            -DJSON=ON
+            -DEXPECTED_SUBSTRING=\"profileId\":\"overwatch-2\"
+            -P "${MVRVB_PROFILE_CATALOG_VERIFY_SCRIPT}"
+  )
+
   add_test(
     NAME runtime_plan_preview_help
     COMMAND mvrvb_runtime_plan_preview --help

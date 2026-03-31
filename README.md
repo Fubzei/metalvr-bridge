@@ -32,6 +32,10 @@ Windows game
   CI-backed parsing, auto-selection, and validation in
   `src/common/compatibility_profile.*` and
   `tests/unit/compatibility_profile_tests.cpp`.
+- A checked-in compatibility catalog layer now lives in
+  `src/common/compatibility_catalog.*`, turning those checked-in profiles into a
+  machine-readable and human-readable game/status database for future launcher,
+  wiki, and runtime surfaces.
 - A checked-in runtime launch-plan builder now lives in
   `src/common/runtime_launch_plan.*`, turning those profiles into backend,
   fallback, env, DLL-override, and launch-argument decisions that a launcher
@@ -44,9 +48,15 @@ Windows game
   plans can be resolved and inspected locally before the launcher wiring is
   complete, including machine-readable JSON export plus bash and PowerShell
   wrapper-script generation for future runtime or launcher integration.
+- A checked-in compatibility catalog tool now lives in `tools/` so the repo can
+  export a consistent compatibility matrix from the same checked-in profiles the
+  runtime layer consumes.
 - A checked-in export helper now lives in `scripts/export_runtime_plan.ps1` so
   persisted JSON, human-readable reports, and wrapper scripts can be generated
   from the same shared contract without Mac hardware.
+- A companion export helper now lives in `scripts/export_profile_catalog.ps1` so
+  JSON and report versions of the compatibility catalog can be generated without
+  Mac hardware.
 - Those persisted JSON plans can now also be loaded back through the shared
   launch-plan layer, so future runtime or launcher glue can consume exported
   plans without re-solving profiles.

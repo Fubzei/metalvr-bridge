@@ -81,6 +81,15 @@ Scope:
 - install notes and required components
 - compatibility states: planning, experimental, validated
 
+Progress checked in so far:
+
+- `src/common/compatibility_catalog.*`
+  - host-safe compatibility matrix builder derived from checked-in profile files
+- `tools/mvrvb_profile_catalog`
+  - export path for JSON or report-style compatibility outputs
+- `scripts/export_profile_catalog.ps1`
+  - host-safe helper for generating compatibility-catalog bundles on disk
+
 ### 4.3 Performance and Latency Engineering
 
 Status: `PLANNED`
@@ -124,6 +133,8 @@ The first checked-in Phase 4 deliverables are:
 
 - `src/common/compatibility_profile.*`
   - CI-validated parser plus auto-selection helpers for runtime compatibility profiles
+- `src/common/compatibility_catalog.*`
+  - host-safe compatibility database builder for JSON/report export from checked-in profiles
 - `src/common/runtime_launch_plan.*`
   - host-safe launch-plan builder that resolves backend/env/args/runtime policy from profiles
 - `src/common/runtime_launch_command.*`
@@ -142,6 +153,8 @@ The first checked-in Phase 4 deliverables are:
   compatibility checks
 - `profiles/`
   - checked-in defaults, templates, and planning profiles with runtime-policy knobs
+- `tests/unit/compatibility_catalog_tests.cpp`
+  - regression coverage for compatibility-catalog summaries and entry content
 - `tests/unit/compatibility_profile_tests.cpp`
   - regression coverage for parser behavior, checked-in files, and profile selection
 - `tests/unit/runtime_launch_plan_tests.cpp`

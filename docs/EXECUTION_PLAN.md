@@ -77,11 +77,17 @@ These items are now checked in and verified in CI:
    - future launcher/runtime integration points for backend, env, and launch policy
    Progress:
    - `src/common/compatibility_profile.*` now parses the profile format
+   - `src/common/compatibility_catalog.*` now turns those checked-in profiles into
+     a compatibility matrix the repo can export as JSON or a human-readable report
    - `profiles/` now holds defaults, templates, and planning profiles
    - `tests/unit/compatibility_profile_tests.cpp` validates the parser and the
      checked-in profile files
+   - `tests/unit/compatibility_catalog_tests.cpp` validates the checked-in
+     compatibility catalog summary and entry data
    - the profile layer now models backend fallback, sync mode, high-resolution mode,
      MetalFX-upscaling intent, and auto-selection rules
+   - `tools/mvrvb_profile_catalog` now exports the compatibility matrix from the
+     same checked-in profiles the launcher/runtime layer will use
    - `src/common/runtime_launch_plan.*` now turns those profiles into a concrete
      launch plan with backend, fallbacks, env vars, DLL overrides, launch args,
      and runtime-policy settings
@@ -97,6 +103,8 @@ These items are now checked in and verified in CI:
      either a fresh profile query or a previously exported JSON plan
    - `scripts/export_runtime_plan.ps1` now produces persisted JSON plus human-readable
      launch-plan bundles from that same shared contract for future runtime glue
+   - `scripts/export_profile_catalog.ps1` now exports the compatibility matrix as
+     both JSON and a human-readable report bundle without Mac hardware
    - persisted JSON launch-plan bundles can now be loaded back into
      `src/common/runtime_launch_plan.*`, so future runtime or launcher glue can
      consume exported plans without re-solving compatibility profiles
