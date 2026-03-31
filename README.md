@@ -33,14 +33,18 @@ Windows game
   `src/common/compatibility_profile.*` and
   `tests/unit/compatibility_profile_tests.cpp`, including install/setup policy
   alongside runtime policy.
+- A checked-in prefix preset system now lives under `profiles/prefix-presets/`,
+  with CI-backed parsing and validation in `src/common/prefix_preset.*` and
+  `tests/unit/prefix_preset_tests.cpp`, so game profiles can point at named
+  bottle-style setup defaults instead of duplicating launcher/package intent.
 - A checked-in compatibility catalog layer now lives in
   `src/common/compatibility_catalog.*`, turning those checked-in profiles into a
   machine-readable and human-readable game/status database for future launcher,
-  wiki, and runtime surfaces.
+  wiki, and runtime surfaces, now with merged prefix-preset setup intent.
 - A checked-in runtime launch-plan builder now lives in
   `src/common/runtime_launch_plan.*`, turning those profiles into backend,
   fallback, install/setup, env, DLL-override, and launch-argument decisions
-  that a launcher can consume.
+  that a launcher can consume, including resolved checked-in prefix presets.
 - A checked-in runtime launch-command materializer now lives in
   `src/common/runtime_launch_command.*`, turning those plans into concrete
   Wine-style command, environment, and wrapper-script output for future runtime

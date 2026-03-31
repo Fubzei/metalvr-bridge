@@ -38,6 +38,7 @@ TEST(RuntimeSetupCommand, BuildsAutomatedAndManualSetupSteps) {
     EXPECT_EQ(result.plan.workingDirectory, ".");
     EXPECT_EQ(result.plan.environment.at("WINEPREFIX"), R"(C:\Prefixes\Overwatch)");
     EXPECT_EQ(result.plan.environment.at("MVRVB_PREFIX_PRESET"), "battlenet-shooter");
+    EXPECT_EQ(result.plan.environment.at("MVRVB_PREFIX_FAMILY"), "battlenet-shooter");
     EXPECT_EQ(result.plan.environment.at("MVRVB_INSTALL_PACKAGES"), "dxvk,battle.net");
     EXPECT_EQ(result.plan.environment.at("MVRVB_INSTALL_WINETRICKS"), "corefonts,vcrun2022");
     ASSERT_EQ(result.plan.actions.size(), 2u);

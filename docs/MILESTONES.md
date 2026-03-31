@@ -25,10 +25,10 @@ runtime validation.
 
 | # | Milestone | Repo Status | Canonical Paths | Notes |
 |---|-----------|-------------|-----------------|-------|
-| 13 | Compatibility profile system | STARTED | `src/common/compatibility_profile.*`, `profiles/`, `tests/unit/compatibility_profile_tests.cpp` | Parser, runtime knobs, install/setup policy, and auto-selection helper are checked in |
+| 13 | Compatibility profile system | STARTED | `src/common/compatibility_profile.*`, `src/common/prefix_preset.*`, `profiles/`, `tests/unit/compatibility_profile_tests.cpp`, `tests/unit/prefix_preset_tests.cpp` | Parser, runtime knobs, install/setup policy, prefix-preset validation, and auto-selection helper are checked in |
 | 14 | Runtime launcher/product integration | STARTED | `src/common/runtime_launch_plan.*`, `src/common/runtime_launch_command.*`, `tools/`, `launcher/`, future runtime glue | Launch-plan builder, launch-command materializer, preview tool, and wrapper-script export are checked in, now including install/setup metadata; launcher wiring is next |
 | 15 | Backend breadth and fallback strategy | PLANNED | future runtime/backend glue | DXVK, VKD3D-Proton, and fallback selection story |
-| 16 | Compatibility database and installer flow | STARTED | `profiles/`, `src/common/compatibility_catalog.*`, `tools/`, launcher, future runtime tooling | Compatibility catalog/reporting is checked in; installer flow is still pending |
+| 16 | Compatibility database and installer flow | STARTED | `profiles/`, `src/common/compatibility_catalog.*`, `src/common/prefix_preset.*`, `tools/`, launcher, future runtime tooling | Compatibility catalog/reporting plus merged prefix-preset setup intent are checked in; fuller installer flow is still pending |
 | 17 | Performance and latency tuning | PLANNED | runtime + renderer hot paths | Frametime stability and low-latency work |
 | 18 | Competitive-game hardening | PLANNED | profiles + runtime + renderer | Separate bar for shooters and anti-cheat-sensitive titles |
 
@@ -40,9 +40,9 @@ runtime validation.
 | macOS launcher CI build | PASSING | Swift launcher compiles |
 | Host-side unit tests | PASSING | Parser, emitter, format-table, ICD contract, and transfer-helper coverage including region geometry and transfer-format classification run in CI |
 | Local host-side checks | IN PLACE | `host-tests/CMakeLists.txt` and `scripts/run_host_checks.ps1` run the Apple-free unit surface on Windows/LLVM |
-| Compatibility profile validation | IN PLACE | Checked-in profile parser, runtime knobs, install/setup policy, sample profiles, and auto-selection helper are covered in CI |
-| Compatibility catalog | IN PLACE | `src/common/compatibility_catalog.*`, `tools/mvrvb_profile_catalog`, and `scripts/export_profile_catalog.ps1` turn checked-in profiles into JSON/report/Markdown compatibility outputs, including install/setup metadata, without Mac hardware |
-| Runtime launch-plan builder | IN PLACE | `src/common/runtime_launch_plan.*` resolves profiles into backend/install/env/args/runtime policy, can persist and reload schema-versioned JSON plans, and can emit Markdown setup checklists in host tests |
+| Compatibility profile validation | IN PLACE | Checked-in profile parser, runtime knobs, install/setup policy, sample profiles, checked-in prefix presets, and auto-selection helper are covered in CI |
+| Compatibility catalog | IN PLACE | `src/common/compatibility_catalog.*`, `tools/mvrvb_profile_catalog`, and `scripts/export_profile_catalog.ps1` turn checked-in profiles plus merged prefix-preset setup intent into JSON/report/Markdown compatibility outputs without Mac hardware |
+| Runtime launch-plan builder | IN PLACE | `src/common/runtime_launch_plan.*` resolves profiles plus checked-in prefix presets into backend/install/env/args/runtime policy, can persist and reload schema-versioned JSON plans, and can emit Markdown setup checklists in host tests |
 | Runtime launch-command materializer | IN PLACE | `src/common/runtime_launch_command.*` turns a resolved plan into a Wine-style command, environment block, and bash/PowerShell wrapper scripts without Mac hardware |
 | Runtime setup-command materializer | IN PLACE | `src/common/runtime_setup_command.*` turns install policy into bootstrap actions, manual follow-up notes, and bash/PowerShell setup scripts without Mac hardware |
 | Runtime plan preview tool | IN PLACE | `tools/mvrvb_runtime_plan_preview` resolves a profile query into a concrete launch summary, JSON launch-plan payload, Markdown setup checklist, launch wrapper script, or setup/bootstrap script, can persist those outputs to disk, and can reload exported JSON plans without Mac hardware |

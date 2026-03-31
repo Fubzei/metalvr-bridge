@@ -22,6 +22,8 @@ TEST(RuntimeLaunchPlan, FallsBackToGlobalDefaultsForUnknownGames) {
         });
 
     ASSERT_TRUE(result) << result.errorMessage;
+    EXPECT_EQ(result.plan.appliedPrefixPresetId, "general-game");
+    EXPECT_EQ(result.plan.appliedPrefixPresetDisplayName, "General Game");
     EXPECT_EQ(result.plan.selectedProfileId, "global-defaults");
     ASSERT_EQ(result.plan.appliedProfileIds.size(), 1u);
     EXPECT_EQ(result.plan.appliedProfileIds[0], "global-defaults");
@@ -29,6 +31,7 @@ TEST(RuntimeLaunchPlan, FallsBackToGlobalDefaultsForUnknownGames) {
     EXPECT_EQ(result.plan.windowsVersion, "win11");
     EXPECT_EQ(result.plan.syncMode, SyncMode::Default);
     EXPECT_EQ(result.plan.environment.at("MVRVB_PROFILE"), "global-defaults");
+    EXPECT_EQ(result.plan.environment.at("MVRVB_PREFIX_FAMILY"), "general-game");
     EXPECT_EQ(result.plan.install.prefixPreset, "general-game");
     ASSERT_EQ(result.plan.install.packages.size(), 1u);
     EXPECT_EQ(result.plan.install.packages[0], "dxvk");
@@ -50,6 +53,8 @@ TEST(RuntimeLaunchPlan, MergesMatchedGameProfileOverGlobalDefaults) {
         });
 
     ASSERT_TRUE(result) << result.errorMessage;
+    EXPECT_EQ(result.plan.appliedPrefixPresetId, "battlenet-shooter");
+    EXPECT_EQ(result.plan.appliedPrefixPresetDisplayName, "Battle.net Shooter");
     EXPECT_EQ(result.plan.selectedProfileId, "overwatch-2");
     ASSERT_EQ(result.plan.appliedProfileIds.size(), 2u);
     EXPECT_EQ(result.plan.appliedProfileIds[0], "global-defaults");
@@ -64,6 +69,7 @@ TEST(RuntimeLaunchPlan, MergesMatchedGameProfileOverGlobalDefaults) {
     EXPECT_TRUE(result.plan.competitive);
     EXPECT_EQ(result.plan.antiCheatRisk, AntiCheatRisk::Blocking);
     EXPECT_EQ(result.plan.environment.at("MVRVB_PROFILE"), "overwatch-2");
+    EXPECT_EQ(result.plan.environment.at("MVRVB_PREFIX_FAMILY"), "battlenet-shooter");
     EXPECT_EQ(result.plan.dllOverrides.at("d3d11"), "native,builtin");
     EXPECT_EQ(result.plan.install.prefixPreset, "battlenet-shooter");
     EXPECT_TRUE(result.plan.install.requiresLauncher);
@@ -89,6 +95,7 @@ TEST(RuntimeLaunchPlan, SummaryIncludesCoreDecisionFields) {
     ASSERT_TRUE(result) << result.errorMessage;
     const std::string summary = summarizeRuntimeLaunchPlan(result.plan);
 
+    EXPECT_NE(summary.find("Applied prefix preset: battlenet-shooter"), std::string::npos);
     EXPECT_NE(summary.find("Selected profile: overwatch-2"), std::string::npos);
     EXPECT_NE(summary.find("Backend: dxvk"), std::string::npos);
     EXPECT_NE(summary.find("Sync mode: msync"), std::string::npos);
@@ -108,8 +115,10 @@ TEST(RuntimeLaunchPlan, DetailedReportIncludesEnvironmentAndArguments) {
     ASSERT_TRUE(result) << result.errorMessage;
     const std::string report = describeRuntimeLaunchPlan(result.plan);
 
+    EXPECT_NE(report.find("Applied prefix preset: battlenet-shooter"), std::string::npos);
     EXPECT_NE(report.find("Environment:"), std::string::npos);
     EXPECT_NE(report.find("MVRVB_PROFILE=overwatch-2"), std::string::npos);
+    EXPECT_NE(report.find("MVRVB_PREFIX_FAMILY=battlenet-shooter"), std::string::npos);
     EXPECT_NE(report.find("DLL overrides:"), std::string::npos);
     EXPECT_NE(report.find("d3d11=native,builtin"), std::string::npos);
     EXPECT_NE(report.find("Install policy:"), std::string::npos);
@@ -132,6 +141,7 @@ TEST(RuntimeLaunchPlan, JsonIncludesMachineReadableFields) {
     const std::string json = runtimeLaunchPlanToJson(result.plan);
 
     EXPECT_NE(json.find("\"schemaVersion\":\"1\""), std::string::npos);
+    EXPECT_NE(json.find("\"appliedPrefixPresetId\":\"battlenet-shooter\""), std::string::npos);
     EXPECT_NE(json.find("\"selectedProfileId\":\"overwatch-2\""), std::string::npos);
     EXPECT_NE(json.find("\"backend\":\"dxvk\""), std::string::npos);
     EXPECT_NE(json.find("\"syncMode\":\"msync\""), std::string::npos);
@@ -155,6 +165,7 @@ TEST(RuntimeLaunchPlan, MarkdownChecklistIncludesSetupGuidance) {
     const std::string checklist = runtimeLaunchPlanToMarkdownChecklist(result.plan);
 
     EXPECT_NE(checklist.find("# Runtime Setup Checklist"), std::string::npos);
+    EXPECT_NE(checklist.find("- Applied prefix preset: `battlenet-shooter`"), std::string::npos);
     EXPECT_NE(checklist.find("- Prefix preset: `battlenet-shooter`"), std::string::npos);
     EXPECT_NE(checklist.find("- Requires launcher bootstrap: `true`"), std::string::npos);
     EXPECT_NE(checklist.find("`battle.net`"), std::string::npos);
@@ -197,6 +208,7 @@ TEST(RuntimeLaunchPlan, WritesJsonAndReportFiles) {
     EXPECT_NE(json.find("\"selectedProfileId\":\"overwatch-2\""), std::string::npos);
     const auto loaded = loadRuntimeLaunchPlanJson(jsonPath);
     ASSERT_TRUE(loaded) << loaded.errorMessage;
+    EXPECT_EQ(loaded.plan.appliedPrefixPresetId, "battlenet-shooter");
     EXPECT_EQ(loaded.plan.selectedProfileId, "overwatch-2");
     EXPECT_EQ(loaded.plan.backend, RendererBackend::DXVK);
     EXPECT_EQ(loaded.plan.syncMode, SyncMode::MSync);

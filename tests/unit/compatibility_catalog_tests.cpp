@@ -48,17 +48,18 @@ TEST(CompatibilityCatalog, CapturesCheckedInProfileDetails) {
     EXPECT_EQ(it->runtime.syncMode, SyncMode::MSync);
     EXPECT_TRUE(it->runtime.highResolutionMode);
     EXPECT_EQ(it->install.prefixPreset, "battlenet-shooter");
+    EXPECT_EQ(it->appliedPrefixPresetDisplayName, "Battle.net Shooter");
     EXPECT_TRUE(it->install.requiresLauncher);
     ASSERT_EQ(it->install.packages.size(), 2u);
-    EXPECT_EQ(it->install.packages[0], "battle.net");
-    EXPECT_EQ(it->install.packages[1], "dxvk");
+    EXPECT_EQ(it->install.packages[0], "dxvk");
+    EXPECT_EQ(it->install.packages[1], "battle.net");
     ASSERT_EQ(it->install.winetricks.size(), 2u);
     EXPECT_EQ(it->install.winetricks[0], "corefonts");
     EXPECT_EQ(it->install.winetricks[1], "vcrun2022");
     ASSERT_EQ(it->match.launchers.size(), 1u);
     EXPECT_EQ(it->match.launchers[0], "Battle.net");
     ASSERT_EQ(it->match.executables.size(), 2u);
-    EXPECT_EQ(it->environmentCount, 2u);
+    EXPECT_EQ(it->environmentCount, 4u);
     EXPECT_EQ(it->dllOverrideCount, 2u);
     ASSERT_EQ(it->launchArgs.size(), 1u);
     EXPECT_EQ(it->launchArgs[0], "--fullscreen");
@@ -76,6 +77,8 @@ TEST(CompatibilityCatalog, JsonIncludesSummaryAndEntryFields) {
     EXPECT_NE(json.find("\"defaultRenderer\":\"dxvk\""), std::string::npos);
     EXPECT_NE(json.find("\"antiCheatRisk\":\"blocking\""), std::string::npos);
     EXPECT_NE(json.find("\"prefixPreset\":\"battlenet-shooter\""), std::string::npos);
+    EXPECT_NE(json.find("\"appliedPrefixPresetDisplayName\":\"Battle.net Shooter\""),
+              std::string::npos);
     EXPECT_NE(json.find("\"requiresLauncher\":true"), std::string::npos);
 }
 

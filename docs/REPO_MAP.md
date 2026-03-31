@@ -54,7 +54,7 @@ That subtree exists in the repo, but it is not currently added by the root
 - `host-tests/`
   - non-Apple CMake entrypoint for running the Apple-free test surface locally
 - `profiles/`
-  - checked-in compatibility profiles for future runtime and launcher policy
+  - checked-in compatibility profiles and prefix presets for future runtime and launcher policy
 - `tools/`
   - checked-in host-safe preview tool for resolving runtime launch plans from
     profile inputs and writing launch/setup artifacts to disk
@@ -66,6 +66,7 @@ That subtree exists in the repo, but it is not currently added by the root
 - logging
 - threading
 - compatibility-profile parser, loader, and selector
+- prefix-preset parser and loader for bottle-style setup defaults
 - compatibility-catalog builder for machine-readable and report-style profile indexing
 - runtime launch-plan builder for launcher/runtime consumption
 - runtime launch-command materializer for wrapper-script generation
@@ -109,10 +110,13 @@ That subtree exists in the repo, but it is not currently added by the root
 ### `profiles`
 
 - compatibility profile defaults, templates, and planning files
+- prefix-preset files for reusable package, launcher-bootstrap, env, DLL-override,
+  and launch-argument defaults
 - intended to drive future runtime backend selection, launch args, env vars,
   DLL override policy, install/setup policy, sync mode, high-resolution mode,
   and MetalFX-upscaling intent
-- validated in CI through `src/common/compatibility_profile.*`
+- validated in CI through `src/common/compatibility_profile.*` and
+  `src/common/prefix_preset.*`
 
 ### `scripts`
 

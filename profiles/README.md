@@ -94,6 +94,24 @@ layer, so exported bundles can become an input to future launcher/runtime flows.
 That persisted JSON contract is schema-versioned so future consumers can reject
 incompatible plan formats cleanly.
 
+## Prefix Presets
+
+The `prefix-presets/` subtree holds `.mvrvb-prefix-preset` files. These are
+named bottle-style setup templates that can carry:
+
+- install packages
+- Winetricks verbs
+- launcher-bootstrap requirements
+- environment defaults
+- DLL override defaults
+- launch-argument defaults
+
+Profiles reference them with `[install] prefix_preset = ...`. The shared
+runtime launch-plan and compatibility-catalog layers merge those presets so the
+repo can express reusable setup families like `general-game`,
+`competitive-shooter`, and `battlenet-shooter` without repeating the same
+launcher/package defaults in every profile.
+
 ## Auto-Match Rules
 
 - `allow_auto_match = true`

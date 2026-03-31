@@ -80,7 +80,10 @@ These items are now checked in and verified in CI:
      install/setup policy for future bottle or prefix orchestration
    - `src/common/compatibility_catalog.*` now turns those checked-in profiles into
      a compatibility matrix the repo can export as JSON, a human-readable report,
-     or a Markdown matrix
+     or a Markdown matrix, now with merged prefix-preset setup intent
+   - `src/common/prefix_preset.*` now validates checked-in bottle-style prefix
+     presets so profiles can reference named setup templates instead of
+     duplicating launcher/package defaults
    - `profiles/` now holds defaults, templates, and planning profiles
    - `tests/unit/compatibility_profile_tests.cpp` validates the parser and the
      checked-in profile files
@@ -88,6 +91,9 @@ These items are now checked in and verified in CI:
      compatibility catalog summary and entry data
    - the profile layer now models backend fallback, sync mode, high-resolution mode,
      MetalFX-upscaling intent, install/setup policy, and auto-selection rules
+   - checked-in `profiles/prefix-presets/` files now provide reusable package,
+     Winetricks, launcher-bootstrap, environment, DLL-override, and launch-argument
+     defaults for compatible profile families
    - `tools/mvrvb_profile_catalog` now exports the compatibility matrix from the
      same checked-in profiles the launcher/runtime layer will use
    - `src/common/runtime_launch_plan.*` now turns those profiles into a concrete

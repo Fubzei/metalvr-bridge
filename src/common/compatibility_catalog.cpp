@@ -102,7 +102,34 @@ bool writeTextFile(const std::filesystem::path& path,
     return true;
 }
 
-CompatibilityCatalogEntry makeEntry(const CompatibilityProfile& profile) {
+void appendUniqueString(std::vector<std::string>* items, const std::string& value) {
+    if (!items || value.empty()) return;
+    if (std::find(items->begin(), items->end(), value) == items->end()) {
+        items->push_back(value);
+    }
+}
+
+void mergeInstallPolicy(CompatibilityInstallPolicy* dst,
+                        const PrefixPresetInstallPolicy& src,
+                        std::string_view presetId) {
+    if (!dst) return;
+    if (dst->prefixPreset.empty()) {
+        dst->prefixPreset = std::string(presetId);
+    }
+    for (const auto& package : src.packages) {
+        appendUniqueString(&dst->packages, package);
+    }
+    for (const auto& verb : src.winetricks) {
+        appendUniqueString(&dst->winetricks, verb);
+    }
+    dst->requiresLauncher = dst->requiresLauncher || src.requiresLauncher;
+    if (dst->notes.empty() && !src.notes.empty()) {
+        dst->notes = src.notes;
+    }
+}
+
+CompatibilityCatalogEntry makeEntry(const CompatibilityProfile& profile,
+                                    const std::vector<PrefixPreset>& prefixPresets) {
     CompatibilityCatalogEntry entry;
     entry.profileId = profile.profileId;
     entry.displayName = profile.displayName;
@@ -121,6 +148,19 @@ CompatibilityCatalogEntry makeEntry(const CompatibilityProfile& profile) {
     entry.launchArgs = profile.launchArgs;
     entry.environmentCount = profile.environment.size();
     entry.dllOverrideCount = profile.dllOverrides.size();
+
+    if (!entry.install.prefixPreset.empty()) {
+        if (const PrefixPreset* preset =
+                findPrefixPresetById(prefixPresets, entry.install.prefixPreset)) {
+            entry.appliedPrefixPresetDisplayName = preset->displayName;
+            mergeInstallPolicy(&entry.install, preset->install, preset->presetId);
+            for (const auto& arg : preset->launchArgs) {
+                appendUniqueString(&entry.launchArgs, arg);
+            }
+            entry.environmentCount += preset->environment.size();
+            entry.dllOverrideCount += preset->dllOverrides.size();
+        }
+    }
     return entry;
 }
 
@@ -128,6 +168,12 @@ CompatibilityCatalogEntry makeEntry(const CompatibilityProfile& profile) {
 
 CompatibilityCatalogResult buildCompatibilityCatalog(
     const std::vector<CompatibilityProfile>& profiles) {
+    return buildCompatibilityCatalog(profiles, {});
+}
+
+CompatibilityCatalogResult buildCompatibilityCatalog(
+    const std::vector<CompatibilityProfile>& profiles,
+    const std::vector<PrefixPreset>& prefixPresets) {
     CompatibilityCatalogResult result;
     if (profiles.empty()) {
         result.errorMessage = "No compatibility profiles are available";
@@ -136,7 +182,7 @@ CompatibilityCatalogResult buildCompatibilityCatalog(
 
     result.catalog.entries.reserve(profiles.size());
     for (const auto& profile : profiles) {
-        result.catalog.entries.push_back(makeEntry(profile));
+        result.catalog.entries.push_back(makeEntry(profile, prefixPresets));
         ++result.catalog.summary.totalProfiles;
         if (profile.allowAutoMatch) {
             ++result.catalog.summary.autoMatchProfiles;
@@ -168,6 +214,7 @@ CompatibilityCatalogResult buildCompatibilityCatalog(
 CompatibilityCatalogResult buildCompatibilityCatalogFromDirectory(
     const std::filesystem::path& root) {
     const auto batch = loadCompatibilityProfilesFromDirectory(root);
+    const auto prefixPresetBatch = loadPrefixPresetsFromDirectory(root / "prefix-presets");
     CompatibilityCatalogResult result;
     if (!batch) {
         std::ostringstream errors;
@@ -178,7 +225,16 @@ CompatibilityCatalogResult buildCompatibilityCatalogFromDirectory(
         result.errorMessage = errors.str();
         return result;
     }
-    return buildCompatibilityCatalog(batch.profiles);
+    if (!prefixPresetBatch) {
+        std::ostringstream errors;
+        for (size_t i = 0; i < prefixPresetBatch.errorMessages.size(); ++i) {
+            if (i != 0) errors << "; ";
+            errors << prefixPresetBatch.errorMessages[i];
+        }
+        result.errorMessage = errors.str();
+        return result;
+    }
+    return buildCompatibilityCatalog(batch.profiles, prefixPresetBatch.presets);
 }
 
 std::string summarizeCompatibilityCatalog(const CompatibilityCatalog& catalog) {
@@ -254,6 +310,10 @@ std::string describeCompatibilityCatalog(const CompatibilityCatalog& catalog) {
             << ", high-res=" << (entry.runtime.highResolutionMode ? "true" : "false")
             << ", MetalFX=" << (entry.runtime.metalFxUpscaling ? "true" : "false") << "\n";
         out << "  install: prefix-preset=" << entry.install.prefixPreset
+            << " (" << (entry.appliedPrefixPresetDisplayName.empty()
+                             ? "unknown"
+                             : entry.appliedPrefixPresetDisplayName)
+            << ")"
             << ", requires-launcher=" << (entry.install.requiresLauncher ? "true" : "false")
             << ", packages=";
         for (size_t i = 0; i < entry.install.packages.size(); ++i) {
@@ -310,6 +370,8 @@ std::string compatibilityCatalogToJson(const CompatibilityCatalog& catalog) {
             appendJsonString(stream, entry.profileId);
             *stream << ",\"displayName\":";
             appendJsonString(stream, entry.displayName);
+            *stream << ",\"appliedPrefixPresetDisplayName\":";
+            appendJsonString(stream, entry.appliedPrefixPresetDisplayName);
             *stream << ",\"status\":";
             appendJsonString(stream, profileStatusName(entry.status));
             *stream << ",\"allowAutoMatch\":" << (entry.allowAutoMatch ? "true" : "false");
@@ -403,7 +465,7 @@ std::string compatibilityCatalogToJson(const CompatibilityCatalog& catalog) {
 std::string compatibilityCatalogToMarkdown(const CompatibilityCatalog& catalog) {
     std::ostringstream out;
     out << "# Compatibility Catalog\n\n";
-    out << "Generated from checked-in `.mvrvb-profile` files.\n\n";
+    out << "Generated from checked-in `.mvrvb-profile` files and merged prefix presets.\n\n";
     out << "## Summary\n\n";
     out << "- Total profiles: " << catalog.summary.totalProfiles << "\n";
     out << "- Auto-match profiles: " << catalog.summary.autoMatchProfiles << "\n";
@@ -450,6 +512,10 @@ std::string compatibilityCatalogToMarkdown(const CompatibilityCatalog& catalog) 
         out << "- MetalFX upscaling: `" << (entry.runtime.metalFxUpscaling ? "true" : "false")
             << "`\n";
         out << "- Prefix preset: `" << entry.install.prefixPreset << "`\n";
+        out << "- Prefix preset display name: `"
+            << (entry.appliedPrefixPresetDisplayName.empty() ? "(unknown)"
+                                                             : entry.appliedPrefixPresetDisplayName)
+            << "`\n";
         out << "- Requires launcher: `" << (entry.install.requiresLauncher ? "true" : "false")
             << "`\n";
         out << "- Install packages: ";

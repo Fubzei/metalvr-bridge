@@ -562,6 +562,10 @@ private:
             if (key == "schemaVersion") {
                 if (!parseString(&schemaVersion_, errorMessage)) return false;
                 if (sawSchemaVersion) *sawSchemaVersion = true;
+            } else if (key == "appliedPrefixPresetId") {
+                if (!parseString(&plan->appliedPrefixPresetId, errorMessage)) return false;
+            } else if (key == "appliedPrefixPresetDisplayName") {
+                if (!parseString(&plan->appliedPrefixPresetDisplayName, errorMessage)) return false;
             } else if (key == "selectedProfileId") {
                 if (!parseString(&plan->selectedProfileId, errorMessage)) return false;
             } else if (key == "selectedDisplayName") {
@@ -648,6 +652,16 @@ const CompatibilityProfile* findGlobalDefaults(const std::vector<CompatibilityPr
     return nullptr;
 }
 
+CompatibilityInstallPolicy installPolicyFromPrefixPreset(const PrefixPreset& preset) {
+    CompatibilityInstallPolicy policy;
+    policy.prefixPreset = preset.presetId;
+    policy.packages = preset.install.packages;
+    policy.winetricks = preset.install.winetricks;
+    policy.requiresLauncher = preset.install.requiresLauncher;
+    policy.notes = preset.install.notes;
+    return policy;
+}
+
 void mergeMaps(std::map<std::string, std::string>* dst,
                const std::map<std::string, std::string>& src) {
     if (!dst) return;
@@ -694,6 +708,13 @@ void mergeInstallPolicy(CompatibilityInstallPolicy* dst,
 
 RuntimeLaunchPlanResult buildRuntimeLaunchPlan(
     const std::vector<CompatibilityProfile>& profiles,
+    const CompatibilityProfileQuery& query) {
+    return buildRuntimeLaunchPlan(profiles, {}, query);
+}
+
+RuntimeLaunchPlanResult buildRuntimeLaunchPlan(
+    const std::vector<CompatibilityProfile>& profiles,
+    const std::vector<PrefixPreset>& prefixPresets,
     const CompatibilityProfileQuery& query) {
     RuntimeLaunchPlanResult result;
     if (profiles.empty()) {
@@ -747,6 +768,29 @@ RuntimeLaunchPlanResult buildRuntimeLaunchPlan(
         appendFallbacks(&result.plan.fallbackBackends, globalDefaults->fallbackRenderers);
     }
 
+    const std::string resolvedPrefixPresetId = !selectedProfile->install.prefixPreset.empty()
+                                                   ? selectedProfile->install.prefixPreset
+                                                   : result.plan.install.prefixPreset;
+    if (!resolvedPrefixPresetId.empty()) {
+        const PrefixPreset* appliedPreset =
+            findPrefixPresetById(prefixPresets, resolvedPrefixPresetId);
+        if (!prefixPresets.empty() && !appliedPreset) {
+            result.errorMessage = "Missing checked-in prefix preset: " + resolvedPrefixPresetId;
+            return result;
+        }
+        if (appliedPreset) {
+            result.plan.appliedPrefixPresetId = appliedPreset->presetId;
+            result.plan.appliedPrefixPresetDisplayName = appliedPreset->displayName;
+            mergeMaps(&result.plan.environment, appliedPreset->environment);
+            mergeMaps(&result.plan.dllOverrides, appliedPreset->dllOverrides);
+            mergeArgs(&result.plan.launchArgs, appliedPreset->launchArgs);
+            mergeInstallPolicy(
+                &result.plan.install,
+                installPolicyFromPrefixPreset(*appliedPreset),
+                true);
+        }
+    }
+
     mergeMaps(&result.plan.environment, selectedProfile->environment);
     mergeMaps(&result.plan.dllOverrides, selectedProfile->dllOverrides);
     mergeArgs(&result.plan.launchArgs, selectedProfile->launchArgs);
@@ -759,6 +803,7 @@ RuntimeLaunchPlanResult buildRuntimeLaunchPlanFromDirectory(
     const std::filesystem::path& root,
     const CompatibilityProfileQuery& query) {
     const auto batch = loadCompatibilityProfilesFromDirectory(root);
+    const auto prefixPresetBatch = loadPrefixPresetsFromDirectory(root / "prefix-presets");
     RuntimeLaunchPlanResult result;
     if (!batch) {
         std::ostringstream errors;
@@ -769,7 +814,16 @@ RuntimeLaunchPlanResult buildRuntimeLaunchPlanFromDirectory(
         result.errorMessage = errors.str();
         return result;
     }
-    return buildRuntimeLaunchPlan(batch.profiles, query);
+    if (!prefixPresetBatch) {
+        std::ostringstream errors;
+        for (size_t i = 0; i < prefixPresetBatch.errorMessages.size(); ++i) {
+            if (i != 0) errors << "; ";
+            errors << prefixPresetBatch.errorMessages[i];
+        }
+        result.errorMessage = errors.str();
+        return result;
+    }
+    return buildRuntimeLaunchPlan(batch.profiles, prefixPresetBatch.presets, query);
 }
 
 RuntimeLaunchPlanResult parseRuntimeLaunchPlanJson(std::string_view text) {
@@ -791,6 +845,13 @@ RuntimeLaunchPlanResult loadRuntimeLaunchPlanJson(const std::filesystem::path& p
 
 std::string summarizeRuntimeLaunchPlan(const RuntimeLaunchPlan& plan) {
     std::ostringstream out;
+    if (!plan.appliedPrefixPresetId.empty()) {
+        out << "Applied prefix preset: " << plan.appliedPrefixPresetId;
+        if (!plan.appliedPrefixPresetDisplayName.empty()) {
+            out << " (" << plan.appliedPrefixPresetDisplayName << ")";
+        }
+        out << "\n";
+    }
     out << "Selected profile: " << plan.selectedProfileId;
     if (!plan.selectedDisplayName.empty()) {
         out << " (" << plan.selectedDisplayName << ")";
@@ -898,6 +959,10 @@ std::string runtimeLaunchPlanToJson(const RuntimeLaunchPlan& plan) {
 
     out << "\"schemaVersion\":";
     appendJsonString(&out, kRuntimeLaunchPlanSchemaVersion);
+    out << ",\"appliedPrefixPresetId\":";
+    appendJsonString(&out, plan.appliedPrefixPresetId);
+    out << ",\"appliedPrefixPresetDisplayName\":";
+    appendJsonString(&out, plan.appliedPrefixPresetDisplayName);
     out << ",\"selectedProfileId\":";
     appendJsonString(&out, plan.selectedProfileId);
     out << ",\"selectedDisplayName\":";
@@ -961,6 +1026,16 @@ std::string runtimeLaunchPlanToMarkdownChecklist(const RuntimeLaunchPlan& plan) 
     out << "# Runtime Setup Checklist\n\n";
     out << "Generated from the resolved MetalVR Bridge launch plan.\n\n";
     out << "## Profile\n\n";
+    out << "- Applied prefix preset: ";
+    if (plan.appliedPrefixPresetId.empty()) {
+        out << "`(none)`\n";
+    } else {
+        out << "`" << plan.appliedPrefixPresetId << "`";
+        if (!plan.appliedPrefixPresetDisplayName.empty()) {
+            out << " (" << plan.appliedPrefixPresetDisplayName << ")";
+        }
+        out << "\n";
+    }
     out << "- Selected profile: `" << plan.selectedProfileId << "`";
     if (!plan.selectedDisplayName.empty()) {
         out << " (" << plan.selectedDisplayName << ")";

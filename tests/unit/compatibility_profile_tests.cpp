@@ -156,10 +156,8 @@ TEST(CompatibilityProfile, CheckedInOverwatchProfileIsPlanningOnly) {
     EXPECT_EQ(result.profile.runtime.syncMode, SyncMode::MSync);
     EXPECT_TRUE(result.profile.runtime.highResolutionMode);
     EXPECT_EQ(result.profile.install.prefixPreset, "battlenet-shooter");
-    EXPECT_TRUE(result.profile.install.requiresLauncher);
-    ASSERT_EQ(result.profile.install.packages.size(), 2u);
-    EXPECT_EQ(result.profile.install.packages[0], "battle.net");
-    EXPECT_EQ(result.profile.install.packages[1], "dxvk");
+    EXPECT_FALSE(result.profile.install.requiresLauncher);
+    EXPECT_TRUE(result.profile.install.packages.empty());
     ASSERT_EQ(result.profile.match.launchers.size(), 1u);
     EXPECT_EQ(result.profile.match.launchers[0], "Battle.net");
 }

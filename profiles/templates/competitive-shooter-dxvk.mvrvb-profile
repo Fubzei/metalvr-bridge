@@ -19,9 +19,6 @@ metalfx_upscaling = false
 
 [install]
 prefix_preset = competitive-shooter
-packages = dxvk
-winetricks = corefonts, vcrun2022
-requires_launcher = false
 notes = Template install intent only. Add any title-specific launcher or redistributable requirements in the final game profile.
 
 [match]
@@ -29,12 +26,4 @@ stores = battlenet, steam
 executables = Game.exe, Game-Win64-Shipping.exe
 
 [env]
-DXVK_HUD = 0
 MVRVB_PROFILE = competitive-shooter-dxvk
-
-[dll_overrides]
-d3d11 = native,builtin
-dxgi = native,builtin
-
-[launch]
-args = --fullscreen

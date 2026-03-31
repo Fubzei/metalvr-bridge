@@ -1,6 +1,7 @@
 #pragma once
 
 #include "compatibility_profile.h"
+#include "prefix_preset.h"
 
 #include <filesystem>
 #include <map>
@@ -14,6 +15,7 @@ inline constexpr const char* kCompatibilityCatalogSchemaVersion = "1";
 struct CompatibilityCatalogEntry {
     std::string profileId;
     std::string displayName;
+    std::string appliedPrefixPresetDisplayName;
     ProfileStatus status{ProfileStatus::Planning};
     bool allowAutoMatch{true};
     std::string category;
@@ -56,6 +58,9 @@ struct CompatibilityCatalogResult {
 
 CompatibilityCatalogResult buildCompatibilityCatalog(
     const std::vector<CompatibilityProfile>& profiles);
+CompatibilityCatalogResult buildCompatibilityCatalog(
+    const std::vector<CompatibilityProfile>& profiles,
+    const std::vector<PrefixPreset>& prefixPresets);
 CompatibilityCatalogResult buildCompatibilityCatalogFromDirectory(
     const std::filesystem::path& root);
 std::string summarizeCompatibilityCatalog(const CompatibilityCatalog& catalog);

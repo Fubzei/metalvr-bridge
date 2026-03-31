@@ -49,6 +49,7 @@ TEST(RuntimeLaunchCommand, MaterializesWineCommandFromLaunchPlan) {
     EXPECT_EQ(result.command.environment.at("MVRVB_HIGH_RESOLUTION_MODE"), "1");
     EXPECT_EQ(result.command.environment.at("MVRVB_SELECTED_PROFILE"), "overwatch-2");
     EXPECT_EQ(result.command.environment.at("MVRVB_PREFIX_PRESET"), "battlenet-shooter");
+    EXPECT_EQ(result.command.environment.at("MVRVB_PREFIX_FAMILY"), "battlenet-shooter");
     EXPECT_EQ(result.command.environment.at("MVRVB_INSTALL_PACKAGES"), "dxvk,battle.net");
     EXPECT_EQ(result.command.environment.at("MVRVB_INSTALL_WINETRICKS"), "corefonts,vcrun2022");
     EXPECT_EQ(result.command.environment.at("MVRVB_REQUIRES_LAUNCHER"), "1");

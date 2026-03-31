@@ -134,10 +134,16 @@ The first checked-in Phase 4 deliverables are:
 - `src/common/compatibility_profile.*`
   - CI-validated parser plus auto-selection helpers for runtime compatibility profiles
   - now includes install/setup policy fields for future bottle or prefix orchestration
+- `src/common/prefix_preset.*`
+  - CI-validated parser and loader for named bottle-style prefix presets that
+    carry shared package, launcher-bootstrap, environment, DLL-override, and
+    launch-argument defaults
 - `src/common/compatibility_catalog.*`
-  - host-safe compatibility database builder for JSON/report export from checked-in profiles
+  - host-safe compatibility database builder for JSON/report export from checked-in
+    profiles plus merged prefix-preset setup intent
 - `src/common/runtime_launch_plan.*`
-  - host-safe launch-plan builder that resolves backend/install/env/args/runtime policy from profiles
+  - host-safe launch-plan builder that resolves backend/install/env/args/runtime policy
+    from profiles plus named prefix presets
   - now also emits a Markdown setup checklist for tester-facing install/bootstrap guidance
 - `src/common/runtime_launch_command.*`
   - host-safe launch-command materializer that turns a resolved plan into runnable
@@ -157,7 +163,8 @@ The first checked-in Phase 4 deliverables are:
 - the persisted launch-plan JSON contract is now schema-versioned for future
   compatibility checks
 - `profiles/`
-  - checked-in defaults, templates, and planning profiles with runtime-policy knobs
+  - checked-in defaults, templates, planning profiles, and prefix presets with
+    runtime/setup-policy knobs
 - `tests/unit/compatibility_catalog_tests.cpp`
   - regression coverage for compatibility-catalog summaries and entry content
 - `tests/unit/compatibility_profile_tests.cpp`

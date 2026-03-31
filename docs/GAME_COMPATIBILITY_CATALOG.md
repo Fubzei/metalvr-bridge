@@ -4,7 +4,7 @@
 -->
 # Compatibility Catalog
 
-Generated from checked-in `.mvrvb-profile` files.
+Generated from checked-in `.mvrvb-profile` files and merged prefix presets.
 
 ## Summary
 
@@ -31,11 +31,12 @@ Generated from checked-in `.mvrvb-profile` files.
 - High resolution mode: `false`
 - MetalFX upscaling: `false`
 - Prefix preset: `general-game`
+- Prefix preset display name: `General Game`
 - Requires launcher: `false`
 - Install packages: `dxvk`
 - Winetricks verbs: `corefonts`
 - Launch args: `(none)`
-- Environment entries: `1`
+- Environment entries: `2`
 - DLL override entries: `0`
 
 ### Competitive Shooter (DXVK Template)
@@ -45,11 +46,12 @@ Generated from checked-in `.mvrvb-profile` files.
 - High resolution mode: `true`
 - MetalFX upscaling: `false`
 - Prefix preset: `competitive-shooter`
+- Prefix preset display name: `Competitive Shooter`
 - Requires launcher: `false`
 - Install packages: `dxvk`
 - Winetricks verbs: `corefonts`, `vcrun2022`
 - Launch args: `--fullscreen`
-- Environment entries: `2`
+- Environment entries: `3`
 - DLL override entries: `2`
 
 ### Overwatch 2
@@ -59,10 +61,11 @@ Generated from checked-in `.mvrvb-profile` files.
 - High resolution mode: `true`
 - MetalFX upscaling: `false`
 - Prefix preset: `battlenet-shooter`
+- Prefix preset display name: `Battle.net Shooter`
 - Requires launcher: `true`
-- Install packages: `battle.net`, `dxvk`
+- Install packages: `dxvk`, `battle.net`
 - Winetricks verbs: `corefonts`, `vcrun2022`
 - Launch args: `--fullscreen`
-- Environment entries: `2`
+- Environment entries: `4`
 - DLL override entries: `2`
 

@@ -19,9 +19,6 @@ metalfx_upscaling = false
 
 [install]
 prefix_preset = battlenet-shooter
-packages = battle.net, dxvk
-winetricks = corefonts, vcrun2022
-requires_launcher = true
 notes = Install Battle.net in the target prefix first, then install or update Overwatch 2 from the launcher before gameplay attempts.
 
 [match]
@@ -30,12 +27,4 @@ stores = battlenet
 executables = Overwatch.exe, Overwatch Launcher.exe
 
 [env]
-DXVK_HUD = 0
 MVRVB_PROFILE = overwatch-2
-
-[dll_overrides]
-d3d11 = native,builtin
-dxgi = native,builtin
-
-[launch]
-args = --fullscreen

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "compatibility_profile.h"
+#include "prefix_preset.h"
 
 #include <filesystem>
 #include <map>
@@ -13,6 +14,8 @@ inline constexpr const char* kRuntimeLaunchPlanSchemaVersion = "1";
 
 struct RuntimeLaunchPlan {
     std::vector<std::string> appliedProfileIds;
+    std::string appliedPrefixPresetId;
+    std::string appliedPrefixPresetDisplayName;
     std::string selectedProfileId;
     std::string selectedDisplayName;
     int matchScore{0};
@@ -40,6 +43,10 @@ struct RuntimeLaunchPlanResult {
 
 RuntimeLaunchPlanResult buildRuntimeLaunchPlan(
     const std::vector<CompatibilityProfile>& profiles,
+    const CompatibilityProfileQuery& query);
+RuntimeLaunchPlanResult buildRuntimeLaunchPlan(
+    const std::vector<CompatibilityProfile>& profiles,
+    const std::vector<PrefixPreset>& prefixPresets,
     const CompatibilityProfileQuery& query);
 RuntimeLaunchPlanResult buildRuntimeLaunchPlanFromDirectory(
     const std::filesystem::path& root,
