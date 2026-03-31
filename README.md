@@ -41,6 +41,10 @@ Windows game
   `src/common/compatibility_catalog.*`, turning those checked-in profiles into a
   machine-readable and human-readable game/status database for future launcher,
   wiki, and runtime surfaces, now with merged prefix-preset setup intent.
+- A checked-in profile lint layer now lives in `src/common/profile_lint.*` and
+  `tools/mvrvb_profile_lint`, so the repo can catch missing preset references,
+  duplicate IDs, and ambiguous auto-match policy before those mistakes reach
+  runtime work.
 - A checked-in runtime launch-plan builder now lives in
   `src/common/runtime_launch_plan.*`, turning those profiles into backend,
   fallback, install/setup, env, DLL-override, and launch-argument decisions
@@ -69,6 +73,13 @@ Windows game
 - A companion export helper now lives in `scripts/export_profile_catalog.ps1` so
   JSON, report, and Markdown versions of the compatibility catalog can be generated
   without Mac hardware.
+- A companion lint helper now lives in `scripts/run_profile_lint.ps1` so the
+  checked-in profile and prefix-preset policy can be validated directly without
+  waiting for the full host test suite.
+- A higher-level runtime bundle helper now lives in
+  `scripts/export_runtime_bundle.ps1`, packaging the launch plan, setup scripts,
+  compatibility catalog, and lint report into one handoff directory for tester
+  or future launcher/runtime flows.
 - Those persisted JSON plans can now also be loaded back through the shared
   launch-plan layer, so future runtime or launcher glue can consume exported
   plans without re-solving profiles.

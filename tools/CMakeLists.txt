@@ -27,7 +27,33 @@ target_compile_definitions(mvrvb_profile_catalog PRIVATE
     MVRVB_TOOLS_PROFILE_DIR="${MVRVB_TOOLS_PROFILE_DIR}"
 )
 
+add_executable(mvrvb_profile_lint
+    profile_lint.cpp
+)
+
+target_link_libraries(mvrvb_profile_lint PRIVATE mvrvb_common)
+
+target_compile_features(mvrvb_profile_lint PRIVATE cxx_std_20)
+
+target_compile_definitions(mvrvb_profile_lint PRIVATE
+    MVRVB_TOOLS_PROFILE_DIR="${MVRVB_TOOLS_PROFILE_DIR}"
+)
+
 if(MVRVB_BUILD_TESTS)
+  add_test(
+    NAME profile_lint_help
+    COMMAND mvrvb_profile_lint --help
+  )
+
+  add_test(
+    NAME profile_lint_clean
+    COMMAND mvrvb_profile_lint
+            --profiles-dir "${MVRVB_TOOLS_PROFILE_DIR}"
+  )
+  set_tests_properties(profile_lint_clean PROPERTIES
+    PASS_REGULAR_EXPRESSION "No lint findings."
+  )
+
   add_test(
     NAME profile_catalog_help
     COMMAND mvrvb_profile_catalog --help

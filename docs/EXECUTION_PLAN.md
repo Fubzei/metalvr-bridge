@@ -84,6 +84,12 @@ These items are now checked in and verified in CI:
    - `src/common/prefix_preset.*` now validates checked-in bottle-style prefix
      presets so profiles can reference named setup templates instead of
      duplicating launcher/package defaults
+   - `src/common/profile_lint.*` plus `tools/mvrvb_profile_lint` now catch
+     missing preset references, duplicate IDs, and ambiguous auto-match rules
+     before runtime work depends on them
+   - `scripts/export_runtime_bundle.ps1` now packages launch-plan output,
+     setup scripts, compatibility catalog exports, and lint results into one
+     handoff directory for testers or future launcher/runtime glue
    - `profiles/` now holds defaults, templates, and planning profiles
    - `tests/unit/compatibility_profile_tests.cpp` validates the parser and the
      checked-in profile files

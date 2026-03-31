@@ -141,6 +141,9 @@ The first checked-in Phase 4 deliverables are:
 - `src/common/compatibility_catalog.*`
   - host-safe compatibility database builder for JSON/report export from checked-in
     profiles plus merged prefix-preset setup intent
+- `src/common/profile_lint.*`
+  - host-safe governance layer for missing preset references, duplicate IDs,
+    and ambiguous auto-match policy
 - `src/common/runtime_launch_plan.*`
   - host-safe launch-plan builder that resolves backend/install/env/args/runtime policy
     from profiles plus named prefix presets
@@ -158,6 +161,11 @@ The first checked-in Phase 4 deliverables are:
 - `scripts/export_runtime_plan.ps1`
   - host-safe helper for generating JSON, report, checklist, launch-script, and
     setup-script bundles on disk from the shared contract
+- `scripts/run_profile_lint.ps1`
+  - direct helper for validating profile and prefix-preset policy without a full host test run
+- `scripts/export_runtime_bundle.ps1`
+  - one-command tester handoff bundle containing the launch plan, setup scripts,
+    compatibility catalog, lint report, and manifest
 - persisted launch-plan JSON now round-trips through the shared runtime-plan layer,
   so future launcher/runtime code can consume exported bundles directly
 - the persisted launch-plan JSON contract is now schema-versioned for future

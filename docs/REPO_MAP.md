@@ -68,6 +68,7 @@ That subtree exists in the repo, but it is not currently added by the root
 - compatibility-profile parser, loader, and selector
 - prefix-preset parser and loader for bottle-style setup defaults
 - compatibility-catalog builder for machine-readable and report-style profile indexing
+- compatibility-policy lint layer for profile and prefix-preset governance
 - runtime launch-plan builder for launcher/runtime consumption
 - runtime launch-command materializer for wrapper-script generation
 - runtime setup-command materializer for bootstrap/setup script generation
@@ -124,8 +125,10 @@ That subtree exists in the repo, but it is not currently added by the root
 - Windows/host-side local test entrypoint for Apple-free modules
 - profile-catalog export helper for JSON and human-readable compatibility reports
 - profile-catalog doc sync helper for the generated Markdown compatibility matrix
+- direct profile-lint helper for policy governance without a full test run
 - launch-plan export helper for JSON, human-readable reports, launch scripts,
   and setup/bootstrap scripts
+- runtime bundle export helper for one-directory tester handoff packages
 - intended to reduce ambiguity for the first dedicated hardware run
 
 ### `host-tests`
@@ -140,6 +143,8 @@ That subtree exists in the repo, but it is not currently added by the root
 - host-safe developer tooling
 - `mvrvb_profile_catalog` builds a compatibility matrix from checked-in profiles
   and can emit a human-readable report, machine-readable JSON, or Markdown matrix
+- `mvrvb_profile_lint` validates checked-in profiles and prefix presets for
+  missing references, duplicate IDs, and ambiguous auto-match rules
 - `mvrvb_runtime_plan_preview` resolves a checked-in compatibility profile
   selection into backend, env, DLL override, and launch-argument output
 - supports human-readable summaries, machine-readable JSON output, Markdown setup

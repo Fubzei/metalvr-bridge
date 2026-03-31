@@ -13,6 +13,7 @@ add_executable(mvrvb_unit_tests
     unit/format_table_tests.cpp
     unit/icd_contract_tests.cpp
     unit/prefix_preset_tests.cpp
+    unit/profile_lint_tests.cpp
     unit/runtime_launch_command_tests.cpp
     unit/runtime_launch_plan_tests.cpp
     unit/runtime_setup_command_tests.cpp

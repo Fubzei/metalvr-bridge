@@ -81,6 +81,7 @@ Update docs when the matching area changes:
 - Update `profiles/README.md` when the compatibility profile format or vocabulary changes.
 - Update `host-tests/CMakeLists.txt` or `scripts/run_host_checks.ps1` when the
   Apple-free local-check flow changes.
+- Update `scripts/run_profile_lint.ps1` when the direct profile-governance flow changes.
 - Update `launcher/README.md` when the launcher packaging flow changes.
 
 ## Pull Request Checklist
@@ -102,6 +103,8 @@ Before submitting a PR:
   Mac runtime validation.
 - `profiles/` is now checked in as the first product/runtime policy layer for
   future backend selection and per-game tuning.
+- `scripts/run_profile_lint.ps1` is the direct local entry point for profile
+  and prefix-preset governance checks when you do not need the full host suite.
 - `src/common/runtime_launch_plan.*` is now the host-safe bridge from checked-in
   profiles to concrete launch decisions; keep it aligned with profile schema changes.
 - `host-tests/` is now checked in as the local non-Apple entrypoint for the
