@@ -53,14 +53,11 @@ struct SystemInfo {
         let device = MTLCreateSystemDefaultDevice()
         let gpuName = device?.name ?? "Unknown GPU"
 
-        var metalVer = "Unknown"
+        var metalVer = "Metal"
         if let dev = device {
-            if dev.supportsFamily(.apple7)      { metalVer = "Metal 3 (Apple 7)" }
-            else if dev.supportsFamily(.apple6)  { metalVer = "Metal 2.3 (Apple 6)" }
-            else if dev.supportsFamily(.apple5)  { metalVer = "Metal 2.2 (Apple 5)" }
-            else if dev.supportsFamily(.apple4)  { metalVer = "Metal 2.1 (Apple 4)" }
-            else if dev.supportsFamily(.common3) { metalVer = "Metal 2 (Common 3)" }
-            else                                 { metalVer = "Metal 2" }
+            if dev.supportsFamily(.common3) { metalVer = "Metal 3" }
+            else if dev.supportsFamily(.common2) { metalVer = "Metal 2" }
+            else if dev.supportsFamily(.common1) { metalVer = "Metal 1" }
         }
 
         let os = ProcessInfo.processInfo.operatingSystemVersion
