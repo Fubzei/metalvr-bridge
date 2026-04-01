@@ -98,37 +98,49 @@ RuntimeSetupCommandResult buildRuntimeSetupCommandPlan(
     const RuntimeLaunchPlan& plan,
     const RuntimeSetupRequest& request) {
     RuntimeSetupCommandResult result;
-    if (request.prefixPath.empty()) {
-        result.errorMessage = "Runtime setup request is missing prefixPath";
-        return result;
-    }
     if (request.winebootBinary.empty()) {
         result.errorMessage = "Runtime setup request is missing winebootBinary";
         return result;
     }
-    if (!plan.install.winetricks.empty() && request.winetricksBinary.empty()) {
+    const RuntimeLaunchPlan resolvedPlan = resolveRuntimeLaunchPlanPrefix(
+        plan,
+        request.prefixPath,
+        request.managedPrefixRoot);
+    if (resolvedPlan.resolvedPrefixPath.empty()) {
+        result.errorMessage = "Runtime setup request did not resolve a usable prefixPath";
+        return result;
+    }
+    if (!resolvedPlan.install.winetricks.empty() && request.winetricksBinary.empty()) {
         result.errorMessage =
             "Runtime setup request is missing winetricksBinary for requested install verbs";
         return result;
     }
 
     result.plan.workingDirectory = defaultWorkingDirectory(request);
-    result.plan.environment = plan.environment;
-    result.plan.environment["WINEPREFIX"] = request.prefixPath;
-    result.plan.environment["MVRVB_SELECTED_PROFILE"] = plan.selectedProfileId;
-    result.plan.environment["MVRVB_PREFIX_PRESET"] = plan.install.prefixPreset;
-    result.plan.environment["MVRVB_INSTALL_PACKAGES"] = joinStrings(plan.install.packages, ",");
+    result.plan.environment = resolvedPlan.environment;
+    result.plan.environment["WINEPREFIX"] = resolvedPlan.resolvedPrefixPath;
+    result.plan.environment["MVRVB_SELECTED_PROFILE"] = resolvedPlan.selectedProfileId;
+    result.plan.environment["MVRVB_PREFIX_PRESET"] = resolvedPlan.install.prefixPreset;
+    result.plan.environment["MVRVB_INSTALL_PACKAGES"] =
+        joinStrings(resolvedPlan.install.packages, ",");
     result.plan.environment["MVRVB_INSTALL_WINETRICKS"] =
-        joinStrings(plan.install.winetricks, ",");
+        joinStrings(resolvedPlan.install.winetricks, ",");
     result.plan.environment["MVRVB_REQUIRES_LAUNCHER"] =
-        boolEnvValue(plan.install.requiresLauncher);
-    result.plan.environment["MVRVB_WINE_MIN_VERSION"] = plan.minimumWineVersion;
-    result.plan.environment["MVRVB_WINE_PREFERRED_VERSION"] = plan.preferredWineVersion;
+        boolEnvValue(resolvedPlan.install.requiresLauncher);
+    result.plan.environment["MVRVB_WINE_MIN_VERSION"] = resolvedPlan.minimumWineVersion;
+    result.plan.environment["MVRVB_WINE_PREFERRED_VERSION"] = resolvedPlan.preferredWineVersion;
     result.plan.environment["MVRVB_REQUIRES_WINE_MONO"] =
-        boolEnvValue(plan.requiresWineMono);
-    result.plan.environment["MVRVB_DX11_BACKEND"] = rendererBackendName(plan.dx11Backend);
-    result.plan.environment["MVRVB_DX12_BACKEND"] = rendererBackendName(plan.dx12Backend);
-    result.plan.environment["MVRVB_VULKAN_BACKEND"] = rendererBackendName(plan.vulkanBackend);
+        boolEnvValue(resolvedPlan.requiresWineMono);
+    result.plan.environment["MVRVB_DX11_BACKEND"] = rendererBackendName(resolvedPlan.dx11Backend);
+    result.plan.environment["MVRVB_DX12_BACKEND"] = rendererBackendName(resolvedPlan.dx12Backend);
+    result.plan.environment["MVRVB_VULKAN_BACKEND"] =
+        rendererBackendName(resolvedPlan.vulkanBackend);
+    result.plan.environment["MVRVB_MANAGED_PREFIX_ROOT"] = resolvedPlan.managedPrefixRoot;
+    result.plan.environment["MVRVB_MANAGED_PREFIX_PATH"] = resolvedPlan.managedPrefixPath;
+    result.plan.environment["MVRVB_RESOLVED_PREFIX_SOURCE"] =
+        resolvedPlan.resolvedPrefixSource;
+    result.plan.environment["MVRVB_RESOLVED_PREFIX_PATH"] =
+        resolvedPlan.resolvedPrefixPath;
 
     result.plan.actions.push_back(RuntimeSetupAction{
         .description = "Initialize or update the target Wine prefix",
@@ -136,39 +148,42 @@ RuntimeSetupCommandResult buildRuntimeSetupCommandPlan(
         .arguments = {"-u"},
     });
 
-    if (!plan.install.winetricks.empty()) {
+    if (!resolvedPlan.install.winetricks.empty()) {
         result.plan.actions.push_back(RuntimeSetupAction{
             .description = "Apply requested Winetricks verbs",
             .program = request.winetricksBinary,
-            .arguments = plan.install.winetricks,
+            .arguments = resolvedPlan.install.winetricks,
         });
     }
 
-    for (const auto& package : plan.install.packages) {
+    result.plan.manualActions.push_back(
+        "Use the " + resolvedPlan.resolvedPrefixSource + " prefix at " +
+        resolvedPlan.resolvedPrefixPath);
+    for (const auto& package : resolvedPlan.install.packages) {
         result.plan.manualActions.push_back("Install package or component: " + package);
     }
-    if (plan.install.requiresLauncher) {
+    if (resolvedPlan.install.requiresLauncher) {
         result.plan.manualActions.push_back(
             "Bootstrap the required launcher inside the prefix before game launch attempts.");
     }
-    if (!plan.minimumWineVersion.empty()) {
+    if (!resolvedPlan.minimumWineVersion.empty()) {
         result.plan.manualActions.push_back(
-            "Use Wine " + plan.minimumWineVersion +
+            "Use Wine " + resolvedPlan.minimumWineVersion +
             " or newer for this runtime plan.");
     }
-    if (!plan.preferredWineVersion.empty()) {
+    if (!resolvedPlan.preferredWineVersion.empty()) {
         result.plan.manualActions.push_back(
-            "Prefer Wine " + plan.preferredWineVersion +
+            "Prefer Wine " + resolvedPlan.preferredWineVersion +
             " when preparing this prefix.");
     }
-    if (plan.requiresWineMono) {
+    if (resolvedPlan.requiresWineMono) {
         result.plan.manualActions.push_back(
             "Install Wine Mono in the target prefix before launching .NET-dependent content.");
     }
-    if (!plan.install.notes.empty()) {
-        result.plan.manualActions.push_back("Install notes: " + plan.install.notes);
+    if (!resolvedPlan.install.notes.empty()) {
+        result.plan.manualActions.push_back("Install notes: " + resolvedPlan.install.notes);
     }
-    if (plan.antiCheatRisk == AntiCheatRisk::Blocking) {
+    if (resolvedPlan.antiCheatRisk == AntiCheatRisk::Blocking) {
         result.warnings.push_back(
             "Anti-cheat risk is blocking; treat this setup plan as technical experimentation only.");
     }

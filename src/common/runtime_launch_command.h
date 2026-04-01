@@ -13,6 +13,7 @@ struct RuntimeLaunchRequest {
     std::string executablePath;
     std::string wineBinary{"wine"};
     std::string prefixPath;
+    std::string managedPrefixRoot;
     std::string workingDirectory;
 };
 

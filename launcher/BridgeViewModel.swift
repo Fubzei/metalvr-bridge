@@ -116,7 +116,11 @@ enum TestStatus: String {
 @MainActor
 final class BridgeViewModel: ObservableObject {
     private enum RuntimeAutomationFollowUp {
-        case importGeneratedBundle(manifestUrl: URL, displayName: String)
+        case importGeneratedBundle(
+            manifestUrl: URL,
+            displayName: String,
+            runSetupAfterImport: Bool
+        )
     }
 
     @Published var logs: [LogEntry] = []
@@ -133,7 +137,7 @@ final class BridgeViewModel: ObservableObject {
     @Published var bridgeStatus: BridgeStatus = .notInstalled
     @Published var testStatus: TestStatus = .idle
     @Published var testRunning: Bool = false
-    @Published var runtimeAutomationStatus: String = "Idle - import a runtime bundle to unlock one-click setup and launch."
+    @Published var runtimeAutomationStatus: String = "Idle - select a known title or import a runtime bundle to unlock guided setup and launch."
     @Published var runtimeAutomationRunning: Bool = false
     @Published var icdPath: String = ""
     @Published var triangleImageData: Data? = nil
@@ -203,10 +207,12 @@ final class BridgeViewModel: ObservableObject {
             ? defaultStarterExecutablePath(for: selectedCatalogEntry)
             : executablePath
         let outputDirectory = "./build-host/exports/\(selectedCatalogEntry.profileId)-bundle"
+        let managedPrefixRoot = launcherManagedPrefixRootUrl().path
 
         var lines = [
             "./build-host/tools/mvrvb_runtime_bundle_builder \\",
-            "  --exe \"\(escapedCommandValue(resolvedExecutablePath))\" \\"
+            "  --exe \"\(escapedCommandValue(resolvedExecutablePath))\" \\",
+            "  --managed-prefix-root \"\(escapedCommandValue(managedPrefixRoot))\" \\"
         ]
 
         if let launcher = selectedCatalogEntry.match.launchers.first,
@@ -228,7 +234,15 @@ final class BridgeViewModel: ObservableObject {
             return "No checked-in title is currently selected."
         }
 
-        return "\(selectedCatalogEntry.displayName) | \(selectedCatalogEntry.backendSummary) | \(selectedCatalogEntry.installSummary)"
+        return "\(selectedCatalogEntry.displayName) | \(selectedCatalogEntry.backendSummary) | \(selectedCatalogEntry.installSummary) | Managed Prefix: \(managedPrefixDirectory(for: selectedCatalogEntry).path)"
+    }
+
+    var starterManagedPrefixSummary: String {
+        guard let selectedCatalogEntry else {
+            return "No known title selected."
+        }
+
+        return "App-managed root: \(launcherManagedPrefixRootUrl().path) | Title prefix: \(managedPrefixDirectory(for: selectedCatalogEntry).path)"
     }
 
     var runtimeExecutionPrepSummary: String {
@@ -294,10 +308,14 @@ final class BridgeViewModel: ObservableObject {
         )
     }
 
-    func generateStarterRuntimeBundle() {
+    func prepareSelectedTitle() {
+        generateStarterRuntimeBundle(runSetupAfterImport: true)
+    }
+
+    func generateStarterRuntimeBundle(runSetupAfterImport: Bool = false) {
         guard let selectedCatalogEntry else {
             log(.warn, "No known title onboarding profile is available to generate")
-            runtimeAutomationStatus = "No known title selected for runtime-bundle generation."
+            runtimeAutomationStatus = "No known title selected for title preparation."
             return
         }
 
@@ -305,7 +323,7 @@ final class BridgeViewModel: ObservableObject {
         guard !trimmedExecutablePath.isEmpty,
               !trimmedExecutablePath.hasPrefix("/path/to/") else {
             log(.warn, "Starter runtime-bundle generation needs a real executable path first")
-            runtimeAutomationStatus = "Enter a real executable path before generating a starter bundle."
+            runtimeAutomationStatus = "Enter a real executable path before preparing the selected title."
             return
         }
 
@@ -322,9 +340,11 @@ final class BridgeViewModel: ObservableObject {
         }
 
         let outputDirectoryUrl = defaultStarterBundleOutputDirectory(for: selectedCatalogEntry)
+        let managedPrefixRootUrl = launcherManagedPrefixRootUrl()
         var arguments = [
             "--profiles-dir", profilesDirectoryUrl.path,
             "--exe", trimmedExecutablePath,
+            "--managed-prefix-root", managedPrefixRootUrl.path,
             "--out-dir", outputDirectoryUrl.path
         ]
         if let launcher = selectedCatalogEntry.match.launchers.first,
@@ -340,13 +360,14 @@ final class BridgeViewModel: ObservableObject {
         let selectedDisplayName = selectedCatalogEntry.displayName
 
         runRuntimeAutomationProcess(
-            displayName: "starter bundle generation",
+            displayName: runSetupAfterImport ? "title preparation bundle generation" : "starter bundle generation",
             executableUrl: builderUrl,
             arguments: arguments,
             currentDirectoryUrl: outputDirectoryUrl.deletingLastPathComponent(),
             followUp: .importGeneratedBundle(
                 manifestUrl: manifestUrl,
-                displayName: selectedDisplayName
+                displayName: selectedDisplayName,
+                runSetupAfterImport: runSetupAfterImport
             )
         )
     }
@@ -782,7 +803,7 @@ final class BridgeViewModel: ObservableObject {
         runtimeBundleManifestSource = ""
         runtimeBundleArtifactPreview = nil
         loadedRuntimeBundle = nil
-        runtimeAutomationStatus = "Idle - import a runtime bundle to unlock one-click setup and launch."
+        runtimeAutomationStatus = "Idle - select a known title or import a runtime bundle to unlock guided setup and launch."
         runtimeAutomationRunning = false
         activeRuntimeProcess = nil
         runtimeAutomationCancellationRequested = false
@@ -836,6 +857,8 @@ final class BridgeViewModel: ObservableObject {
             text += "Runtime Plan Profile: \(runtimeLaunchPlan.selectedDisplayName)\n"
             text += "Runtime Plan Backend: \(runtimeLaunchPlan.backend)\n"
             text += "Runtime Plan Prefix: \(runtimeLaunchPlan.appliedPrefixPresetDisplayName)\n"
+            text += "Runtime Plan Resolved Prefix: \(runtimeLaunchPlan.resolvedPrefixPath ?? "n/a")\n"
+            text += "Runtime Plan Prefix Source: \(runtimeLaunchPlan.resolvedPrefixSource ?? "managed")\n"
             text += "Runtime Plan Source: \(runtimeLaunchPlanSource)\n"
         }
         if let runtimeBundleManifest {
@@ -1028,6 +1051,8 @@ final class BridgeViewModel: ObservableObject {
         switch action {
         case .importJson:
             importRuntimeLaunchPlan()
+        case .prepareKnownTitle:
+            prepareSelectedTitle()
         case .generateStarterBundle:
             generateStarterRuntimeBundle()
         case .copyStarterCommand:
@@ -1105,7 +1130,7 @@ final class BridgeViewModel: ObservableObject {
         }
 
         log(.info, "Runtime plan profile: \(runtimeLaunchPlan.selectedDisplayName) via \(runtimeLaunchPlan.backend)")
-        log(.info, "Runtime plan prefix: \(runtimeLaunchPlan.appliedPrefixPresetDisplayName), source: \(runtimeLaunchPlanSource)")
+        log(.info, "Runtime plan prefix: \(runtimeLaunchPlan.appliedPrefixPresetDisplayName), source: \(runtimeLaunchPlan.resolvedPrefixSource ?? "managed"), path: \(runtimeLaunchPlan.resolvedPrefixPath ?? "n/a"), plan source: \(runtimeLaunchPlanSource)")
         log(.info, "Runtime plan launch surface: \(runtimeLaunchPlan.launchSummary)")
     }
 
@@ -1139,7 +1164,7 @@ final class BridgeViewModel: ObservableObject {
         self.loadedRuntimeBundle = loadedRuntimeBundle
         runtimeBundleManifest = loadedRuntimeBundle.snapshot
         runtimeBundleManifestSource = loadedRuntimeBundle.sourceDescription
-        runtimeAutomationStatus = "Bundle ready - use Prepare Prefix or Run Launch for one-click runtime actions."
+        runtimeAutomationStatus = "Bundle ready - use Prepare Title or Run Launch for guided runtime actions."
         runtimeAutomationRunning = false
         runtimeAutomationCancellationRequested = false
 
@@ -1244,9 +1269,11 @@ final class BridgeViewModel: ObservableObject {
             text += "Profile: \(runtimeLaunchPlan.selectedDisplayName)\n"
             text += "Backend: \(runtimeLaunchPlan.backendSummary)\n"
             text += "Prefix: \(runtimeLaunchPlan.appliedPrefixPresetDisplayName)\n"
+            text += "Resolved Prefix: \(runtimeLaunchPlan.resolvedPrefixPath ?? "n/a")\n"
+            text += "Prefix Source: \(runtimeLaunchPlan.resolvedPrefixSource ?? "managed")\n"
             text += "Runtime: \(runtimeLaunchPlan.runtimeSummary)\n"
             text += "Risk: \(runtimeLaunchPlan.antiCheatRiskLabel)\n"
-            text += "Setup Summary: \(runtimeLaunchPlan.installSummary)\n"
+            text += "Setup Summary: \(runtimeLaunchPlan.setupReadinessSummary)\n"
             text += "Launch Summary: \(runtimeLaunchPlan.launchSummary)\n"
             text += "Plan Source: \(runtimeLaunchPlanSource)\n"
         }
@@ -1372,6 +1399,25 @@ final class BridgeViewModel: ObservableObject {
         return documentsDirectory
             .appendingPathComponent("MetalVR Bridge Bundles", isDirectory: true)
             .appendingPathComponent("\(entry.profileId)-bundle-\(dateStamp())", isDirectory: true)
+    }
+
+    private func launcherManagedPrefixRootUrl() -> URL {
+        let fileManager = FileManager.default
+        let applicationSupportDirectory = fileManager.urls(
+            for: .applicationSupportDirectory,
+            in: .userDomainMask
+        ).first ?? fileManager.homeDirectoryForCurrentUser
+
+        return applicationSupportDirectory
+            .appendingPathComponent("MetalVR Bridge", isDirectory: true)
+            .appendingPathComponent("prefixes", isDirectory: true)
+    }
+
+    private func managedPrefixDirectory(
+        for entry: CompatibilityCatalogSnapshot.Entry
+    ) -> URL {
+        launcherManagedPrefixRootUrl()
+            .appendingPathComponent(entry.profileId, isDirectory: true)
     }
 
     private func readRuntimeBundleTextAsset(for manifestPath: String) -> String? {
@@ -1592,11 +1638,15 @@ final class BridgeViewModel: ObservableObject {
         }
 
         switch followUp {
-        case let .importGeneratedBundle(manifestUrl, displayName):
+        case let .importGeneratedBundle(manifestUrl, displayName, runSetupAfterImport):
             do {
                 let loadedRuntimeBundle = try RuntimeBundleManifestSnapshot.load(from: manifestUrl)
                 applyRuntimeBundleManifest(loadedRuntimeBundle, logSuccess: true)
                 log(.pass, "Generated and imported starter runtime bundle for \(displayName)")
+                if runSetupAfterImport {
+                    runtimeAutomationStatus = "Bundle imported - starting title preparation."
+                    runRuntimeBundleSetupScript()
+                }
             } catch {
                 runtimeAutomationStatus = "Generated starter bundle, but importing the manifest failed."
                 log(.error, "Starter bundle generation succeeded but the manifest could not be imported: \(error.localizedDescription)")

@@ -3,11 +3,17 @@
 #include <algorithm>
 #include <charconv>
 #include <cctype>
+#include <cstdlib>
 #include <fstream>
 #include <iterator>
 #include <sstream>
 
 namespace mvrvb {
+std::filesystem::path defaultManagedPrefixRootForCurrentPlatform();
+RuntimeLaunchPlan resolveRuntimeLaunchPlanPrefix(const RuntimeLaunchPlan& plan,
+                                                 std::string_view explicitPrefixPath,
+                                                 std::string_view managedPrefixRoot);
+
 namespace {
 
 std::string jsonEscape(std::string_view value) {
@@ -151,6 +157,113 @@ std::optional<AntiCheatRisk> antiCheatRiskFromName(std::string_view value) {
     return std::nullopt;
 }
 
+std::string normalizePathForPersistence(const std::filesystem::path& path) {
+    return path.lexically_normal().generic_string();
+}
+
+std::string trimRepeatedDashes(std::string value) {
+    std::string out;
+    out.reserve(value.size());
+    bool previousWasDash = false;
+    for (const char ch : value) {
+        if (ch == '-') {
+            if (previousWasDash) continue;
+            previousWasDash = true;
+        } else {
+            previousWasDash = false;
+        }
+        out.push_back(ch);
+    }
+
+    while (!out.empty() && out.front() == '-') {
+        out.erase(out.begin());
+    }
+    while (!out.empty() && out.back() == '-') {
+        out.pop_back();
+    }
+    return out;
+}
+
+std::string slugifyPrefixComponent(std::string_view value) {
+    std::string slug;
+    slug.reserve(value.size());
+    for (const char rawCh : value) {
+        const auto ch = static_cast<unsigned char>(rawCh);
+        if (std::isalnum(ch) != 0) {
+            slug.push_back(static_cast<char>(std::tolower(ch)));
+        } else if (rawCh == '-' || rawCh == '_' || rawCh == ' ' || rawCh == '.') {
+            slug.push_back('-');
+        }
+    }
+
+    slug = trimRepeatedDashes(std::move(slug));
+    if (!slug.empty()) return slug;
+    return "managed-prefix";
+}
+
+std::string executableStemForPrefix(std::string_view executable) {
+    if (executable.empty()) return {};
+    const auto stem = std::filesystem::path(executable).stem().string();
+    if (!stem.empty()) {
+        return slugifyPrefixComponent(stem);
+    }
+    return slugifyPrefixComponent(executable);
+}
+
+std::string chooseManagedPrefixSlug(const CompatibilityProfile& selectedProfile,
+                                    const CompatibilityProfileQuery& query) {
+    if (selectedProfile.profileId != "global-defaults" && !selectedProfile.profileId.empty()) {
+        return slugifyPrefixComponent(selectedProfile.profileId);
+    }
+    if (!query.executable.empty()) {
+        const auto executableSlug = executableStemForPrefix(query.executable);
+        if (!executableSlug.empty()) {
+            return executableSlug;
+        }
+    }
+    if (!selectedProfile.displayName.empty()) {
+        return slugifyPrefixComponent(selectedProfile.displayName);
+    }
+    return "managed-prefix";
+}
+
+std::filesystem::path prefixRootFromEnvironment(const char* variable) {
+    if (variable == nullptr) return {};
+#ifdef _WIN32
+    char* value = nullptr;
+    size_t length = 0;
+    if (_dupenv_s(&value, &length, variable) != 0 || value == nullptr || *value == '\0') {
+        if (value != nullptr) {
+            std::free(value);
+        }
+        return {};
+    }
+
+    std::filesystem::path result(value);
+    std::free(value);
+    return result;
+#else
+    const char* value = std::getenv(variable);
+    if (value == nullptr || *value == '\0') return {};
+    return std::filesystem::path(value);
+#endif
+}
+
+void applyManagedPrefixRoot(RuntimeLaunchPlan* plan, const std::filesystem::path& rootPath) {
+    if (!plan) return;
+    const auto normalizedRoot = normalizePathForPersistence(rootPath);
+    plan->managedPrefixRoot = normalizedRoot;
+    if (plan->managedPrefixSlug.empty()) {
+        plan->managedPrefixSlug = "managed-prefix";
+    }
+    plan->managedPrefixPath =
+        normalizePathForPersistence(rootPath / plan->managedPrefixSlug);
+    if (plan->resolvedPrefixSource != "explicit" || plan->resolvedPrefixPath.empty()) {
+        plan->resolvedPrefixSource = "managed";
+        plan->resolvedPrefixPath = plan->managedPrefixPath;
+    }
+}
+
 void applyStringOverride(std::string* dst, const std::string& src) {
     if (!dst || src.empty()) return;
     *dst = src;
@@ -190,6 +303,16 @@ public:
                    schemaVersion_ != kRuntimeLaunchPlanSchemaVersion) {
             result.errorMessage = "Unsupported runtime launch plan schemaVersion: " +
                                   schemaVersion_;
+        } else {
+            if (result.plan.managedPrefixSlug.empty()) {
+                result.plan.managedPrefixSlug =
+                    slugifyPrefixComponent(result.plan.selectedProfileId);
+            }
+            result.plan = resolveRuntimeLaunchPlanPrefix(
+                result.plan,
+                result.plan.resolvedPrefixSource == "explicit"
+                    ? result.plan.resolvedPrefixPath
+                    : std::string_view{});
         }
         return result;
     }
@@ -624,6 +747,16 @@ private:
                 if (!parseString(&plan->appliedPrefixPresetId, errorMessage)) return false;
             } else if (key == "appliedPrefixPresetDisplayName") {
                 if (!parseString(&plan->appliedPrefixPresetDisplayName, errorMessage)) return false;
+            } else if (key == "managedPrefixSlug") {
+                if (!parseString(&plan->managedPrefixSlug, errorMessage)) return false;
+            } else if (key == "managedPrefixRoot") {
+                if (!parseString(&plan->managedPrefixRoot, errorMessage)) return false;
+            } else if (key == "managedPrefixPath") {
+                if (!parseString(&plan->managedPrefixPath, errorMessage)) return false;
+            } else if (key == "resolvedPrefixSource") {
+                if (!parseString(&plan->resolvedPrefixSource, errorMessage)) return false;
+            } else if (key == "resolvedPrefixPath") {
+                if (!parseString(&plan->resolvedPrefixPath, errorMessage)) return false;
             } else if (key == "selectedProfileId") {
                 if (!parseString(&plan->selectedProfileId, errorMessage)) return false;
             } else if (key == "selectedDisplayName") {
@@ -776,6 +909,63 @@ void applyRuntimeOverrides(RuntimeLaunchPlan* dst,
 
 }  // namespace
 
+std::filesystem::path defaultManagedPrefixRootForCurrentPlatform() {
+#if defined(_WIN32)
+    auto base = prefixRootFromEnvironment("LOCALAPPDATA");
+    if (base.empty()) {
+        const auto userProfile = prefixRootFromEnvironment("USERPROFILE");
+        if (!userProfile.empty()) {
+            base = userProfile / "AppData" / "Local";
+        }
+    }
+    if (base.empty()) {
+        base = std::filesystem::current_path();
+    }
+    return base / "MetalVR Bridge" / "prefixes";
+#elif defined(__APPLE__)
+    auto home = prefixRootFromEnvironment("HOME");
+    if (home.empty()) {
+        home = std::filesystem::current_path();
+    }
+    return home / "Library" / "Application Support" / "MetalVR Bridge" / "prefixes";
+#else
+    auto dataHome = prefixRootFromEnvironment("XDG_DATA_HOME");
+    if (dataHome.empty()) {
+        auto home = prefixRootFromEnvironment("HOME");
+        if (!home.empty()) {
+            dataHome = home / ".local" / "share";
+        }
+    }
+    if (dataHome.empty()) {
+        dataHome = std::filesystem::current_path();
+    }
+    return dataHome / "MetalVR Bridge" / "prefixes";
+#endif
+}
+
+RuntimeLaunchPlan resolveRuntimeLaunchPlanPrefix(const RuntimeLaunchPlan& plan,
+                                                 std::string_view explicitPrefixPath,
+                                                 std::string_view managedPrefixRoot) {
+    RuntimeLaunchPlan resolvedPlan = plan;
+    const auto rootPath = managedPrefixRoot.empty()
+        ? (resolvedPlan.managedPrefixRoot.empty()
+            ? defaultManagedPrefixRootForCurrentPlatform()
+            : std::filesystem::path(resolvedPlan.managedPrefixRoot))
+        : std::filesystem::path(managedPrefixRoot);
+
+    applyManagedPrefixRoot(&resolvedPlan, rootPath);
+    if (!explicitPrefixPath.empty()) {
+        resolvedPlan.resolvedPrefixSource = "explicit";
+        resolvedPlan.resolvedPrefixPath =
+            normalizePathForPersistence(std::filesystem::path(explicitPrefixPath));
+    } else if (resolvedPlan.resolvedPrefixPath.empty()) {
+        resolvedPlan.resolvedPrefixSource = "managed";
+        resolvedPlan.resolvedPrefixPath = resolvedPlan.managedPrefixPath;
+    }
+
+    return resolvedPlan;
+}
+
 RuntimeLaunchPlanResult buildRuntimeLaunchPlan(
     const std::vector<CompatibilityProfile>& profiles,
     const CompatibilityProfileQuery& query) {
@@ -863,6 +1053,8 @@ RuntimeLaunchPlanResult buildRuntimeLaunchPlan(
     mergeMaps(&result.plan.dllOverrides, selectedProfile->dllOverrides);
     mergeArgs(&result.plan.launchArgs, selectedProfile->launchArgs);
     mergeInstallPolicy(&result.plan.install, selectedProfile->install, true);
+    result.plan.managedPrefixSlug = chooseManagedPrefixSlug(*selectedProfile, query);
+    result.plan = resolveRuntimeLaunchPlanPrefix(result.plan);
 
     return result;
 }
@@ -931,6 +1123,11 @@ std::string summarizeRuntimeLaunchPlan(const RuntimeLaunchPlan& plan) {
         out << plan.appliedProfileIds[i];
     }
     out << "\n";
+    out << "Managed prefix slug: " << plan.managedPrefixSlug << "\n";
+    out << "Managed prefix root: " << plan.managedPrefixRoot << "\n";
+    out << "Managed prefix path: " << plan.managedPrefixPath << "\n";
+    out << "Resolved prefix source: " << plan.resolvedPrefixSource << "\n";
+    out << "Resolved prefix path: " << plan.resolvedPrefixPath << "\n";
     out << "Backend: " << rendererBackendName(plan.backend) << "\n";
     out << "Fallbacks: ";
     for (size_t i = 0; i < plan.fallbackBackends.size(); ++i) {
@@ -997,6 +1194,11 @@ std::string describeRuntimeLaunchPlan(const RuntimeLaunchPlan& plan) {
         }
     }
     out << "Install policy:\n";
+    out << "  managed_prefix_slug=" << plan.managedPrefixSlug << "\n";
+    out << "  managed_prefix_root=" << plan.managedPrefixRoot << "\n";
+    out << "  managed_prefix_path=" << plan.managedPrefixPath << "\n";
+    out << "  resolved_prefix_source=" << plan.resolvedPrefixSource << "\n";
+    out << "  resolved_prefix_path=" << plan.resolvedPrefixPath << "\n";
     out << "  wine_minimum_version=" << plan.minimumWineVersion << "\n";
     out << "  wine_preferred_version=" << plan.preferredWineVersion << "\n";
     out << "  requires_wine_mono=" << (plan.requiresWineMono ? "true" : "false") << "\n";
@@ -1040,6 +1242,16 @@ std::string runtimeLaunchPlanToJson(const RuntimeLaunchPlan& plan) {
     appendJsonString(&out, plan.appliedPrefixPresetId);
     out << ",\"appliedPrefixPresetDisplayName\":";
     appendJsonString(&out, plan.appliedPrefixPresetDisplayName);
+    out << ",\"managedPrefixSlug\":";
+    appendJsonString(&out, plan.managedPrefixSlug);
+    out << ",\"managedPrefixRoot\":";
+    appendJsonString(&out, plan.managedPrefixRoot);
+    out << ",\"managedPrefixPath\":";
+    appendJsonString(&out, plan.managedPrefixPath);
+    out << ",\"resolvedPrefixSource\":";
+    appendJsonString(&out, plan.resolvedPrefixSource);
+    out << ",\"resolvedPrefixPath\":";
+    appendJsonString(&out, plan.resolvedPrefixPath);
     out << ",\"selectedProfileId\":";
     appendJsonString(&out, plan.selectedProfileId);
     out << ",\"selectedDisplayName\":";
@@ -1114,7 +1326,7 @@ std::string runtimeLaunchPlanToMarkdownChecklist(const RuntimeLaunchPlan& plan) 
     out << "# Runtime Setup Checklist\n\n";
     out << "Generated from the resolved MetalVR Bridge launch plan.\n\n";
     out << "## Profile\n\n";
-    out << "- Applied prefix preset: ";
+      out << "- Applied prefix preset: ";
     if (plan.appliedPrefixPresetId.empty()) {
         out << "`(none)`\n";
     } else {
@@ -1124,12 +1336,16 @@ std::string runtimeLaunchPlanToMarkdownChecklist(const RuntimeLaunchPlan& plan) 
         }
         out << "\n";
     }
-    out << "- Selected profile: `" << plan.selectedProfileId << "`";
-    if (!plan.selectedDisplayName.empty()) {
-        out << " (" << plan.selectedDisplayName << ")";
-    }
-    out << "\n";
-    out << "- Backend: `" << rendererBackendName(plan.backend) << "`\n";
+      out << "- Selected profile: `" << plan.selectedProfileId << "`";
+      if (!plan.selectedDisplayName.empty()) {
+          out << " (" << plan.selectedDisplayName << ")";
+      }
+      out << "\n";
+      out << "- Managed prefix root: `" << plan.managedPrefixRoot << "`\n";
+      out << "- Managed prefix path: `" << plan.managedPrefixPath << "`\n";
+      out << "- Resolved prefix source: `" << plan.resolvedPrefixSource << "`\n";
+      out << "- Resolved prefix path: `" << plan.resolvedPrefixPath << "`\n";
+      out << "- Backend: `" << rendererBackendName(plan.backend) << "`\n";
     out << "- Fallback backends: ";
     if (plan.fallbackBackends.empty()) {
         out << "`(none)`\n";

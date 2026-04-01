@@ -391,12 +391,13 @@ struct ContentView: View {
                 )
                 statusCallout(title: "Runtime", message: selectedEntry.runtimeSummary)
                 statusCallout(title: "Install", message: selectedEntry.installSummary)
+                statusCallout(title: "Managed Prefix", message: vm.starterManagedPrefixSummary)
                 statusCallout(title: "Match", message: selectedEntry.matchSummary)
                 statusCallout(title: "Notes", message: selectedEntry.notes)
                 statusCallout(
-                    title: "Builder",
+                    title: "One-Click Prep",
                     message: vm.canGenerateStarterBundleInApp
-                        ? "Bundled runtime-bundle builder is available. The launcher can generate and import a starter bundle directly."
+                        ? "Bundled runtime-bundle builder is available. The launcher can generate, import, and run the setup flow for the selected title directly."
                         : "Bundled runtime-bundle builder is not available in this launcher build yet. Copy the starter command as the fallback path."
                 )
 
@@ -425,11 +426,11 @@ struct ContentView: View {
                 statusCallout(title: "Starter Summary", message: vm.starterBundleSummary)
 
                 HStack(spacing: 8) {
-                    Button(action: { vm.generateStarterRuntimeBundle() }) {
+                    Button(action: { vm.prepareSelectedTitle() }) {
                         HStack(spacing: 6) {
                             Image(systemName: vm.runtimeAutomationRunning ? "hourglass" : "wand.and.stars.inverse")
                                 .font(.system(size: 10))
-                            Text(vm.runtimeAutomationRunning ? "Running..." : "Generate Bundle")
+                            Text(vm.runtimeAutomationRunning ? "Running..." : "Prepare Title")
                                 .font(.system(size: 10, weight: .semibold, design: .monospaced))
                         }
                         .frame(maxWidth: .infinity)
@@ -451,7 +452,7 @@ struct ContentView: View {
                         HStack(spacing: 6) {
                             Image(systemName: "doc.on.clipboard")
                                 .font(.system(size: 10))
-                            Text("Copy Starter Command")
+                            Text("Copy Builder Cmd")
                                 .font(.system(size: 10, weight: .semibold, design: .monospaced))
                         }
                         .frame(maxWidth: .infinity)
@@ -502,11 +503,13 @@ struct ContentView: View {
                     statusRow(label: "Profile", value: runtimePlan.selectedDisplayName)
                     statusRow(label: "Backend", value: runtimePlan.backendSummary)
                     statusRow(label: "Prefix", value: runtimePlan.appliedPrefixPresetDisplayName)
+                    statusRow(label: "Prefix Src", value: runtimePlan.resolvedPrefixSource ?? "managed")
                     statusRow(label: "Runtime", value: runtimePlan.runtimeSummary)
                     statusRow(label: "Risk", value: runtimePlan.antiCheatRiskLabel)
                 }
 
-                statusCallout(title: "Setup", message: runtimePlan.installSummary)
+                statusCallout(title: "Setup", message: runtimePlan.setupReadinessSummary)
+                statusCallout(title: "Managed Prefix", message: runtimePlan.managedPrefixSummary)
                 statusCallout(title: "Launch", message: runtimePlan.launchSummary)
                 statusCallout(title: "Source", message: vm.runtimeLaunchPlanSource)
 
@@ -603,7 +606,7 @@ struct ContentView: View {
                         HStack(spacing: 6) {
                             Image(systemName: vm.runtimeAutomationRunning ? "hourglass" : "wand.and.stars")
                                 .font(.system(size: 10))
-                            Text(vm.runtimeAutomationRunning ? "Running..." : "Prepare Prefix")
+                            Text(vm.runtimeAutomationRunning ? "Running..." : "Prepare Title")
                                 .font(.system(size: 10, weight: .semibold, design: .monospaced))
                         }
                         .frame(maxWidth: .infinity)

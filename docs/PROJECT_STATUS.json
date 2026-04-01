@@ -21,10 +21,10 @@
                    "startedMilestones":  [
                                              13,
                                              14,
+                                             15,
                                              16
                                          ],
                    "plannedMilestones":  [
-                                             15,
                                              17,
                                              18
                                          ]
@@ -34,11 +34,11 @@
                            "macos-ci-build-launcher",
                            "host-side-unit-tests",
                            "compatibility-profile-validation",
-                           "wine-version-and-api-route-policy-validation",
                            "prefix-preset-validation",
                            "compatibility-catalog-export",
                            "compatibility-policy-lint",
                            "runtime-launch-plan-generation",
+                           "runtime-managed-prefix-resolution",
                            "runtime-launch-command-generation",
                            "runtime-setup-command-generation",
                            "runtime-bundle-builder",
@@ -56,7 +56,8 @@
                            "launcher-runtime-prep-export",
                            "launcher-runtime-prep-preview",
                            "launcher-known-title-onboarding",
-                           "launcher-starter-bundle-generation"
+                           "launcher-starter-bundle-generation",
+                           "launcher-managed-prefix-prepare-title-flow"
                        ],
     "notYetProven":  [
                          "launcher-triangle-on-real-mac",
@@ -66,8 +67,7 @@
                      ],
     "nextGate":  "Launcher triangle, vulkaninfo, and vkcube on Mac hardware.",
     "nextNonMacSteps":  [
-                            "Move from starter-bundle generation toward launcher-run prefix installation and first title launch for selected known profiles.",
-                            "Use the new Wine 11+/Mono/API-route policy to drive future automated prefix/bootstrap decisions instead of a single flat backend toggle.",
+                            "Use the managed-prefix Prepare Title flow as the default launcher/bootstrap path for selected known titles until Mac hardware is available.",
                             "Keep compatibility profiles and prefix presets governed through lint and docs.",
                             "Keep repo and wiki handoff docs aligned with the checked-in source of truth."
                         ],

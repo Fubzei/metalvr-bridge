@@ -143,51 +143,64 @@ RuntimeLaunchCommandResult materializeRuntimeLaunchCommand(
         return result;
     }
 
+    const RuntimeLaunchPlan resolvedPlan = resolveRuntimeLaunchPlanPrefix(
+        plan,
+        request.prefixPath,
+        request.managedPrefixRoot);
+    if (resolvedPlan.resolvedPrefixPath.empty()) {
+        result.errorMessage = "Runtime launch plan did not resolve a usable prefix path";
+        return result;
+    }
+
     result.command.program = request.wineBinary;
     result.command.arguments.push_back(request.executablePath);
-    for (const auto& argument : plan.launchArgs) {
+    for (const auto& argument : resolvedPlan.launchArgs) {
         result.command.arguments.push_back(argument);
     }
     result.command.workingDirectory = request.workingDirectory.empty()
         ? defaultWorkingDirectoryForExecutable(request.executablePath)
         : request.workingDirectory;
-    result.command.environment = plan.environment;
+    result.command.environment = resolvedPlan.environment;
 
-    if (!request.prefixPath.empty()) {
-        result.command.environment["WINEPREFIX"] = request.prefixPath;
-    }
-    if (!plan.dllOverrides.empty()) {
-        result.command.environment["WINEDLLOVERRIDES"] = joinDllOverrides(plan.dllOverrides);
+    result.command.environment["WINEPREFIX"] = resolvedPlan.resolvedPrefixPath;
+    result.command.environment["MVRVB_MANAGED_PREFIX_ROOT"] = resolvedPlan.managedPrefixRoot;
+    result.command.environment["MVRVB_MANAGED_PREFIX_PATH"] = resolvedPlan.managedPrefixPath;
+    result.command.environment["MVRVB_RESOLVED_PREFIX_SOURCE"] =
+        resolvedPlan.resolvedPrefixSource;
+    result.command.environment["MVRVB_RESOLVED_PREFIX_PATH"] =
+        resolvedPlan.resolvedPrefixPath;
+    if (!resolvedPlan.dllOverrides.empty()) {
+        result.command.environment["WINEDLLOVERRIDES"] = joinDllOverrides(resolvedPlan.dllOverrides);
     }
 
-    result.command.environment["MVRVB_SELECTED_PROFILE"] = plan.selectedProfileId;
-    result.command.environment["MVRVB_RENDERER_BACKEND"] = rendererBackendName(plan.backend);
+    result.command.environment["MVRVB_SELECTED_PROFILE"] = resolvedPlan.selectedProfileId;
+    result.command.environment["MVRVB_RENDERER_BACKEND"] = rendererBackendName(resolvedPlan.backend);
     result.command.environment["MVRVB_RENDERER_FALLBACKS"] =
-        joinFallbackBackends(plan.fallbackBackends);
-    result.command.environment["MVRVB_WINDOWS_VERSION"] = plan.windowsVersion;
-    result.command.environment["MVRVB_WINE_MIN_VERSION"] = plan.minimumWineVersion;
-    result.command.environment["MVRVB_WINE_PREFERRED_VERSION"] = plan.preferredWineVersion;
+        joinFallbackBackends(resolvedPlan.fallbackBackends);
+    result.command.environment["MVRVB_WINDOWS_VERSION"] = resolvedPlan.windowsVersion;
+    result.command.environment["MVRVB_WINE_MIN_VERSION"] = resolvedPlan.minimumWineVersion;
+    result.command.environment["MVRVB_WINE_PREFERRED_VERSION"] = resolvedPlan.preferredWineVersion;
     result.command.environment["MVRVB_REQUIRES_WINE_MONO"] =
-        boolEnvValue(plan.requiresWineMono);
-    result.command.environment["MVRVB_DX11_BACKEND"] = rendererBackendName(plan.dx11Backend);
-    result.command.environment["MVRVB_DX12_BACKEND"] = rendererBackendName(plan.dx12Backend);
-    result.command.environment["MVRVB_VULKAN_BACKEND"] = rendererBackendName(plan.vulkanBackend);
-    result.command.environment["MVRVB_SYNC_MODE"] = syncModeName(plan.syncMode);
+        boolEnvValue(resolvedPlan.requiresWineMono);
+    result.command.environment["MVRVB_DX11_BACKEND"] = rendererBackendName(resolvedPlan.dx11Backend);
+    result.command.environment["MVRVB_DX12_BACKEND"] = rendererBackendName(resolvedPlan.dx12Backend);
+    result.command.environment["MVRVB_VULKAN_BACKEND"] = rendererBackendName(resolvedPlan.vulkanBackend);
+    result.command.environment["MVRVB_SYNC_MODE"] = syncModeName(resolvedPlan.syncMode);
     result.command.environment["MVRVB_HIGH_RESOLUTION_MODE"] =
-        boolEnvValue(plan.highResolutionMode);
+        boolEnvValue(resolvedPlan.highResolutionMode);
     result.command.environment["MVRVB_METALFX_UPSCALING"] =
-        boolEnvValue(plan.metalFxUpscaling);
+        boolEnvValue(resolvedPlan.metalFxUpscaling);
     result.command.environment["MVRVB_ANTI_CHEAT_RISK"] =
-        antiCheatRiskName(plan.antiCheatRisk);
-    result.command.environment["MVRVB_PREFIX_PRESET"] = plan.install.prefixPreset;
+        antiCheatRiskName(resolvedPlan.antiCheatRisk);
+    result.command.environment["MVRVB_PREFIX_PRESET"] = resolvedPlan.install.prefixPreset;
     result.command.environment["MVRVB_INSTALL_PACKAGES"] =
-        joinStrings(plan.install.packages, ",");
+        joinStrings(resolvedPlan.install.packages, ",");
     result.command.environment["MVRVB_INSTALL_WINETRICKS"] =
-        joinStrings(plan.install.winetricks, ",");
+        joinStrings(resolvedPlan.install.winetricks, ",");
     result.command.environment["MVRVB_REQUIRES_LAUNCHER"] =
-        boolEnvValue(plan.install.requiresLauncher);
+        boolEnvValue(resolvedPlan.install.requiresLauncher);
 
-    switch (plan.antiCheatRisk) {
+    switch (resolvedPlan.antiCheatRisk) {
         case AntiCheatRisk::Blocking:
             result.warnings.push_back(
                 "Anti-cheat risk is blocking; this launch plan is not expected to be service-safe.");
@@ -199,7 +212,7 @@ RuntimeLaunchCommandResult materializeRuntimeLaunchCommand(
         default:
             break;
     }
-    if (plan.backend == RendererBackend::Auto) {
+    if (resolvedPlan.backend == RendererBackend::Auto) {
         result.warnings.push_back(
             "Renderer backend is set to auto; runtime wrapper should be ready to apply fallback logic.");
     }

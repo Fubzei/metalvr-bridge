@@ -91,8 +91,8 @@ These items are now checked in and verified in CI:
    - `tools/mvrvb_runtime_bundle_builder` plus `scripts/export_runtime_bundle.ps1`
      now package launch-plan output, setup scripts, compatibility catalog
      exports, and lint results into one handoff directory for testers or future
-     launcher/runtime glue, with a portable default `prefix/` directory when no
-     explicit prefix path is supplied
+     launcher/runtime glue, carrying the resolved managed-prefix root/path when
+     no explicit prefix path is supplied
    - `docs/AI_HANDOFF.md`, `scripts/update_ai_handoff_doc.ps1`, and
      `scripts/export_ai_handoff_bundle.ps1` now provide a canonical AI resume
      path so any coding helper can pick up from the latest checked-in repo state
@@ -147,14 +147,14 @@ These items are now checked in and verified in CI:
      to actual one-click runtime actions without waiting for the full runtime wrapper
    - `launcher/CompatibilityCatalog.swift`, `launcher/BridgeViewModel.swift`,
      and `launcher/ContentView.swift` now turn the bundled compatibility catalog
-     into a known-title onboarding card with starter runtime-bundle command
-     generation, so testers can pick a checked-in title and stage bundle export
-     from a more consumer-friendly surface
+     into a known-title onboarding card with managed-prefix summaries and guided
+     `Prepare Title` onboarding, so testers can pick a checked-in title and
+     stage bundle export from a more consumer-friendly surface
    - `launcher/BridgeViewModel.swift`, `launcher/ContentView.swift`,
      `launcher/setup.sh`, and `.github/workflows/build.yml` now also bundle and
      use the host-safe runtime-bundle builder plus checked-in `profiles/` tree,
-     so the launcher can generate and immediately import starter runtime bundles
-     for selected titles when those resources are present
+     so the launcher can generate, immediately import, and optionally prepare
+     starter runtime bundles for selected titles when those resources are present
    - `src/common/runtime_launch_command.*` now avoids emitting shell-invalid
      `cd C:\...` steps when a launch request starts from a Windows-style
      executable path and no explicit host working directory is supplied
@@ -172,14 +172,15 @@ These items are now checked in and verified in CI:
      same checked-in profiles the launcher/runtime layer will use
    - `src/common/runtime_launch_plan.*` now turns those profiles into a concrete
      launch plan with backend, fallbacks, install/setup policy, env vars,
-     DLL overrides, launch args, Wine-version policy, API-route intent, and
-     runtime-policy settings
+     DLL overrides, launch args, Wine-version policy, API-route intent,
+     runtime-policy settings, and managed-prefix root/path decisions
    - `src/common/runtime_launch_command.*` now materializes that plan into a
      runnable Wine-style command with merged environment metadata and wrapper-script
      output for future runtime or launcher glue
    - `src/common/runtime_setup_command.*` now materializes install/setup policy
      into bootstrap actions, manual follow-up notes, and generated bash/PowerShell
-     setup scripts for future prefix orchestration
+     setup scripts for future prefix orchestration, defaulting to the resolved
+     managed prefix when no explicit override is provided
    - `tools/mvrvb_runtime_plan_preview` now resolves and prints that launch plan
      from the command line so product/runtime policy can be exercised without
      waiting on launcher wiring or Mac hardware
@@ -188,7 +189,7 @@ These items are now checked in and verified in CI:
    - the preview tool can now also emit bash or PowerShell wrapper scripts from
      either a fresh profile query or a previously exported JSON plan
    - the preview tool can now also emit bash or PowerShell setup/bootstrap
-     scripts when given a target prefix path
+     scripts when given either an explicit target prefix path or a managed-prefix root
    - the same launch-plan layer can now emit a Markdown setup checklist so the
      first Mac tester gets install/bootstrap guidance alongside launch details
    - `scripts/export_runtime_plan.ps1` now produces persisted JSON, a human-readable

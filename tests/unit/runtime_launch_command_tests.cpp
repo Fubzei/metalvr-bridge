@@ -41,7 +41,7 @@ TEST(RuntimeLaunchCommand, MaterializesWineCommandFromLaunchPlan) {
     EXPECT_EQ(result.command.arguments[0], R"(C:\Games\Overwatch\Overwatch.exe)");
     EXPECT_EQ(result.command.arguments[1], "--fullscreen");
     EXPECT_EQ(result.command.workingDirectory, ".");
-    EXPECT_EQ(result.command.environment.at("WINEPREFIX"), R"(C:\Prefixes\Overwatch)");
+    EXPECT_EQ(result.command.environment.at("WINEPREFIX"), "C:/Prefixes/Overwatch");
     EXPECT_EQ(result.command.environment.at("WINEDLLOVERRIDES"),
               "d3d11=native,builtin;dxgi=native,builtin");
     EXPECT_EQ(result.command.environment.at("MVRVB_RENDERER_BACKEND"), "dxvk");
@@ -56,6 +56,11 @@ TEST(RuntimeLaunchCommand, MaterializesWineCommandFromLaunchPlan) {
     EXPECT_EQ(result.command.environment.at("MVRVB_SELECTED_PROFILE"), "overwatch-2");
     EXPECT_EQ(result.command.environment.at("MVRVB_PREFIX_PRESET"), "battlenet-shooter");
     EXPECT_EQ(result.command.environment.at("MVRVB_PREFIX_FAMILY"), "battlenet-shooter");
+    EXPECT_EQ(result.command.environment.at("MVRVB_MANAGED_PREFIX_PATH"),
+              result.command.environment.at("MVRVB_MANAGED_PREFIX_ROOT") + "/overwatch-2");
+    EXPECT_EQ(result.command.environment.at("MVRVB_RESOLVED_PREFIX_SOURCE"), "explicit");
+    EXPECT_EQ(result.command.environment.at("MVRVB_RESOLVED_PREFIX_PATH"),
+              "C:/Prefixes/Overwatch");
     EXPECT_EQ(result.command.environment.at("MVRVB_INSTALL_PACKAGES"), "dxvk,battle.net");
     EXPECT_EQ(result.command.environment.at("MVRVB_INSTALL_WINETRICKS"), "corefonts,vcrun2022");
     EXPECT_EQ(result.command.environment.at("MVRVB_REQUIRES_LAUNCHER"), "1");
@@ -75,7 +80,8 @@ TEST(RuntimeLaunchCommand, BashScriptIncludesExportsAndExecInvocation) {
     ASSERT_TRUE(result) << result.errorMessage;
     const std::string script = renderRuntimeLaunchCommandBash(result.command);
 
-    EXPECT_NE(script.find("export WINEPREFIX='C:\\Prefixes\\Overwatch'"), std::string::npos);
+    EXPECT_NE(script.find("export WINEPREFIX='C:/Prefixes/Overwatch'"), std::string::npos);
+    EXPECT_NE(script.find("export MVRVB_RESOLVED_PREFIX_SOURCE='explicit'"), std::string::npos);
     EXPECT_NE(script.find("export MVRVB_DX12_BACKEND='vkd3d-proton'"), std::string::npos);
     EXPECT_NE(script.find("export MVRVB_PREFIX_PRESET='battlenet-shooter'"), std::string::npos);
     EXPECT_NE(script.find("export WINEDLLOVERRIDES='d3d11=native,builtin;dxgi=native,builtin'"),
@@ -95,6 +101,8 @@ TEST(RuntimeLaunchCommand, PosixExecutableUsesParentAsWorkingDirectory) {
 
     ASSERT_TRUE(result) << result.errorMessage;
     EXPECT_EQ(result.command.workingDirectory, "/Games/Overwatch");
+    EXPECT_EQ(result.command.environment.at("MVRVB_RESOLVED_PREFIX_SOURCE"), "managed");
+    EXPECT_NE(result.command.environment.at("WINEPREFIX").find("overwatch-2"), std::string::npos);
 }
 
 TEST(RuntimeLaunchCommand, PowerShellScriptIncludesEnvironmentAndInvocation) {
@@ -110,6 +118,7 @@ TEST(RuntimeLaunchCommand, PowerShellScriptIncludesEnvironmentAndInvocation) {
     const std::string script = renderRuntimeLaunchCommandPowerShell(result.command);
 
     EXPECT_NE(script.find("$env:MVRVB_RENDERER_BACKEND = 'dxvk'"), std::string::npos);
+    EXPECT_NE(script.find("$env:MVRVB_RESOLVED_PREFIX_SOURCE = 'managed'"), std::string::npos);
     EXPECT_NE(script.find("$env:MVRVB_WINE_MIN_VERSION = '11.0'"), std::string::npos);
     EXPECT_NE(script.find("$env:MVRVB_INSTALL_PACKAGES = 'dxvk,battle.net'"), std::string::npos);
     EXPECT_NE(script.find("$env:WINEDLLOVERRIDES = 'd3d11=native,builtin;dxgi=native,builtin'"),
@@ -126,6 +135,23 @@ TEST(RuntimeLaunchCommand, RejectsMissingExecutablePath) {
 
     ASSERT_FALSE(result);
     EXPECT_NE(result.errorMessage.find("missing executablePath"), std::string::npos);
+}
+
+TEST(RuntimeLaunchCommand, ExplicitPrefixOverrideBeatsManagedDefault) {
+    const RuntimeLaunchPlan plan = buildOverwatchPlan();
+    const auto result = materializeRuntimeLaunchCommand(
+        plan,
+        RuntimeLaunchRequest{
+            .executablePath = R"(C:\Games\Overwatch\Overwatch.exe)",
+            .prefixPath = R"(D:\CustomPrefixes\Overwatch)",
+            .managedPrefixRoot = R"(C:\ManagedPrefixes)",
+        });
+
+    ASSERT_TRUE(result) << result.errorMessage;
+    EXPECT_EQ(result.command.environment.at("MVRVB_MANAGED_PREFIX_PATH"),
+              "C:/ManagedPrefixes/overwatch-2");
+    EXPECT_EQ(result.command.environment.at("MVRVB_RESOLVED_PREFIX_SOURCE"), "explicit");
+    EXPECT_EQ(result.command.environment.at("WINEPREFIX"), "D:/CustomPrefixes/Overwatch");
 }
 
 }  // namespace

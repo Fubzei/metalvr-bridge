@@ -18,6 +18,11 @@ struct RuntimeLaunchPlan {
     std::string appliedPrefixPresetDisplayName;
     std::string selectedProfileId;
     std::string selectedDisplayName;
+    std::string managedPrefixSlug;
+    std::string managedPrefixRoot;
+    std::string managedPrefixPath;
+    std::string resolvedPrefixSource{"managed"};
+    std::string resolvedPrefixPath;
     int matchScore{0};
     RendererBackend backend{RendererBackend::Auto};
     std::vector<RendererBackend> fallbackBackends;
@@ -57,6 +62,11 @@ RuntimeLaunchPlanResult buildRuntimeLaunchPlan(
 RuntimeLaunchPlanResult buildRuntimeLaunchPlanFromDirectory(
     const std::filesystem::path& root,
     const CompatibilityProfileQuery& query);
+std::filesystem::path defaultManagedPrefixRootForCurrentPlatform();
+RuntimeLaunchPlan resolveRuntimeLaunchPlanPrefix(
+    const RuntimeLaunchPlan& plan,
+    std::string_view explicitPrefixPath = {},
+    std::string_view managedPrefixRoot = {});
 RuntimeLaunchPlanResult parseRuntimeLaunchPlanJson(std::string_view text);
 RuntimeLaunchPlanResult loadRuntimeLaunchPlanJson(const std::filesystem::path& path);
 std::string summarizeRuntimeLaunchPlan(const RuntimeLaunchPlan& plan);

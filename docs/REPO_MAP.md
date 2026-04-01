@@ -73,6 +73,7 @@ That subtree exists in the repo, but it is not currently added by the root
 - compatibility-catalog builder for machine-readable and report-style profile indexing
 - compatibility-policy lint layer for profile and prefix-preset governance
 - runtime launch-plan builder for launcher/runtime consumption
+  - including managed-prefix root/path resolution with explicit override support
 - runtime launch-command materializer for wrapper-script generation
 - runtime setup-command materializer for bootstrap/setup script generation
 - shared utility headers
@@ -108,8 +109,10 @@ That subtree exists in the repo, but it is not currently added by the root
   actions, one-click imported setup/launch actions, imported launch-command and
   environment clipboard helpers, concise execution-prep export, inline
   execution-prep preview, known-title onboarding sourced from the bundled
-  compatibility catalog, starter runtime-bundle command generation, in-app
-  starter-bundle generation/import when helper resources are bundled, and log export
+  compatibility catalog, managed-prefix summaries for selected titles, starter
+  runtime-bundle command generation, in-app starter-bundle generation/import
+  when helper resources are bundled, guided `Prepare Title` actions for known
+  titles, and log export
 - packaging script
 
 ### `docs`
@@ -142,7 +145,8 @@ That subtree exists in the repo, but it is not currently added by the root
 - profile-catalog doc sync helper for the generated Markdown compatibility matrix
 - direct profile-lint helper for policy governance without a full test run
 - launch-plan export helper for JSON, human-readable reports, launch scripts,
-  and setup/bootstrap scripts
+  and setup/bootstrap scripts, now with managed-prefix defaults when no explicit
+  prefix path is supplied
 - runtime bundle export helper for one-directory tester handoff packages
 - AI handoff doc update and bundle export helpers for coding-agent continuity
 - machine-readable project-status update helper for tooling continuity
@@ -164,11 +168,12 @@ That subtree exists in the repo, but it is not currently added by the root
 - `mvrvb_profile_lint` validates checked-in profiles and prefix presets for
   missing references, duplicate IDs, and ambiguous auto-match rules
 - `mvrvb_runtime_plan_preview` resolves a checked-in compatibility profile
-  selection into backend, env, DLL override, and launch-argument output
+  selection into backend, env, DLL override, launch-argument output, and
+  managed-prefix decisions
 - `mvrvb_runtime_bundle_builder` packages launch-plan, setup-script,
   compatibility-catalog, lint, and manifest output directly from the host-safe
-  C++ tooling layer, with a portable default `prefix/` directory for
-  self-contained runtime bundles
+  C++ tooling layer, with managed-prefix root/path metadata when no explicit
+  prefix path is supplied
 - supports human-readable summaries, machine-readable JSON output, Markdown setup
   checklists, bash/PowerShell launch-script generation, and bash/PowerShell
   setup-script generation for future launcher/runtime consumption

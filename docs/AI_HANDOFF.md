@@ -10,6 +10,7 @@ MetalVR Bridge.
 - The launcher builds in macOS CI.
 - The Apple-free host test surface, profile lint, and product-layer tooling all run
   locally without Mac hardware.
+- Current Windows/LLVM host verification is `104/104` passing.
 - The next decisive gate is still real Mac runtime validation:
   - launcher triangle
   - `vulkaninfo`
@@ -22,19 +23,22 @@ MetalVR Bridge.
 - Compatibility profiles, prefix presets, compatibility catalog export, launch-plan
   generation, launch/setup script generation, runtime-bundle building, and policy
   lint are all checked in and host-verified.
-- The shared runtime policy now carries a Wine 11+ floor/preference, Wine Mono
-  requirement intent, and explicit DX11/DX12/Vulkan backend-route policy from
-  checked-in profiles into resolved launch plans and generated setup/launch scripts.
+- The shared runtime plan now resolves an app-managed prefix by default when no
+  explicit prefix is supplied, preserves explicit prefix overrides, and carries the
+  resolved prefix source/root/path through JSON plans, bundle manifests, and
+  generated setup/launch scripts.
 - The launcher now consumes the bundled `docs/PROJECT_STATUS.json` snapshot so the
   Mac app reflects the same current phase and next gate tracked in the repo docs.
 - The launcher now also consumes the bundled `docs/GAME_COMPATIBILITY_CATALOG.json`
   snapshot so the app can summarize checked-in profile coverage without rerunning tools.
 - The launcher now turns that bundled compatibility snapshot into a known-title
-  onboarding card so the app can browse checked-in titles and generate starter
-  runtime-bundle commands from the same source-of-truth catalog.
+  onboarding card so the app can browse checked-in titles, auto-resolve a managed
+  prefix location, and stage guided one-click preparation from the same
+  source-of-truth catalog.
 - When the launcher bundle also includes the runtime-bundle helper plus the
   checked-in `profiles/` tree, that onboarding path can now generate and import
-  starter runtime bundles directly inside the app.
+  starter runtime bundles directly inside the app, then offer a primary
+  `Prepare Title` action that runs the generated setup flow before launch.
 - The launcher now imports or consumes bundled `launch-plan.json` previews exported
   from the shared runtime-plan tooling, so product policy can be inspected in-app.
 - The launcher now also imports `bundle-manifest.json` exports from the shared
@@ -84,7 +88,7 @@ Compatibility/runtime exports:
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File scripts\export_profile_catalog.ps1
-powershell -ExecutionPolicy Bypass -File scripts\export_runtime_plan.ps1 -Executable "C:/Games/Overwatch/Overwatch.exe" -Launcher "Battle.net" -Store "battlenet" -PrefixPath "C:/Prefixes/Overwatch"
+powershell -ExecutionPolicy Bypass -File scripts\export_runtime_plan.ps1 -Executable "C:/Games/Overwatch/Overwatch.exe" -Launcher "Battle.net" -Store "battlenet"
 powershell -ExecutionPolicy Bypass -File scripts\export_runtime_bundle.ps1 -Executable "C:/Games/Overwatch/Overwatch.exe" -Launcher "Battle.net" -Store "battlenet"
 ```
 
@@ -96,9 +100,8 @@ bash scripts/mac_runtime_smoke_test.sh
 
 ## Best Next Non-Mac Priorities
 
-1. Move from starter-bundle generation toward launcher-run prefix installation
-   and first title launch for selected known profiles, driven by the new
-   Wine/API-route policy.
+1. Carry the new managed-prefix `Prepare Title` flow into the eventual runtime
+   wrapper and first Mac smoke-test bundle execution.
 2. Keep the compatibility profile and prefix-preset governance strong as more games or
    templates are added.
 3. Keep the repo and generated docs aligned whenever the product/runtime surface changes.

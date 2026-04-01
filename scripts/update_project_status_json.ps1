@@ -14,8 +14,8 @@ $status = [ordered]@{
         currentStatus = "not-started"
     }
     phase4 = [ordered]@{
-        startedMilestones = @(13, 14, 16)
-        plannedMilestones = @(15, 17, 18)
+        startedMilestones = @(13, 14, 15, 16)
+        plannedMilestones = @(17, 18)
     }
     provenSurfaces = @(
         "macos-ci-build-icd",
@@ -26,6 +26,7 @@ $status = [ordered]@{
         "compatibility-catalog-export",
         "compatibility-policy-lint",
         "runtime-launch-plan-generation",
+        "runtime-managed-prefix-resolution",
         "runtime-launch-command-generation",
         "runtime-setup-command-generation",
         "runtime-bundle-builder",
@@ -43,7 +44,8 @@ $status = [ordered]@{
         "launcher-runtime-prep-export",
         "launcher-runtime-prep-preview",
         "launcher-known-title-onboarding",
-        "launcher-starter-bundle-generation"
+        "launcher-starter-bundle-generation",
+        "launcher-managed-prefix-prepare-title-flow"
     )
     notYetProven = @(
         "launcher-triangle-on-real-mac",
@@ -53,7 +55,7 @@ $status = [ordered]@{
     )
     nextGate = "Launcher triangle, vulkaninfo, and vkcube on Mac hardware."
     nextNonMacSteps = @(
-        "Move from starter-bundle generation toward launcher-run prefix installation and first title launch for selected known profiles.",
+        "Use the managed-prefix Prepare Title flow as the default launcher/bootstrap path for selected known titles until Mac hardware is available.",
         "Keep compatibility profiles and prefix presets governed through lint and docs.",
         "Keep repo and wiki handoff docs aligned with the checked-in source of truth."
     )

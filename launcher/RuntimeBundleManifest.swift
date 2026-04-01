@@ -53,6 +53,9 @@ struct RuntimeBundleManifestSnapshot: Decodable {
     let launcher: String
     let store: String
     let prefixPath: String
+    let prefixSource: String?
+    let managedPrefixRoot: String?
+    let managedPrefixPath: String?
     let profilesDir: String
     let files: Files
 
@@ -74,6 +77,12 @@ struct RuntimeBundleManifestSnapshot: Decodable {
         }
         if !prefixPath.isEmpty {
             parts.append("Prefix: \(prefixPath)")
+        }
+        if let prefixSource, !prefixSource.isEmpty {
+            parts.append("Source: \(prefixSource)")
+        }
+        if let managedPrefixPath, !managedPrefixPath.isEmpty, managedPrefixPath != prefixPath {
+            parts.append("Managed: \(managedPrefixPath)")
         }
         return parts.joined(separator: " | ")
     }

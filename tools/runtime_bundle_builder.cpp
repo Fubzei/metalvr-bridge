@@ -38,6 +38,7 @@ void printUsage(std::ostream& out) {
         << "  --store <name>           Store identifier, for example steam or battlenet\n"
         << "  --profiles-dir <path>    Profile directory (defaults to the checked-in profiles tree)\n"
         << "  --out-dir <path>         Bundle output directory (defaults to <exe-stem>-bundle)\n"
+        << "  --managed-prefix-root <path> Managed prefix root override for generated bundles\n"
         << "  --prefix <path>          Prefix path to embed in generated setup/launch scripts\n"
         << "  --working-dir <path>     Working directory to embed in generated scripts\n"
         << "  --wine-binary <path>     Wine executable to use for launch scripts (default: wine)\n"
@@ -170,7 +171,7 @@ bool writeManifest(const std::filesystem::path& manifestPath,
                    std::string_view executable,
                    std::string_view launcher,
                    std::string_view store,
-                   std::string_view prefixPath,
+                   const mvrvb::RuntimeLaunchPlan& plan,
                    const std::filesystem::path& profilesDir,
                    std::string* errorMessage) {
     std::ostringstream manifest;
@@ -179,7 +180,10 @@ bool writeManifest(const std::filesystem::path& manifestPath,
              << "  \"executable\": \"" << jsonEscape(executable) << "\",\n"
              << "  \"launcher\": \"" << jsonEscape(launcher) << "\",\n"
              << "  \"store\": \"" << jsonEscape(store) << "\",\n"
-             << "  \"prefixPath\": \"" << jsonEscape(prefixPath) << "\",\n"
+             << "  \"prefixPath\": \"" << jsonEscape(plan.resolvedPrefixPath) << "\",\n"
+             << "  \"prefixSource\": \"" << jsonEscape(plan.resolvedPrefixSource) << "\",\n"
+             << "  \"managedPrefixRoot\": \"" << jsonEscape(plan.managedPrefixRoot) << "\",\n"
+             << "  \"managedPrefixPath\": \"" << jsonEscape(plan.managedPrefixPath) << "\",\n"
              << "  \"profilesDir\": \"" << jsonEscape(profilesDir.string()) << "\",\n"
              << "  \"files\": {\n"
              << "    \"launchPlanJson\": \"" << kLaunchPlanJsonName << "\",\n"
@@ -208,6 +212,7 @@ int main(int argc, char** argv) {
     std::string launcher;
     std::string store;
     std::string prefixPath;
+    std::string managedPrefixRoot;
     std::string workingDirectory;
     std::string wineBinary = "wine";
     std::string winebootBinary = "wineboot";
@@ -270,6 +275,13 @@ int main(int argc, char** argv) {
             }
             return 1;
         }
+        if (arg == "--managed-prefix-root") {
+            if (const char* value = requireValue("--managed-prefix-root")) {
+                managedPrefixRoot = value;
+                continue;
+            }
+            return 1;
+        }
         if (arg == "--working-dir") {
             if (const char* value = requireValue("--working-dir")) {
                 workingDirectory = value;
@@ -324,25 +336,26 @@ int main(int argc, char** argv) {
         return 1;
     }
 
-    if (prefixPath.empty()) {
-        prefixPath = "prefix";
-    }
-
     const mvrvb::CompatibilityProfileQuery query{
         .executable = executable,
         .launcher = launcher,
         .store = store,
     };
-    const auto planResult = mvrvb::buildRuntimeLaunchPlanFromDirectory(profilesDir, query);
+    auto planResult = mvrvb::buildRuntimeLaunchPlanFromDirectory(profilesDir, query);
     if (!planResult) {
         std::cerr << "Failed to build runtime launch plan: " << planResult.errorMessage << "\n";
         return 1;
     }
+    planResult.plan = mvrvb::resolveRuntimeLaunchPlanPrefix(
+        planResult.plan,
+        prefixPath,
+        managedPrefixRoot);
 
     const mvrvb::RuntimeLaunchRequest launchRequest{
         .executablePath = executable,
         .wineBinary = wineBinary,
         .prefixPath = prefixPath,
+        .managedPrefixRoot = managedPrefixRoot,
         .workingDirectory = workingDirectory,
     };
     const auto launchCommandResult =
@@ -355,6 +368,7 @@ int main(int argc, char** argv) {
 
     const mvrvb::RuntimeSetupRequest setupRequest{
         .prefixPath = prefixPath,
+        .managedPrefixRoot = managedPrefixRoot,
         .winebootBinary = winebootBinary,
         .winetricksBinary = winetricksBinary,
         .workingDirectory = workingDirectory.empty() ? "." : workingDirectory,
@@ -477,7 +491,7 @@ int main(int argc, char** argv) {
                 executable,
                 launcher,
                 store,
-                prefixPath,
+                planResult.plan,
                 profilesDir,
                 &errorMessage),
             kManifestName)) {
@@ -486,6 +500,6 @@ int main(int argc, char** argv) {
 
     std::cout << "Runtime bundle directory: " << outputDir.string() << "\n";
     std::cout << "Bundle manifest:         " << (outputDir / kManifestName).string() << "\n";
-    std::cout << "Prefix path:             " << prefixPath << "\n";
+    std::cout << "Prefix path:             " << planResult.plan.resolvedPrefixPath << "\n";
     return 0;
 }

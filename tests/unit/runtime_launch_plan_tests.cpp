@@ -25,6 +25,12 @@ TEST(RuntimeLaunchPlan, FallsBackToGlobalDefaultsForUnknownGames) {
     EXPECT_EQ(result.plan.appliedPrefixPresetId, "general-game");
     EXPECT_EQ(result.plan.appliedPrefixPresetDisplayName, "General Game");
     EXPECT_EQ(result.plan.selectedProfileId, "global-defaults");
+    EXPECT_EQ(result.plan.managedPrefixSlug, "unknowngame");
+    EXPECT_EQ(result.plan.managedPrefixRoot,
+              defaultManagedPrefixRootForCurrentPlatform().generic_string());
+    EXPECT_EQ(result.plan.resolvedPrefixSource, "managed");
+    EXPECT_EQ(result.plan.resolvedPrefixPath, result.plan.managedPrefixPath);
+    EXPECT_NE(result.plan.managedPrefixPath.find("unknowngame"), std::string::npos);
     ASSERT_EQ(result.plan.appliedProfileIds.size(), 1u);
     EXPECT_EQ(result.plan.appliedProfileIds[0], "global-defaults");
     EXPECT_EQ(result.plan.backend, RendererBackend::Auto);
@@ -63,6 +69,12 @@ TEST(RuntimeLaunchPlan, MergesMatchedGameProfileOverGlobalDefaults) {
     EXPECT_EQ(result.plan.appliedPrefixPresetId, "battlenet-shooter");
     EXPECT_EQ(result.plan.appliedPrefixPresetDisplayName, "Battle.net Shooter");
     EXPECT_EQ(result.plan.selectedProfileId, "overwatch-2");
+    EXPECT_EQ(result.plan.managedPrefixSlug, "overwatch-2");
+    EXPECT_EQ(result.plan.managedPrefixRoot,
+              defaultManagedPrefixRootForCurrentPlatform().generic_string());
+    EXPECT_EQ(result.plan.resolvedPrefixSource, "managed");
+    EXPECT_EQ(result.plan.resolvedPrefixPath, result.plan.managedPrefixPath);
+    EXPECT_NE(result.plan.managedPrefixPath.find("overwatch-2"), std::string::npos);
     ASSERT_EQ(result.plan.appliedProfileIds.size(), 2u);
     EXPECT_EQ(result.plan.appliedProfileIds[0], "global-defaults");
     EXPECT_EQ(result.plan.appliedProfileIds[1], "overwatch-2");
@@ -110,6 +122,8 @@ TEST(RuntimeLaunchPlan, SummaryIncludesCoreDecisionFields) {
 
     EXPECT_NE(summary.find("Applied prefix preset: battlenet-shooter"), std::string::npos);
     EXPECT_NE(summary.find("Selected profile: overwatch-2"), std::string::npos);
+    EXPECT_NE(summary.find("Managed prefix path:"), std::string::npos);
+    EXPECT_NE(summary.find("Resolved prefix source: managed"), std::string::npos);
     EXPECT_NE(summary.find("Backend: dxvk"), std::string::npos);
     EXPECT_NE(summary.find("Wine minimum version: 11.0"), std::string::npos);
     EXPECT_NE(summary.find("DX12 backend route: vkd3d-proton"), std::string::npos);
@@ -137,6 +151,8 @@ TEST(RuntimeLaunchPlan, DetailedReportIncludesEnvironmentAndArguments) {
     EXPECT_NE(report.find("DLL overrides:"), std::string::npos);
     EXPECT_NE(report.find("d3d11=native,builtin"), std::string::npos);
     EXPECT_NE(report.find("Install policy:"), std::string::npos);
+    EXPECT_NE(report.find("managed_prefix_path="), std::string::npos);
+    EXPECT_NE(report.find("resolved_prefix_source=managed"), std::string::npos);
     EXPECT_NE(report.find("wine_minimum_version=11.0"), std::string::npos);
     EXPECT_NE(report.find("requires_wine_mono=false"), std::string::npos);
     EXPECT_NE(report.find("prefix_preset=battlenet-shooter"), std::string::npos);
@@ -159,6 +175,8 @@ TEST(RuntimeLaunchPlan, JsonIncludesMachineReadableFields) {
 
     EXPECT_NE(json.find("\"schemaVersion\":\"1\""), std::string::npos);
     EXPECT_NE(json.find("\"appliedPrefixPresetId\":\"battlenet-shooter\""), std::string::npos);
+    EXPECT_NE(json.find("\"managedPrefixSlug\":\"overwatch-2\""), std::string::npos);
+    EXPECT_NE(json.find("\"resolvedPrefixSource\":\"managed\""), std::string::npos);
     EXPECT_NE(json.find("\"selectedProfileId\":\"overwatch-2\""), std::string::npos);
     EXPECT_NE(json.find("\"backend\":\"dxvk\""), std::string::npos);
     EXPECT_NE(json.find("\"minimumWineVersion\":\"11.0\""), std::string::npos);
@@ -189,6 +207,8 @@ TEST(RuntimeLaunchPlan, MarkdownChecklistIncludesSetupGuidance) {
 
     EXPECT_NE(checklist.find("# Runtime Setup Checklist"), std::string::npos);
     EXPECT_NE(checklist.find("- Applied prefix preset: `battlenet-shooter`"), std::string::npos);
+    EXPECT_NE(checklist.find("- Managed prefix path: `"), std::string::npos);
+    EXPECT_NE(checklist.find("- Resolved prefix source: `managed`"), std::string::npos);
     EXPECT_NE(checklist.find("- Prefix preset: `battlenet-shooter`"), std::string::npos);
     EXPECT_NE(checklist.find("- Wine minimum version: `11.0`"), std::string::npos);
     EXPECT_NE(checklist.find("- DX12 backend route: `vkd3d-proton`"), std::string::npos);
@@ -234,6 +254,9 @@ TEST(RuntimeLaunchPlan, WritesJsonAndReportFiles) {
     const auto loaded = loadRuntimeLaunchPlanJson(jsonPath);
     ASSERT_TRUE(loaded) << loaded.errorMessage;
     EXPECT_EQ(loaded.plan.appliedPrefixPresetId, "battlenet-shooter");
+    EXPECT_EQ(loaded.plan.managedPrefixSlug, "overwatch-2");
+    EXPECT_EQ(loaded.plan.resolvedPrefixSource, "managed");
+    EXPECT_EQ(loaded.plan.resolvedPrefixPath, loaded.plan.managedPrefixPath);
     EXPECT_EQ(loaded.plan.selectedProfileId, "overwatch-2");
     EXPECT_EQ(loaded.plan.backend, RendererBackend::DXVK);
     EXPECT_EQ(loaded.plan.minimumWineVersion, "11.0");
@@ -263,6 +286,27 @@ TEST(RuntimeLaunchPlan, WritesJsonAndReportFiles) {
     std::filesystem::remove(jsonPath, ec);
     std::filesystem::remove(reportPath, ec);
     std::filesystem::remove(checklistPath, ec);
+}
+
+TEST(RuntimeLaunchPlan, ExplicitPrefixOverrideWinsOverManagedPrefix) {
+    const auto result = buildRuntimeLaunchPlanFromDirectory(
+        repoRoot() / "profiles",
+        CompatibilityProfileQuery{
+            .executable = R"(C:\Games\Overwatch\Overwatch.exe)",
+            .launcher = "Battle.net",
+            .store = "battlenet",
+        });
+
+    ASSERT_TRUE(result) << result.errorMessage;
+    const RuntimeLaunchPlan explicitPlan = resolveRuntimeLaunchPlanPrefix(
+        result.plan,
+        R"(C:\Prefixes\ManualOverwatch)",
+        R"(C:\ManagedPrefixes)");
+
+    EXPECT_EQ(explicitPlan.managedPrefixRoot, "C:/ManagedPrefixes");
+    EXPECT_EQ(explicitPlan.managedPrefixPath, "C:/ManagedPrefixes/overwatch-2");
+    EXPECT_EQ(explicitPlan.resolvedPrefixSource, "explicit");
+    EXPECT_EQ(explicitPlan.resolvedPrefixPath, "C:/Prefixes/ManualOverwatch");
 }
 
 TEST(RuntimeLaunchPlan, RejectsUnknownBackendInPersistedJson) {

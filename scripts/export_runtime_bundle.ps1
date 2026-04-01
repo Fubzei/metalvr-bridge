@@ -4,6 +4,7 @@ param(
     [string]$Launcher = "",
     [string]$Store = "",
     [string]$PrefixPath = "",
+    [string]$ManagedPrefixRoot = "",
     [string]$ProfilesDir = "",
     [string]$BuildDir = "",
     [string]$OutputDir = ""
@@ -83,6 +84,9 @@ if (-not [string]::IsNullOrWhiteSpace($Store)) {
 }
 if (-not [string]::IsNullOrWhiteSpace($PrefixPath)) {
     $toolArgs += @("--prefix", $PrefixPath)
+}
+if (-not [string]::IsNullOrWhiteSpace($ManagedPrefixRoot)) {
+    $toolArgs += @("--managed-prefix-root", $ManagedPrefixRoot)
 }
 
 & $toolPath @toolArgs

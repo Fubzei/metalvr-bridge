@@ -11,6 +11,7 @@ namespace mvrvb {
 
 struct RuntimeSetupRequest {
     std::string prefixPath;
+    std::string managedPrefixRoot;
     std::string winebootBinary{"wineboot"};
     std::string winetricksBinary{"winetricks"};
     std::string workingDirectory;

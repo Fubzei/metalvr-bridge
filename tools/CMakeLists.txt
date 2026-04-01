@@ -167,7 +167,7 @@ if(MVRVB_BUILD_TESTS)
             --json
   )
   set_tests_properties(runtime_plan_preview_overwatch_json PROPERTIES
-    PASS_REGULAR_EXPRESSION "\"selectedProfileId\":\"overwatch-2\""
+    PASS_REGULAR_EXPRESSION "\"resolvedPrefixSource\":\"managed\""
   )
 
   add_test(
@@ -180,7 +180,33 @@ if(MVRVB_BUILD_TESTS)
             --checklist
   )
   set_tests_properties(runtime_plan_preview_overwatch_checklist PROPERTIES
-    PASS_REGULAR_EXPRESSION "Prefix preset: `battlenet-shooter`"
+    PASS_REGULAR_EXPRESSION "Resolved prefix source: `managed`"
+  )
+
+  add_test(
+    NAME runtime_plan_preview_overwatch_setup_bash_managed
+    COMMAND mvrvb_runtime_plan_preview
+            --profiles-dir "${MVRVB_TOOLS_PROFILE_DIR}"
+            --exe "C:/Games/Overwatch/Overwatch.exe"
+            --launcher "Battle.net"
+            --store "battlenet"
+            --setup-bash
+  )
+  set_tests_properties(runtime_plan_preview_overwatch_setup_bash_managed PROPERTIES
+    PASS_REGULAR_EXPRESSION "export WINEPREFIX='.*overwatch-2'"
+  )
+
+  add_test(
+    NAME runtime_plan_preview_overwatch_setup_powershell_managed
+    COMMAND mvrvb_runtime_plan_preview
+            --profiles-dir "${MVRVB_TOOLS_PROFILE_DIR}"
+            --exe "C:/Games/Overwatch/Overwatch.exe"
+            --launcher "Battle.net"
+            --store "battlenet"
+            --setup-powershell
+  )
+  set_tests_properties(runtime_plan_preview_overwatch_setup_powershell_managed PROPERTIES
+    PASS_REGULAR_EXPRESSION "\\$env:WINEPREFIX = '.*overwatch-2'"
   )
 
   add_test(
@@ -362,6 +388,7 @@ if(MVRVB_BUILD_TESTS)
               -DREPO_ROOT=${MVRVB_TOOLS_REPO_ROOT}
               -DBUILD_DIR=${CMAKE_BINARY_DIR}
               -DOUTPUT_DIR=${CMAKE_CURRENT_BINARY_DIR}/artifacts/runtime-bundle
+              -DEXPECTED_PREFIX_SOURCE=explicit
               -P "${MVRVB_RUNTIME_BUNDLE_VERIFY_SCRIPT}"
     )
   endif()
@@ -372,7 +399,8 @@ if(MVRVB_BUILD_TESTS)
             -DTOOL=$<TARGET_FILE:mvrvb_runtime_bundle_builder>
             -DPROFILE_DIR=${MVRVB_TOOLS_PROFILE_DIR}
             -DOUTPUT_DIR=${CMAKE_CURRENT_BINARY_DIR}/artifacts/runtime-bundle-direct
-            -DEXPECTED_PREFIX=prefix
+            -DEXPECTED_PREFIX_SOURCE=managed
+            -DEXPECTED_PREFIX_CONTAINS=overwatch-2
             -P "${MVRVB_RUNTIME_BUNDLE_VERIFY_SCRIPT}"
   )
 endif()
