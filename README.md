@@ -32,7 +32,8 @@ Windows game
   CI-backed parsing, auto-selection, and validation in
   `src/common/compatibility_profile.*` and
   `tests/unit/compatibility_profile_tests.cpp`, including install/setup policy
-  alongside runtime policy.
+  alongside runtime policy, now including Wine 11+/Mono intent and explicit
+  DX11/DX12/Vulkan route selection.
 - A checked-in prefix preset system now lives under `profiles/prefix-presets/`,
   with CI-backed parsing and validation in `src/common/prefix_preset.*` and
   `tests/unit/prefix_preset_tests.cpp`, so game profiles can point at named
@@ -48,7 +49,8 @@ Windows game
 - A checked-in runtime launch-plan builder now lives in
   `src/common/runtime_launch_plan.*`, turning those profiles into backend,
   fallback, install/setup, env, DLL-override, and launch-argument decisions
-  that a launcher can consume, including resolved checked-in prefix presets.
+  that a launcher can consume, including resolved checked-in prefix presets plus
+  Wine-version and API-route policy.
 - A checked-in runtime launch-command materializer now lives in
   `src/common/runtime_launch_command.*`, turning those plans into concrete
   Wine-style command, environment, and wrapper-script output for future runtime

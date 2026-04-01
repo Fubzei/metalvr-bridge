@@ -77,7 +77,8 @@ These items are now checked in and verified in CI:
    - future launcher/runtime integration points for backend, env, and launch policy
    Progress:
    - `src/common/compatibility_profile.*` now parses the profile format, including
-     install/setup policy for future bottle or prefix orchestration
+     install/setup policy plus Wine 11+/Mono and DX11/DX12/Vulkan route policy
+     for future bottle or prefix orchestration
    - `src/common/compatibility_catalog.*` now turns those checked-in profiles into
      a compatibility matrix the repo can export as JSON, a human-readable report,
      or a Markdown matrix, now with merged prefix-preset setup intent
@@ -171,7 +172,8 @@ These items are now checked in and verified in CI:
      same checked-in profiles the launcher/runtime layer will use
    - `src/common/runtime_launch_plan.*` now turns those profiles into a concrete
      launch plan with backend, fallbacks, install/setup policy, env vars,
-     DLL overrides, launch args, and runtime-policy settings
+     DLL overrides, launch args, Wine-version policy, API-route intent, and
+     runtime-policy settings
    - `src/common/runtime_launch_command.*` now materializes that plan into a
      runnable Wine-style command with merged environment metadata and wrapper-script
      output for future runtime or launcher glue

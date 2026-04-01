@@ -55,6 +55,8 @@ That subtree exists in the repo, but it is not currently added by the root
   - non-Apple CMake entrypoint for running the Apple-free test surface locally
 - `profiles/`
   - checked-in compatibility profiles and prefix presets for future runtime and launcher policy
+  - now includes Wine 11+/Mono requirement intent plus explicit DX11/DX12/Vulkan
+    route policy in addition to install/setup metadata
 - `tools/`
   - checked-in host-safe preview tool for resolving runtime launch plans from
     profile inputs and writing launch/setup artifacts to disk
@@ -66,6 +68,7 @@ That subtree exists in the repo, but it is not currently added by the root
 - logging
 - threading
 - compatibility-profile parser, loader, and selector
+  - including Wine-policy and API-route parsing for future backend breadth
 - prefix-preset parser and loader for bottle-style setup defaults
 - compatibility-catalog builder for machine-readable and report-style profile indexing
 - compatibility-policy lint layer for profile and prefix-preset governance
@@ -125,8 +128,9 @@ That subtree exists in the repo, but it is not currently added by the root
 - prefix-preset files for reusable package, launcher-bootstrap, env, DLL-override,
   and launch-argument defaults
 - intended to drive future runtime backend selection, launch args, env vars,
-  DLL override policy, install/setup policy, sync mode, high-resolution mode,
-  and MetalFX-upscaling intent
+  DLL override policy, install/setup policy, Wine version and Mono policy,
+  DX11/DX12/Vulkan route intent, sync mode, high-resolution mode, and
+  MetalFX-upscaling intent
 - validated in CI through `src/common/compatibility_profile.*` and
   `src/common/prefix_preset.*`
 

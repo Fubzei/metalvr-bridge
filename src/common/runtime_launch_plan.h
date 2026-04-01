@@ -22,6 +22,12 @@ struct RuntimeLaunchPlan {
     RendererBackend backend{RendererBackend::Auto};
     std::vector<RendererBackend> fallbackBackends;
     std::string windowsVersion;
+    std::string minimumWineVersion;
+    std::string preferredWineVersion;
+    bool requiresWineMono{false};
+    RendererBackend dx11Backend{RendererBackend::Auto};
+    RendererBackend dx12Backend{RendererBackend::Auto};
+    RendererBackend vulkanBackend{RendererBackend::Auto};
     SyncMode syncMode{SyncMode::Default};
     bool highResolutionMode{false};
     bool metalFxUpscaling{false};

@@ -5,7 +5,7 @@ category = baseline
 notes = Baseline shared prefix preset for broad game compatibility while per-title flows mature.
 
 [install]
-packages = dxvk
+packages = dxvk, vkd3d-proton
 winetricks = corefonts
 requires_launcher = false
 notes = Baseline setup intent for shared game prefixes while title-specific presets are still maturing.

@@ -22,6 +22,9 @@ MetalVR Bridge.
 - Compatibility profiles, prefix presets, compatibility catalog export, launch-plan
   generation, launch/setup script generation, runtime-bundle building, and policy
   lint are all checked in and host-verified.
+- The shared runtime policy now carries a Wine 11+ floor/preference, Wine Mono
+  requirement intent, and explicit DX11/DX12/Vulkan backend-route policy from
+  checked-in profiles into resolved launch plans and generated setup/launch scripts.
 - The launcher now consumes the bundled `docs/PROJECT_STATUS.json` snapshot so the
   Mac app reflects the same current phase and next gate tracked in the repo docs.
 - The launcher now also consumes the bundled `docs/GAME_COMPATIBILITY_CATALOG.json`
@@ -94,7 +97,8 @@ bash scripts/mac_runtime_smoke_test.sh
 ## Best Next Non-Mac Priorities
 
 1. Move from starter-bundle generation toward launcher-run prefix installation
-   and first title launch for selected known profiles.
+   and first title launch for selected known profiles, driven by the new
+   Wine/API-route policy.
 2. Keep the compatibility profile and prefix-preset governance strong as more games or
    templates are added.
 3. Keep the repo and generated docs aligned whenever the product/runtime surface changes.

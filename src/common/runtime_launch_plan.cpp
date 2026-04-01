@@ -151,6 +151,22 @@ std::optional<AntiCheatRisk> antiCheatRiskFromName(std::string_view value) {
     return std::nullopt;
 }
 
+void applyStringOverride(std::string* dst, const std::string& src) {
+    if (!dst || src.empty()) return;
+    *dst = src;
+}
+
+void applyOptionalBoolOverride(bool* dst, const std::optional<bool>& src) {
+    if (!dst || !src.has_value()) return;
+    *dst = *src;
+}
+
+void applyOptionalBackendOverride(RendererBackend* dst,
+                                  const std::optional<RendererBackend>& src) {
+    if (!dst || !src.has_value()) return;
+    *dst = *src;
+}
+
 class RuntimeLaunchPlanJsonParser {
 public:
     explicit RuntimeLaunchPlanJsonParser(std::string_view input) : input_(input) {}
@@ -505,6 +521,48 @@ private:
                 if (!parseBool(&plan->highResolutionMode, errorMessage)) return false;
             } else if (key == "metalFxUpscaling") {
                 if (!parseBool(&plan->metalFxUpscaling, errorMessage)) return false;
+            } else if (key == "minimumWineVersion") {
+                if (!parseString(&plan->minimumWineVersion, errorMessage)) return false;
+            } else if (key == "preferredWineVersion") {
+                if (!parseString(&plan->preferredWineVersion, errorMessage)) return false;
+            } else if (key == "requiresWineMono") {
+                if (!parseBool(&plan->requiresWineMono, errorMessage)) return false;
+            } else if (key == "dx11Backend") {
+                std::string value;
+                if (!parseString(&value, errorMessage)) return false;
+                const auto backend = rendererBackendFromName(value);
+                if (!backend.has_value()) {
+                    if (errorMessage) {
+                        *errorMessage =
+                            "Unknown dx11 backend in runtime launch plan JSON: " + value;
+                    }
+                    return false;
+                }
+                plan->dx11Backend = *backend;
+            } else if (key == "dx12Backend") {
+                std::string value;
+                if (!parseString(&value, errorMessage)) return false;
+                const auto backend = rendererBackendFromName(value);
+                if (!backend.has_value()) {
+                    if (errorMessage) {
+                        *errorMessage =
+                            "Unknown dx12 backend in runtime launch plan JSON: " + value;
+                    }
+                    return false;
+                }
+                plan->dx12Backend = *backend;
+            } else if (key == "vulkanBackend") {
+                std::string value;
+                if (!parseString(&value, errorMessage)) return false;
+                const auto backend = rendererBackendFromName(value);
+                if (!backend.has_value()) {
+                    if (errorMessage) {
+                        *errorMessage =
+                            "Unknown vulkan backend in runtime launch plan JSON: " + value;
+                    }
+                    return false;
+                }
+                plan->vulkanBackend = *backend;
             } else {
                 if (!skipValue(errorMessage)) return false;
             }
@@ -704,6 +762,18 @@ void mergeInstallPolicy(CompatibilityInstallPolicy* dst,
     }
 }
 
+void applyRuntimeOverrides(RuntimeLaunchPlan* dst,
+                           const CompatibilityRuntimePolicy& src) {
+    if (!dst) return;
+    applyStringOverride(&dst->windowsVersion, src.windowsVersion);
+    applyStringOverride(&dst->minimumWineVersion, src.wine.minimumVersion);
+    applyStringOverride(&dst->preferredWineVersion, src.wine.preferredVersion);
+    applyOptionalBoolOverride(&dst->requiresWineMono, src.wine.requiresMono);
+    applyOptionalBackendOverride(&dst->dx11Backend, src.backends.direct3D11);
+    applyOptionalBackendOverride(&dst->dx12Backend, src.backends.direct3D12);
+    applyOptionalBackendOverride(&dst->vulkanBackend, src.backends.vulkan);
+}
+
 }  // namespace
 
 RuntimeLaunchPlanResult buildRuntimeLaunchPlan(
@@ -742,6 +812,7 @@ RuntimeLaunchPlanResult buildRuntimeLaunchPlan(
         mergeMaps(&result.plan.dllOverrides, globalDefaults->dllOverrides);
         mergeArgs(&result.plan.launchArgs, globalDefaults->launchArgs);
         mergeInstallPolicy(&result.plan.install, globalDefaults->install, true);
+        applyRuntimeOverrides(&result.plan, globalDefaults->runtime);
     }
 
     if (selectedProfile != globalDefaults) {
@@ -752,16 +823,13 @@ RuntimeLaunchPlanResult buildRuntimeLaunchPlan(
     result.plan.selectedDisplayName = selectedProfile->displayName;
     result.plan.matchScore = compatibilityProfileMatchScore(*selectedProfile, query);
     result.plan.backend = selectedProfile->defaultRenderer;
-    result.plan.windowsVersion = selectedProfile->runtime.windowsVersion;
-    if (result.plan.windowsVersion.empty() && globalDefaults) {
-        result.plan.windowsVersion = globalDefaults->runtime.windowsVersion;
-    }
     result.plan.syncMode = selectedProfile->runtime.syncMode;
     result.plan.highResolutionMode = selectedProfile->runtime.highResolutionMode;
     result.plan.metalFxUpscaling = selectedProfile->runtime.metalFxUpscaling;
     result.plan.latencySensitive = selectedProfile->latencySensitive;
     result.plan.competitive = selectedProfile->competitive;
     result.plan.antiCheatRisk = selectedProfile->antiCheatRisk;
+    applyRuntimeOverrides(&result.plan, selectedProfile->runtime);
 
     appendFallbacks(&result.plan.fallbackBackends, selectedProfile->fallbackRenderers);
     if (globalDefaults && globalDefaults != selectedProfile) {
@@ -871,6 +939,12 @@ std::string summarizeRuntimeLaunchPlan(const RuntimeLaunchPlan& plan) {
     }
     out << "\n";
     out << "Windows version: " << plan.windowsVersion << "\n";
+    out << "Wine minimum version: " << plan.minimumWineVersion << "\n";
+    out << "Wine preferred version: " << plan.preferredWineVersion << "\n";
+    out << "Requires Wine Mono: " << (plan.requiresWineMono ? "true" : "false") << "\n";
+    out << "DX11 backend route: " << rendererBackendName(plan.dx11Backend) << "\n";
+    out << "DX12 backend route: " << rendererBackendName(plan.dx12Backend) << "\n";
+    out << "Vulkan backend route: " << rendererBackendName(plan.vulkanBackend) << "\n";
     out << "Sync mode: " << syncModeName(plan.syncMode) << "\n";
     out << "High resolution mode: " << (plan.highResolutionMode ? "true" : "false") << "\n";
     out << "MetalFX upscaling: " << (plan.metalFxUpscaling ? "true" : "false") << "\n";
@@ -923,6 +997,9 @@ std::string describeRuntimeLaunchPlan(const RuntimeLaunchPlan& plan) {
         }
     }
     out << "Install policy:\n";
+    out << "  wine_minimum_version=" << plan.minimumWineVersion << "\n";
+    out << "  wine_preferred_version=" << plan.preferredWineVersion << "\n";
+    out << "  requires_wine_mono=" << (plan.requiresWineMono ? "true" : "false") << "\n";
     out << "  prefix_preset=" << plan.install.prefixPreset << "\n";
     out << "  requires_launcher=" << (plan.install.requiresLauncher ? "true" : "false") << "\n";
     out << "  packages:\n";
@@ -984,6 +1061,17 @@ std::string runtimeLaunchPlanToJson(const RuntimeLaunchPlan& plan) {
     out << ",\"runtime\":{";
     out << "\"windowsVersion\":";
     appendJsonString(&out, plan.windowsVersion);
+    out << ",\"minimumWineVersion\":";
+    appendJsonString(&out, plan.minimumWineVersion);
+    out << ",\"preferredWineVersion\":";
+    appendJsonString(&out, plan.preferredWineVersion);
+    out << ",\"requiresWineMono\":" << (plan.requiresWineMono ? "true" : "false");
+    out << ",\"dx11Backend\":";
+    appendJsonString(&out, rendererBackendName(plan.dx11Backend));
+    out << ",\"dx12Backend\":";
+    appendJsonString(&out, rendererBackendName(plan.dx12Backend));
+    out << ",\"vulkanBackend\":";
+    appendJsonString(&out, rendererBackendName(plan.vulkanBackend));
     out << ",\"syncMode\":";
     appendJsonString(&out, syncModeName(plan.syncMode));
     out << ",\"highResolutionMode\":" << (plan.highResolutionMode ? "true" : "false");
@@ -1053,6 +1141,12 @@ std::string runtimeLaunchPlanToMarkdownChecklist(const RuntimeLaunchPlan& plan) 
         out << "\n";
     }
     out << "- Windows version intent: `" << plan.windowsVersion << "`\n";
+    out << "- Wine minimum version: `" << plan.minimumWineVersion << "`\n";
+    out << "- Wine preferred version: `" << plan.preferredWineVersion << "`\n";
+    out << "- Requires Wine Mono: `" << (plan.requiresWineMono ? "true" : "false") << "`\n";
+    out << "- DX11 backend route: `" << rendererBackendName(plan.dx11Backend) << "`\n";
+    out << "- DX12 backend route: `" << rendererBackendName(plan.dx12Backend) << "`\n";
+    out << "- Vulkan backend route: `" << rendererBackendName(plan.vulkanBackend) << "`\n";
     out << "- Sync mode: `" << syncModeName(plan.syncMode) << "`\n";
     out << "- High resolution mode: `" << (plan.highResolutionMode ? "true" : "false") << "`\n";
     out << "- MetalFX upscaling: `" << (plan.metalFxUpscaling ? "true" : "false") << "`\n";

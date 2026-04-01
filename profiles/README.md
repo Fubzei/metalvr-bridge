@@ -7,7 +7,11 @@ Profiles in this tree are not blanket compatibility claims. They are structured
 runtime intents that can express:
 
 - the preferred renderer/backend strategy for a title
+- explicit DX11, DX12, and Vulkan route intent where the runtime should not rely
+  on a single flat backend choice
 - fallback backends
+- the Wine version floor and preferred Wine version for the title/runtime
+- whether Wine Mono should be treated as a setup requirement
 - install/setup intent for the target prefix
 - sync-mode and high-resolution policy
 - MetalFX upscaling intent where that becomes relevant
@@ -57,6 +61,14 @@ Sections:
   - `sync_mode`
   - `high_resolution_mode`
   - `metalfx_upscaling`
+- `[wine]`
+  - `minimum_version`
+  - `preferred_version`
+  - `requires_mono`
+- `[backends]`
+  - `dx11`
+  - `dx12`
+  - `vulkan`
 - `[install]`
   - `prefix_preset`
   - `packages`

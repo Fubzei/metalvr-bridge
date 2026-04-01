@@ -45,6 +45,12 @@ TEST(RuntimeLaunchCommand, MaterializesWineCommandFromLaunchPlan) {
     EXPECT_EQ(result.command.environment.at("WINEDLLOVERRIDES"),
               "d3d11=native,builtin;dxgi=native,builtin");
     EXPECT_EQ(result.command.environment.at("MVRVB_RENDERER_BACKEND"), "dxvk");
+    EXPECT_EQ(result.command.environment.at("MVRVB_WINE_MIN_VERSION"), "11.0");
+    EXPECT_EQ(result.command.environment.at("MVRVB_WINE_PREFERRED_VERSION"), "11.0");
+    EXPECT_EQ(result.command.environment.at("MVRVB_REQUIRES_WINE_MONO"), "0");
+    EXPECT_EQ(result.command.environment.at("MVRVB_DX11_BACKEND"), "dxvk");
+    EXPECT_EQ(result.command.environment.at("MVRVB_DX12_BACKEND"), "vkd3d-proton");
+    EXPECT_EQ(result.command.environment.at("MVRVB_VULKAN_BACKEND"), "native-vulkan");
     EXPECT_EQ(result.command.environment.at("MVRVB_SYNC_MODE"), "msync");
     EXPECT_EQ(result.command.environment.at("MVRVB_HIGH_RESOLUTION_MODE"), "1");
     EXPECT_EQ(result.command.environment.at("MVRVB_SELECTED_PROFILE"), "overwatch-2");
@@ -70,6 +76,7 @@ TEST(RuntimeLaunchCommand, BashScriptIncludesExportsAndExecInvocation) {
     const std::string script = renderRuntimeLaunchCommandBash(result.command);
 
     EXPECT_NE(script.find("export WINEPREFIX='C:\\Prefixes\\Overwatch'"), std::string::npos);
+    EXPECT_NE(script.find("export MVRVB_DX12_BACKEND='vkd3d-proton'"), std::string::npos);
     EXPECT_NE(script.find("export MVRVB_PREFIX_PRESET='battlenet-shooter'"), std::string::npos);
     EXPECT_NE(script.find("export WINEDLLOVERRIDES='d3d11=native,builtin;dxgi=native,builtin'"),
               std::string::npos);
@@ -103,6 +110,7 @@ TEST(RuntimeLaunchCommand, PowerShellScriptIncludesEnvironmentAndInvocation) {
     const std::string script = renderRuntimeLaunchCommandPowerShell(result.command);
 
     EXPECT_NE(script.find("$env:MVRVB_RENDERER_BACKEND = 'dxvk'"), std::string::npos);
+    EXPECT_NE(script.find("$env:MVRVB_WINE_MIN_VERSION = '11.0'"), std::string::npos);
     EXPECT_NE(script.find("$env:MVRVB_INSTALL_PACKAGES = 'dxvk,battle.net'"), std::string::npos);
     EXPECT_NE(script.find("$env:WINEDLLOVERRIDES = 'd3d11=native,builtin;dxgi=native,builtin'"),
               std::string::npos);

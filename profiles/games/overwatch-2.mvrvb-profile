@@ -17,6 +17,14 @@ sync_mode = msync
 high_resolution_mode = true
 metalfx_upscaling = false
 
+[wine]
+minimum_version = 11.0
+preferred_version = 11.0
+requires_mono = false
+
+[backends]
+dx11 = dxvk
+
 [install]
 prefix_preset = battlenet-shooter
 notes = Install Battle.net in the target prefix first, then install or update Overwatch 2 from the launcher before gameplay attempts.

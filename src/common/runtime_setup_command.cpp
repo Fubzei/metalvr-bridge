@@ -122,6 +122,13 @@ RuntimeSetupCommandResult buildRuntimeSetupCommandPlan(
         joinStrings(plan.install.winetricks, ",");
     result.plan.environment["MVRVB_REQUIRES_LAUNCHER"] =
         boolEnvValue(plan.install.requiresLauncher);
+    result.plan.environment["MVRVB_WINE_MIN_VERSION"] = plan.minimumWineVersion;
+    result.plan.environment["MVRVB_WINE_PREFERRED_VERSION"] = plan.preferredWineVersion;
+    result.plan.environment["MVRVB_REQUIRES_WINE_MONO"] =
+        boolEnvValue(plan.requiresWineMono);
+    result.plan.environment["MVRVB_DX11_BACKEND"] = rendererBackendName(plan.dx11Backend);
+    result.plan.environment["MVRVB_DX12_BACKEND"] = rendererBackendName(plan.dx12Backend);
+    result.plan.environment["MVRVB_VULKAN_BACKEND"] = rendererBackendName(plan.vulkanBackend);
 
     result.plan.actions.push_back(RuntimeSetupAction{
         .description = "Initialize or update the target Wine prefix",
@@ -143,6 +150,20 @@ RuntimeSetupCommandResult buildRuntimeSetupCommandPlan(
     if (plan.install.requiresLauncher) {
         result.plan.manualActions.push_back(
             "Bootstrap the required launcher inside the prefix before game launch attempts.");
+    }
+    if (!plan.minimumWineVersion.empty()) {
+        result.plan.manualActions.push_back(
+            "Use Wine " + plan.minimumWineVersion +
+            " or newer for this runtime plan.");
+    }
+    if (!plan.preferredWineVersion.empty()) {
+        result.plan.manualActions.push_back(
+            "Prefer Wine " + plan.preferredWineVersion +
+            " when preparing this prefix.");
+    }
+    if (plan.requiresWineMono) {
+        result.plan.manualActions.push_back(
+            "Install Wine Mono in the target prefix before launching .NET-dependent content.");
     }
     if (!plan.install.notes.empty()) {
         result.plan.manualActions.push_back("Install notes: " + plan.install.notes);

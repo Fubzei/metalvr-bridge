@@ -60,7 +60,7 @@ Exit criteria:
 
 ### 4.1 Backend Breadth
 
-Status: `PLANNED`
+Status: `STARTED`
 
 Scope:
 
@@ -68,6 +68,22 @@ Scope:
 - support a real `VKD3D-Proton` path for D3D12-era games
 - design backend fallback behavior per profile
 - keep room for direct or alternate D3D-to-Metal paths when they are the better fit
+
+Progress checked in so far:
+
+- checked-in profiles can now express:
+  - a Wine version floor and preferred Wine version
+  - whether Wine Mono is required for the title or template
+  - explicit DX11, DX12, and Vulkan route intent
+- resolved runtime launch plans now carry those Wine/backend routes through to:
+  - machine-readable JSON
+  - human-readable reports
+  - Markdown setup checklists
+  - generated setup and launch environment blocks
+- checked-in defaults now target a Wine 11+ baseline and express:
+  - `DXVK` for DX11
+  - `VKD3D-Proton` for DX12
+  - `native-vulkan` for native Vulkan titles
 
 ### 4.2 Compatibility Database and Installer Orchestration
 
@@ -133,7 +149,8 @@ The first checked-in Phase 4 deliverables are:
 
 - `src/common/compatibility_profile.*`
   - CI-validated parser plus auto-selection helpers for runtime compatibility profiles
-  - now includes install/setup policy fields for future bottle or prefix orchestration
+  - now includes install/setup policy fields plus Wine 11+/Mono/API-route policy
+    for future bottle or prefix orchestration
 - `src/common/prefix_preset.*`
   - CI-validated parser and loader for named bottle-style prefix presets that
     carry shared package, launcher-bootstrap, environment, DLL-override, and
@@ -148,12 +165,16 @@ The first checked-in Phase 4 deliverables are:
   - host-safe launch-plan builder that resolves backend/install/env/args/runtime policy
     from profiles plus named prefix presets
   - now also emits a Markdown setup checklist for tester-facing install/bootstrap guidance
+  - now carries resolved Wine floor/preference, Mono requirement intent, and
+    DX11/DX12/Vulkan backend-route policy
 - `src/common/runtime_launch_command.*`
   - host-safe launch-command materializer that turns a resolved plan into runnable
     command, environment, and wrapper-script output
+  - now exports resolved Wine/API-route policy into the generated launch environment
 - `src/common/runtime_setup_command.*`
   - host-safe setup/bootstrap materializer that turns install policy into
     automated prefix actions, manual follow-up notes, and generated setup scripts
+  - now exports resolved Wine/API-route policy into the generated setup environment
 - `tools/mvrvb_runtime_plan_preview`
   - host-safe preview entry point for inspecting merged launch decisions without Mac hardware,
     with JSON output, checklist output, launch/setup script generation, and

@@ -50,6 +50,18 @@ enum class SyncMode : uint8_t {
     Disabled,
 };
 
+struct CompatibilityWinePolicy {
+    std::string minimumVersion;
+    std::string preferredVersion;
+    std::optional<bool> requiresMono;
+};
+
+struct CompatibilityBackendRoutePolicy {
+    std::optional<RendererBackend> direct3D11;
+    std::optional<RendererBackend> direct3D12;
+    std::optional<RendererBackend> vulkan;
+};
+
 struct CompatibilityMatchCriteria {
     std::vector<std::string> executables;
     std::vector<std::string> launchers;
@@ -61,6 +73,8 @@ struct CompatibilityRuntimePolicy {
     SyncMode syncMode{SyncMode::Default};
     bool highResolutionMode{false};
     bool metalFxUpscaling{false};
+    CompatibilityWinePolicy wine;
+    CompatibilityBackendRoutePolicy backends;
 };
 
 struct CompatibilityInstallPolicy {

@@ -34,6 +34,7 @@
                            "macos-ci-build-launcher",
                            "host-side-unit-tests",
                            "compatibility-profile-validation",
+                           "wine-version-and-api-route-policy-validation",
                            "prefix-preset-validation",
                            "compatibility-catalog-export",
                            "compatibility-policy-lint",
@@ -66,6 +67,7 @@
     "nextGate":  "Launcher triangle, vulkaninfo, and vkcube on Mac hardware.",
     "nextNonMacSteps":  [
                             "Move from starter-bundle generation toward launcher-run prefix installation and first title launch for selected known profiles.",
+                            "Use the new Wine 11+/Mono/API-route policy to drive future automated prefix/bootstrap decisions instead of a single flat backend toggle.",
                             "Keep compatibility profiles and prefix presets governed through lint and docs.",
                             "Keep repo and wiki handoff docs aligned with the checked-in source of truth."
                         ],

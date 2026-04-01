@@ -86,7 +86,7 @@ std::string defaultWorkingDirectoryForExecutable(std::string_view executablePath
     if (looksLikeWindowsAbsolutePath(executablePath)) {
         return ".";
     }
-    const auto parent = std::filesystem::path(executablePath).parent_path();
+    const auto parent = std::filesystem::path(std::string(executablePath)).parent_path();
     if (parent.empty()) return ".";
     return parent.string();
 }
@@ -145,10 +145,9 @@ RuntimeLaunchCommandResult materializeRuntimeLaunchCommand(
 
     result.command.program = request.wineBinary;
     result.command.arguments.push_back(request.executablePath);
-    result.command.arguments.insert(
-        result.command.arguments.end(),
-        plan.launchArgs.begin(),
-        plan.launchArgs.end());
+    for (const auto& argument : plan.launchArgs) {
+        result.command.arguments.push_back(argument);
+    }
     result.command.workingDirectory = request.workingDirectory.empty()
         ? defaultWorkingDirectoryForExecutable(request.executablePath)
         : request.workingDirectory;
@@ -166,6 +165,13 @@ RuntimeLaunchCommandResult materializeRuntimeLaunchCommand(
     result.command.environment["MVRVB_RENDERER_FALLBACKS"] =
         joinFallbackBackends(plan.fallbackBackends);
     result.command.environment["MVRVB_WINDOWS_VERSION"] = plan.windowsVersion;
+    result.command.environment["MVRVB_WINE_MIN_VERSION"] = plan.minimumWineVersion;
+    result.command.environment["MVRVB_WINE_PREFERRED_VERSION"] = plan.preferredWineVersion;
+    result.command.environment["MVRVB_REQUIRES_WINE_MONO"] =
+        boolEnvValue(plan.requiresWineMono);
+    result.command.environment["MVRVB_DX11_BACKEND"] = rendererBackendName(plan.dx11Backend);
+    result.command.environment["MVRVB_DX12_BACKEND"] = rendererBackendName(plan.dx12Backend);
+    result.command.environment["MVRVB_VULKAN_BACKEND"] = rendererBackendName(plan.vulkanBackend);
     result.command.environment["MVRVB_SYNC_MODE"] = syncModeName(plan.syncMode);
     result.command.environment["MVRVB_HIGH_RESOLUTION_MODE"] =
         boolEnvValue(plan.highResolutionMode);
