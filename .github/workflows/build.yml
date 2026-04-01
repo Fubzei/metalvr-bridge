@@ -67,7 +67,7 @@ jobs:
         tar -czf dist/metalvr-bridge-icd.tar.gz -C dist/icd .
         ls -lh dist
     - name: Upload ICD artifact
-      uses: actions/upload-artifact@v6
+      uses: actions/upload-artifact@v7
       with:
         name: metalvr-bridge-icd
         path: dist/metalvr-bridge-icd.tar.gz
@@ -87,7 +87,7 @@ jobs:
         cd launcher
         bash setup.sh
     - name: Upload launcher artifact
-      uses: actions/upload-artifact@v6
+      uses: actions/upload-artifact@v7
       with:
         name: metalvr-launcher
         path: launcher/MetalVR-Bridge-Installer.zip
