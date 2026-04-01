@@ -68,9 +68,11 @@ fi
 swiftc \
     -o MetalVRBridge \
     -framework SwiftUI \
+    -framework Combine \
     -framework Metal \
     -framework AppKit \
     -framework CoreGraphics \
+    -framework UniformTypeIdentifiers \
     -target "$TARGET" \
     -O \
     -whole-module-optimization \
