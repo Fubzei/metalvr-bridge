@@ -458,21 +458,51 @@ CompatibilityProfileParseResult loadCompatibilityProfile(const std::filesystem::
 CompatibilityProfileBatchLoadResult loadCompatibilityProfilesFromDirectory(
     const std::filesystem::path& root) {
     CompatibilityProfileBatchLoadResult result;
-    if (!std::filesystem::exists(root)) {
+    std::error_code ec;
+    if (!std::filesystem::exists(root, ec)) {
+        if (ec) {
+            result.errorMessages.push_back("Failed to inspect compatibility profile directory: " +
+                                           root.string() + " (" + ec.message() + ")");
+            return result;
+        }
         result.errorMessages.push_back("Compatibility profile directory does not exist: " +
                                        root.string());
         return result;
     }
 
     std::vector<std::filesystem::path> profilePaths;
-    for (const auto& entry : std::filesystem::recursive_directory_iterator(root)) {
-        if (!entry.is_regular_file() || entry.path().extension() != ".mvrvb-profile") {
-            continue;
+    std::filesystem::recursive_directory_iterator it(
+        root,
+        std::filesystem::directory_options::skip_permission_denied,
+        ec);
+    const std::filesystem::recursive_directory_iterator end;
+    if (ec) {
+        result.errorMessages.push_back("Failed to walk compatibility profile directory: " +
+                                       root.string() + " (" + ec.message() + ")");
+        return result;
+    }
+
+    while (it != end) {
+        const auto entry = *it;
+        std::error_code entryEc;
+        const bool isRegularFile = entry.is_regular_file(entryEc);
+        if (entryEc) {
+            result.errorMessages.push_back("Failed to inspect compatibility profile entry: " +
+                                           entry.path().string() + " (" + entryEc.message() + ")");
+        } else if (isRegularFile && entry.path().extension() == ".mvrvb-profile") {
+            profilePaths.push_back(entry.path());
         }
-        profilePaths.push_back(entry.path());
+
+        it.increment(ec);
+        if (ec) {
+            result.errorMessages.push_back("Failed while iterating compatibility profile directory: " +
+                                           root.string() + " (" + ec.message() + ")");
+            ec.clear();
+        }
     }
 
     std::sort(profilePaths.begin(), profilePaths.end());
+    profilePaths.erase(std::unique(profilePaths.begin(), profilePaths.end()), profilePaths.end());
     for (const auto& path : profilePaths) {
         const auto loadResult = loadCompatibilityProfile(path);
         if (!loadResult) {

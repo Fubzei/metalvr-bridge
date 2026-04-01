@@ -194,21 +194,51 @@ PrefixPresetParseResult loadPrefixPreset(const std::filesystem::path& path) {
 
 PrefixPresetBatchLoadResult loadPrefixPresetsFromDirectory(const std::filesystem::path& root) {
     PrefixPresetBatchLoadResult result;
-    if (!std::filesystem::exists(root)) {
+    std::error_code ec;
+    if (!std::filesystem::exists(root, ec)) {
+        if (ec) {
+            result.errorMessages.push_back("Failed to inspect prefix preset directory: " +
+                                           root.string() + " (" + ec.message() + ")");
+            return result;
+        }
         result.errorMessages.push_back("Prefix preset directory does not exist: " + root.string());
         return result;
     }
 
     std::vector<std::filesystem::path> presetPaths;
-    for (const auto& entry : std::filesystem::recursive_directory_iterator(root)) {
-        if (!entry.is_regular_file() ||
-            entry.path().extension() != ".mvrvb-prefix-preset") {
-            continue;
+    std::filesystem::recursive_directory_iterator it(
+        root,
+        std::filesystem::directory_options::skip_permission_denied,
+        ec);
+    const std::filesystem::recursive_directory_iterator end;
+    if (ec) {
+        result.errorMessages.push_back("Failed to walk prefix preset directory: " +
+                                       root.string() + " (" + ec.message() + ")");
+        return result;
+    }
+
+    while (it != end) {
+        const auto entry = *it;
+        std::error_code entryEc;
+        const bool isRegularFile = entry.is_regular_file(entryEc);
+        if (entryEc) {
+            result.errorMessages.push_back("Failed to inspect prefix preset entry: " +
+                                           entry.path().string() + " (" + entryEc.message() + ")");
+        } else if (isRegularFile &&
+                   entry.path().extension() == ".mvrvb-prefix-preset") {
+            presetPaths.push_back(entry.path());
         }
-        presetPaths.push_back(entry.path());
+
+        it.increment(ec);
+        if (ec) {
+            result.errorMessages.push_back("Failed while iterating prefix preset directory: " +
+                                           root.string() + " (" + ec.message() + ")");
+            ec.clear();
+        }
     }
 
     std::sort(presetPaths.begin(), presetPaths.end());
+    presetPaths.erase(std::unique(presetPaths.begin(), presetPaths.end()), presetPaths.end());
     for (const auto& path : presetPaths) {
         const auto loadResult = loadPrefixPreset(path);
         if (!loadResult) {
