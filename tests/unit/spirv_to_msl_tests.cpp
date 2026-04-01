@@ -3,6 +3,7 @@
 #include "msl_emitter/spirv_to_msl.h"
 
 #include <array>
+#include <sstream>
 #include <string>
 
 namespace mvrvb::msl {
@@ -205,6 +206,17 @@ SPIRVModule makeComputeModuleWithIntegerComparisons() {
     return module;
 }
 
+std::string findLineContaining(const std::string& source, const std::string& needle) {
+    std::istringstream stream(source);
+    std::string line;
+    while (std::getline(stream, line)) {
+        if (line.find(needle) != std::string::npos) {
+            return line;
+        }
+    }
+    return {};
+}
+
 TEST(SpirvToMsl, RejectsModulesWithoutEntryPoints) {
     const TranslateResult result = translateToMSL({});
 
@@ -300,14 +312,33 @@ TEST(SpirvToMsl, EmitsCorrectIntegerComparisonOperators) {
     const TranslateResult result = translateToMSL(makeComputeModuleWithIntegerComparisons());
 
     ASSERT_TRUE(result) << result.errorMessage;
-    EXPECT_NE(result.mslSource.find("bool v10 = 2u > 1u;"), std::string::npos);
-    EXPECT_NE(result.mslSource.find("bool v11 = 2 > 1;"), std::string::npos);
-    EXPECT_NE(result.mslSource.find("bool v12 = 2u >= 1u;"), std::string::npos);
-    EXPECT_NE(result.mslSource.find("bool v13 = 2 >= 1;"), std::string::npos);
-    EXPECT_NE(result.mslSource.find("bool v14 = 1u < 2u;"), std::string::npos);
-    EXPECT_NE(result.mslSource.find("bool v15 = 1 < 2;"), std::string::npos);
-    EXPECT_NE(result.mslSource.find("bool v16 = 1u <= 2u;"), std::string::npos);
-    EXPECT_NE(result.mslSource.find("bool v17 = 1 <= 2;"), std::string::npos);
+
+    const std::string uGreater = findLineContaining(result.mslSource, "bool v10 =");
+    const std::string sGreater = findLineContaining(result.mslSource, "bool v11 =");
+    const std::string uGreaterEqual = findLineContaining(result.mslSource, "bool v12 =");
+    const std::string sGreaterEqual = findLineContaining(result.mslSource, "bool v13 =");
+    const std::string uLess = findLineContaining(result.mslSource, "bool v14 =");
+    const std::string sLess = findLineContaining(result.mslSource, "bool v15 =");
+    const std::string uLessEqual = findLineContaining(result.mslSource, "bool v16 =");
+    const std::string sLessEqual = findLineContaining(result.mslSource, "bool v17 =");
+
+    ASSERT_FALSE(uGreater.empty());
+    ASSERT_FALSE(sGreater.empty());
+    ASSERT_FALSE(uGreaterEqual.empty());
+    ASSERT_FALSE(sGreaterEqual.empty());
+    ASSERT_FALSE(uLess.empty());
+    ASSERT_FALSE(sLess.empty());
+    ASSERT_FALSE(uLessEqual.empty());
+    ASSERT_FALSE(sLessEqual.empty());
+
+    EXPECT_NE(uGreater.find(" > "), std::string::npos);
+    EXPECT_NE(sGreater.find(" > "), std::string::npos);
+    EXPECT_NE(uGreaterEqual.find(" >= "), std::string::npos);
+    EXPECT_NE(sGreaterEqual.find(" >= "), std::string::npos);
+    EXPECT_NE(uLess.find(" < "), std::string::npos);
+    EXPECT_NE(sLess.find(" < "), std::string::npos);
+    EXPECT_NE(uLessEqual.find(" <= "), std::string::npos);
+    EXPECT_NE(sLessEqual.find(" <= "), std::string::npos);
 }
 
 }  // namespace

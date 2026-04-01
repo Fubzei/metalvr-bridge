@@ -1,6 +1,7 @@
 import Foundation
 import Metal
 import AppKit
+import UniformTypeIdentifiers
 
 // MARK: - Log Entry
 
