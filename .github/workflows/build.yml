@@ -27,9 +27,19 @@ jobs:
           echo "::group::CTest temporary logs"
           if [ -f Testing/Temporary/LastTest.log ]; then
             cat Testing/Temporary/LastTest.log
+            while IFS= read -r line; do
+              if [ -n "$line" ]; then
+                echo "::error::$line"
+              fi
+            done < Testing/Temporary/LastTest.log
           fi
           if [ -f Testing/Temporary/LastTestsFailed.log ]; then
             cat Testing/Temporary/LastTestsFailed.log
+            while IFS= read -r line; do
+              if [ -n "$line" ]; then
+                echo "::error::$line"
+              fi
+            done < Testing/Temporary/LastTestsFailed.log
           fi
           echo "::endgroup::"
           exit 1

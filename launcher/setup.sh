@@ -65,7 +65,8 @@ else
     TARGET="x86_64-apple-macos13.0"
 fi
 
-swiftc \
+SWIFTC_LOG="$(mktemp)"
+if ! swiftc \
     -o MetalVRBridge \
     -framework SwiftUI \
     -framework Combine \
@@ -87,7 +88,17 @@ swiftc \
     RuntimeBundleManifest.swift \
     RuntimeBundleArtifactPreview.swift \
     RuntimeGuidedActionPlan.swift \
-    2>&1
+    >"$SWIFTC_LOG" 2>&1; then
+    cat "$SWIFTC_LOG"
+    while IFS= read -r line; do
+        if [ -n "$line" ]; then
+            echo "::error::$line"
+        fi
+    done < <(tail -n 80 "$SWIFTC_LOG")
+    rm -f "$SWIFTC_LOG"
+    exit 1
+fi
+rm -f "$SWIFTC_LOG"
 
 echo "[2/7] Building runtime helper..."
 
