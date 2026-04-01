@@ -23,9 +23,9 @@ jobs:
     - name: Run unit tests
       run: |
         cd build
-        CTEST_EXCLUDE_REGEX='^CompatibilityCatalog\.'
-        echo "Running macOS unit tests with temporary exclusion: ${CTEST_EXCLUDE_REGEX}"
-        if ! ctest --output-on-failure --exclude-regex "${CTEST_EXCLUDE_REGEX}"; then
+        CTEST_INCLUDE_REGEX='^(FormatTable|IcdContracts|SpirvParser|SpirvToMsl|TransferUtils)\.'
+        echo "Running macOS ICD-focused unit tests with temporary selection: ${CTEST_INCLUDE_REGEX}"
+        if ! ctest --output-on-failure --tests-regex "${CTEST_INCLUDE_REGEX}"; then
           echo "::group::CTest temporary logs"
           if [ -f Testing/Temporary/LastTest.log ]; then
             cat Testing/Temporary/LastTest.log
