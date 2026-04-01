@@ -21,7 +21,19 @@ jobs:
     - name: Build
       run: cd build && make -j$(sysctl -n hw.ncpu)
     - name: Run unit tests
-      run: cd build && ctest --output-on-failure
+      run: |
+        cd build
+        if ! ctest --output-on-failure; then
+          echo "::group::CTest temporary logs"
+          if [ -f Testing/Temporary/LastTest.log ]; then
+            cat Testing/Temporary/LastTest.log
+          fi
+          if [ -f Testing/Temporary/LastTestsFailed.log ]; then
+            cat Testing/Temporary/LastTestsFailed.log
+          fi
+          echo "::endgroup::"
+          exit 1
+        fi
     - name: Package ICD artifact
       run: |
         mkdir -p dist/icd
