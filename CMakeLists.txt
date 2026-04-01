@@ -27,8 +27,11 @@ option(MVRVB_STREAMING         "Build network streaming backend"      ON)
 add_compile_options(
   -Wall -Wextra -Wpedantic
   -Wno-unused-parameter
-  $<$<CONFIG:Release>:-O3 -flto>
-  $<$<CONFIG:Debug>:-O0 -g -fno-omit-frame-pointer>
+  $<$<CONFIG:Release>:-O3>
+  $<$<CONFIG:Release>:-flto>
+  $<$<CONFIG:Debug>:-O0>
+  $<$<CONFIG:Debug>:-g>
+  $<$<CONFIG:Debug>:-fno-omit-frame-pointer>
 )
 
 if(MVRVB_ENABLE_ASAN AND CMAKE_BUILD_TYPE STREQUAL "Debug")
@@ -65,6 +68,9 @@ FetchContent_Declare(
   GIT_SHALLOW    TRUE
 )
 FetchContent_MakeAvailable(vulkan_headers)
+add_subdirectory(src/common)
+add_subdirectory(src/shader_translator)
+add_subdirectory(src/vulkan_layer)
 
 # ── Third-party: GoogleTest ───────────────────────────────────────────────────
 if(MVRVB_BUILD_TESTS)

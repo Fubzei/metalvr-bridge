@@ -21,6 +21,33 @@
 #include <cstdint>
 #include <memory>
 
+#ifndef MVRVB_VK_METAL_SURFACE_CREATE_INFO_EXT_DEFINED
+#define MVRVB_VK_METAL_SURFACE_CREATE_INFO_EXT_DEFINED
+#ifndef VK_EXT_METAL_SURFACE_EXTENSION_NAME
+typedef struct VkMetalSurfaceCreateInfoEXT {
+    VkStructureType sType;
+    const void*     pNext;
+    uint32_t        flags;
+    const void*     pLayer;
+} VkMetalSurfaceCreateInfoEXT;
+#endif
+#endif
+
+#ifndef MVRVB_VK_WIN32_SURFACE_CREATE_INFO_KHR_DEFINED
+#define MVRVB_VK_WIN32_SURFACE_CREATE_INFO_KHR_DEFINED
+#ifndef VK_KHR_WIN32_SURFACE_EXTENSION_NAME
+typedef void* HWND;
+typedef void* HINSTANCE;
+typedef struct VkWin32SurfaceCreateInfoKHR {
+    VkStructureType sType;
+    const void*     pNext;
+    uint32_t        flags;
+    HINSTANCE       hinstance;
+    HWND            hwnd;
+} VkWin32SurfaceCreateInfoKHR;
+#endif
+#endif
+
 // ── ICD export macros ─────────────────────────────────────────────────────────
 #define MVVK_EXPORT __attribute__((visibility("default")))
 

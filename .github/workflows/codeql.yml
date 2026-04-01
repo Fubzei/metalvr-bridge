@@ -1,0 +1,58 @@
+name: CodeQL
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  schedule:
+  - cron: '22 10 * * 1'
+permissions:
+  actions: read
+  contents: read
+  security-events: write
+jobs:
+  analyze:
+    name: Analyze (${{ matrix.language }})
+    runs-on: ${{ matrix.runs-on }}
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+        - language: actions
+          runs-on: ubuntu-latest
+          build-mode: none
+        - language: c-cpp
+          runs-on: macos-14
+          build-mode: manual
+        - language: swift
+          runs-on: macos-14
+          build-mode: manual
+    steps:
+    - uses: actions/checkout@v6
+      with:
+        persist-credentials: false
+    - name: Install C/C++ dependencies
+      if: matrix.language == 'c-cpp'
+      run: brew install cmake vulkan-headers
+    - name: Initialize CodeQL
+      uses: github/codeql-action/init@v4
+      with:
+        languages: ${{ matrix.language }}
+        build-mode: ${{ matrix.build-mode }}
+    - name: Build ICD for CodeQL
+      if: matrix.language == 'c-cpp'
+      run: |
+        mkdir build
+        cd build
+        cmake .. -DCMAKE_BUILD_TYPE=Release
+        cmake --build . -j$(sysctl -n hw.ncpu)
+    - name: Build launcher for CodeQL
+      if: matrix.language == 'swift'
+      run: |
+        cd launcher
+        bash setup.sh
+    - name: Perform CodeQL Analysis
+      uses: github/codeql-action/analyze@v4
+      with:
+        category: /language:${{ matrix.language }}

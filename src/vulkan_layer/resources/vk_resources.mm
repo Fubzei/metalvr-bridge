@@ -33,10 +33,10 @@ static uint32_t bytesPerPixel(VkFormat fmt) {
         return info.bytesPerBlock;
     // Fallback for compressed or unknown formats
     switch (fmt) {
-        case 37: return 1;   // R8_UNORM
-        case 43: return 2;   // R8G8_UNORM
-        case 44: return 4;   // R8G8B8A8_UNORM
-        case 37+6: return 4; // R16G16_UNORM
+        case VK_FORMAT_R8_UNORM: return 1;
+        case VK_FORMAT_R8G8_UNORM: return 2;
+        case VK_FORMAT_R8G8B8A8_UNORM: return 4;
+        case VK_FORMAT_R16G16_UNORM: return 4;
         default: return 4;
     }
 }

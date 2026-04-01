@@ -4,32 +4,92 @@ on:
     branches: [main]
   pull_request:
     branches: [main]
+permissions:
+  contents: read
 jobs:
   build-icd:
     name: Build ICD (macOS)
     runs-on: macos-14
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v6
+      with:
+        persist-credentials: false
     - name: Install deps
       run: brew install cmake vulkan-headers
     - name: Configure
       run: mkdir build && cd build && cmake .. -DCMAKE_BUILD_TYPE=Release
     - name: Build
       run: cd build && make -j$(sysctl -n hw.ncpu)
-    - name: Check
-      run: ls -lh build/libMetalVRBridge.dylib
+    - name: Run unit tests
+      run: |
+        cd build
+        CTEST_INCLUDE_REGEX='^(FormatTable|IcdContracts|SpirvParser|SpirvToMsl|TransferUtils)\.'
+        echo "Running macOS ICD-focused unit tests with temporary selection: ${CTEST_INCLUDE_REGEX}"
+        if ! ctest --output-on-failure --tests-regex "${CTEST_INCLUDE_REGEX}"; then
+          echo "::group::CTest temporary logs"
+          if [ -f Testing/Temporary/LastTest.log ]; then
+            cat Testing/Temporary/LastTest.log
+            while IFS= read -r line; do
+              if [ -n "$line" ]; then
+                echo "::error::$line"
+              fi
+            done < Testing/Temporary/LastTest.log
+          fi
+          if [ -f Testing/Temporary/LastTestsFailed.log ]; then
+            cat Testing/Temporary/LastTestsFailed.log
+            while IFS= read -r line; do
+              if [ -n "$line" ]; then
+                echo "::error::$line"
+              fi
+            done < Testing/Temporary/LastTestsFailed.log
+          fi
+          echo "::endgroup::"
+          exit 1
+        fi
+    - name: Package ICD artifact
+      run: |
+        mkdir -p dist/icd
+        cp build/libMetalVRBridge.dylib dist/icd/
+        cp vulkan_icd.json dist/icd/
+        perl -0pi -e 's@\@rpath/libMetalVRBridge\.dylib@./libMetalVRBridge.dylib@g' dist/icd/vulkan_icd.json
+        cat > dist/icd/README.txt <<'EOF'
+        MetalVR Bridge ICD artifact
+
+        Contents:
+        - libMetalVRBridge.dylib
+        - vulkan_icd.json
+
+        Usage:
+        1. Extract this tarball.
+        2. Set VK_ICD_FILENAMES to the extracted vulkan_icd.json path.
+        3. Run vulkaninfo or vkcube from the same extracted folder.
+        EOF
+        tar -czf dist/metalvr-bridge-icd.tar.gz -C dist/icd .
+        ls -lh dist
+    - name: Upload ICD artifact
+      uses: actions/upload-artifact@v7
+      with:
+        name: metalvr-bridge-icd
+        path: dist/metalvr-bridge-icd.tar.gz
+        if-no-files-found: error
+        retention-days: 14
   build-launcher:
     name: Build Launcher App (macOS)
     runs-on: macos-14
     steps:
-    - uses: actions/checkout@v4
-    - name: Build launcher
+    - uses: actions/checkout@v6
+      with:
+        persist-credentials: false
+    - name: Install launcher deps
+      run: brew install cmake
+    - name: Build launcher bundle
       run: |
         cd launcher
-        swiftc -o MetalVRBridge -framework SwiftUI -framework Metal -framework AppKit -framework CoreGraphics -target arm64-apple-macos13.0 -O MetalVRBridgeApp.swift ContentView.swift BridgeViewModel.swift
-    - name: Bundle
-      run: |
-        cd launcher
-        mkdir -p "MetalVR Bridge.app/Contents/MacOS"
-        cp MetalVRBridge "MetalVR Bridge.app/Contents/MacOS/"
-        echo "Launcher bundle created"
+        bash setup.sh
+    - name: Upload launcher artifact
+      uses: actions/upload-artifact@v7
+      with:
+        name: metalvr-launcher
+        path: launcher/MetalVR-Bridge-Installer.zip
+        if-no-files-found: error
+        retention-days: 14

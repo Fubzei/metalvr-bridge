@@ -1,0 +1,132 @@
+name: Game compatibility report
+description: Record a game-level launch, rendering, and profile outcome.
+title: "[Game Compatibility]: "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use this report for actual game testing, not the initial `vulkaninfo` or `vkcube` smoke test.
+
+  - type: input
+    id: commit_sha
+    attributes:
+      label: Tested commit SHA
+      placeholder: b3b81b6
+    validations:
+      required: true
+
+  - type: input
+    id: game_name
+    attributes:
+      label: Game name
+      placeholder: Overwatch 2
+    validations:
+      required: true
+
+  - type: input
+    id: profile_id
+    attributes:
+      label: Profile ID
+      description: Use the checked-in profile ID if one exists, or say `none`.
+      placeholder: overwatch-2
+    validations:
+      required: true
+
+  - type: input
+    id: mac_model
+    attributes:
+      label: Mac model
+      placeholder: MacBook Pro (M5 Pro, 2026)
+    validations:
+      required: true
+
+  - type: input
+    id: macos_version
+    attributes:
+      label: macOS version
+      placeholder: macOS 14.7
+    validations:
+      required: true
+
+  - type: input
+    id: launcher_path
+    attributes:
+      label: Launcher / store path
+      placeholder: Battle.net
+    validations:
+      required: true
+
+  - type: dropdown
+    id: backend
+    attributes:
+      label: Backend used
+      options:
+        - auto
+        - dxvk
+        - vkd3d-proton
+        - d3dmetal
+        - dxmt
+        - wined3d
+        - native-vulkan
+        - unknown
+    validations:
+      required: true
+
+  - type: dropdown
+    id: result
+    attributes:
+      label: Result
+      options:
+        - launch fails
+        - launcher only
+        - game boots
+        - menu renders
+        - enters gameplay
+        - playable
+        - competitive-viable
+    validations:
+      required: true
+
+  - type: dropdown
+    id: anti_cheat
+    attributes:
+      label: Anti-cheat / service status
+      options:
+        - unknown
+        - not applicable
+        - blocked
+        - launches but constrained
+        - appears okay
+    validations:
+      required: true
+
+  - type: textarea
+    id: performance
+    attributes:
+      label: Performance and latency notes
+      placeholder: |
+        Approximate FPS:
+        Frametime stability:
+        Input latency observations:
+        Stutter or shader hitching:
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs_and_artifacts
+    attributes:
+      label: Logs and artifacts
+      description: List attached logs, screenshots, or videos.
+      placeholder: |
+        launcher.log
+        game.log
+        screenshot.png
+        short-video.mov
+    validations:
+      required: true
+
+  - type: textarea
+    id: notes
+    attributes:
+      label: Notes
+      placeholder: Mention exact launch flags, prefix setup, or any profile overrides used.

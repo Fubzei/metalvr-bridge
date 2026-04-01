@@ -1,0 +1,30 @@
+schema_version = 1
+profile_id = overwatch-2
+display_name = Overwatch 2
+status = planning
+allow_auto_match = true
+category = competitive-shooter
+default_renderer = dxvk
+fallback_renderers = d3dmetal, wined3d
+latency_sensitive = true
+competitive = true
+anti_cheat_risk = blocking
+notes = Planning profile only. This file captures intended runtime policy and should not be read as a current compatibility claim.
+
+[runtime]
+windows_version = win11
+sync_mode = msync
+high_resolution_mode = true
+metalfx_upscaling = false
+
+[install]
+prefix_preset = battlenet-shooter
+notes = Install Battle.net in the target prefix first, then install or update Overwatch 2 from the launcher before gameplay attempts.
+
+[match]
+launchers = Battle.net
+stores = battlenet
+executables = Overwatch.exe, Overwatch Launcher.exe
+
+[env]
+MVRVB_PROFILE = overwatch-2

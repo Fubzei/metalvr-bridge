@@ -181,7 +181,7 @@ static std::string buildPassthroughBody(uint32_t inputVerts) {
 
 // ── buildGeometryEmulator ─────────────────────────────────────────────────────
 
-GeometryEmuResult buildGeometryEmulator(const SPIRVModule&        module,
+GeometryEmuResult buildGeometryEmulator(const spirv::SPIRVModule& module,
                                          uint32_t                  entryIndex,
                                          const GeometryEmuOptions& opts) {
     GeometryEmuResult result;
@@ -191,8 +191,8 @@ GeometryEmuResult buildGeometryEmulator(const SPIRVModule&        module,
         return result;
     }
 
-    const EntryPoint& ep = module.entryPoints[entryIndex];
-    if (ep.stage != SpvStage::Geometry) {
+    const spirv::EntryPoint& ep = module.entryPoints[entryIndex];
+    if (ep.stage != spirv::ShaderStage::Geometry) {
         result.errorMessage = "Entry point is not a geometry stage";
         return result;
     }

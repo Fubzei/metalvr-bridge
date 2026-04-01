@@ -1,0 +1,157 @@
+#include <gtest/gtest.h>
+
+#include "compatibility_catalog.h"
+
+#include <algorithm>
+#include <filesystem>
+#include <initializer_list>
+#include <set>
+
+namespace mvrvb {
+namespace {
+
+std::filesystem::path repoRoot() {
+    return std::filesystem::path(MVRVB_SOURCE_ROOT);
+}
+
+int countFor(const std::map<std::string, int>& counts, std::string_view key) {
+    const auto it = counts.find(std::string(key));
+    return it == counts.end() ? 0 : it->second;
+}
+
+CompatibilityCatalogResult buildCheckedInCatalog() {
+    const auto profilesRoot = repoRoot() / "profiles";
+    std::vector<CompatibilityProfile> profiles;
+    for (const auto& relativePath : {
+             std::filesystem::path("defaults/global-defaults.mvrvb-profile"),
+             std::filesystem::path("games/overwatch-2.mvrvb-profile"),
+             std::filesystem::path("templates/competitive-shooter-dxvk.mvrvb-profile"),
+         }) {
+        const auto loadResult = loadCompatibilityProfile(profilesRoot / relativePath);
+        if (!loadResult) {
+            CompatibilityCatalogResult result;
+            result.errorMessage = loadResult.errorMessage;
+            return result;
+        }
+        profiles.push_back(loadResult.profile);
+    }
+
+    std::vector<PrefixPreset> presets;
+    for (const auto& relativePath : {
+             std::filesystem::path("prefix-presets/general-game.mvrvb-prefix-preset"),
+             std::filesystem::path("prefix-presets/competitive-shooter.mvrvb-prefix-preset"),
+             std::filesystem::path("prefix-presets/battlenet-shooter.mvrvb-prefix-preset"),
+         }) {
+        const auto loadResult = loadPrefixPreset(profilesRoot / relativePath);
+        if (!loadResult) {
+            CompatibilityCatalogResult result;
+            result.errorMessage = loadResult.errorMessage;
+            return result;
+        }
+        presets.push_back(loadResult.preset);
+    }
+
+    return buildCompatibilityCatalog(profiles, presets);
+}
+
+TEST(CompatibilityCatalog, BuildsSummaryFromCheckedInProfiles) {
+    const auto result = buildCheckedInCatalog();
+
+    ASSERT_TRUE(result) << result.errorMessage;
+
+    std::set<std::string> profileIds;
+    for (const auto& entry : result.catalog.entries) {
+        profileIds.insert(entry.profileId);
+    }
+
+    EXPECT_TRUE(profileIds.contains("global-defaults"));
+    EXPECT_TRUE(profileIds.contains("competitive-shooter-dxvk"));
+    EXPECT_TRUE(profileIds.contains("overwatch-2"));
+    EXPECT_GE(result.catalog.summary.totalProfiles, 3);
+    EXPECT_GE(result.catalog.summary.autoMatchProfiles, 2);
+    EXPECT_GE(result.catalog.summary.templateProfiles, 1);
+    EXPECT_GE(result.catalog.summary.competitiveProfiles, 2);
+    EXPECT_GE(result.catalog.summary.latencySensitiveProfiles, 2);
+    EXPECT_GE(countFor(result.catalog.summary.statusCounts, "planning"), 3);
+    EXPECT_GE(countFor(result.catalog.summary.categoryCounts, "baseline"), 1);
+    EXPECT_GE(countFor(result.catalog.summary.categoryCounts, "competitive-shooter"), 2);
+    EXPECT_GE(countFor(result.catalog.summary.backendCounts, "auto"), 1);
+    EXPECT_GE(countFor(result.catalog.summary.backendCounts, "dxvk"), 2);
+}
+
+TEST(CompatibilityCatalog, CapturesCheckedInProfileDetails) {
+    const auto result = buildCheckedInCatalog();
+
+    ASSERT_TRUE(result) << result.errorMessage;
+    const auto it = std::find_if(result.catalog.entries.begin(),
+                                 result.catalog.entries.end(),
+                                 [](const CompatibilityCatalogEntry& entry) {
+                                     return entry.profileId == "overwatch-2";
+                                 });
+    ASSERT_NE(it, result.catalog.entries.end());
+    EXPECT_EQ(it->displayName, "Overwatch 2");
+    EXPECT_TRUE(it->allowAutoMatch);
+    EXPECT_EQ(it->status, ProfileStatus::Planning);
+    EXPECT_EQ(it->defaultRenderer, RendererBackend::DXVK);
+    EXPECT_EQ(it->antiCheatRisk, AntiCheatRisk::Blocking);
+    EXPECT_TRUE(it->competitive);
+    EXPECT_TRUE(it->latencySensitive);
+    EXPECT_EQ(it->runtime.syncMode, SyncMode::MSync);
+    EXPECT_TRUE(it->runtime.highResolutionMode);
+    EXPECT_EQ(it->install.prefixPreset, "battlenet-shooter");
+    EXPECT_EQ(it->appliedPrefixPresetDisplayName, "Battle.net Shooter");
+    EXPECT_TRUE(it->install.requiresLauncher);
+    ASSERT_EQ(it->install.packages.size(), 2u);
+    EXPECT_EQ(it->install.packages[0], "dxvk");
+    EXPECT_EQ(it->install.packages[1], "battle.net");
+    ASSERT_EQ(it->install.winetricks.size(), 2u);
+    EXPECT_EQ(it->install.winetricks[0], "corefonts");
+    EXPECT_EQ(it->install.winetricks[1], "vcrun2022");
+    ASSERT_EQ(it->match.launchers.size(), 1u);
+    EXPECT_EQ(it->match.launchers[0], "Battle.net");
+    ASSERT_EQ(it->match.executables.size(), 2u);
+    EXPECT_EQ(it->environmentCount, 4u);
+    EXPECT_EQ(it->dllOverrideCount, 2u);
+    ASSERT_EQ(it->launchArgs.size(), 1u);
+    EXPECT_EQ(it->launchArgs[0], "--fullscreen");
+}
+
+TEST(CompatibilityCatalog, JsonIncludesSummaryAndEntryFields) {
+    const auto result = buildCheckedInCatalog();
+
+    ASSERT_TRUE(result) << result.errorMessage;
+    const std::string json = compatibilityCatalogToJson(result.catalog);
+
+    EXPECT_NE(json.find("\"schemaVersion\":\"1\""), std::string::npos);
+    EXPECT_NE(json.find("\"totalProfiles\":3"), std::string::npos);
+    EXPECT_NE(json.find("\"profileId\":\"overwatch-2\""), std::string::npos);
+    EXPECT_NE(json.find("\"defaultRenderer\":\"dxvk\""), std::string::npos);
+    EXPECT_NE(json.find("\"antiCheatRisk\":\"blocking\""), std::string::npos);
+    EXPECT_NE(json.find("\"prefixPreset\":\"battlenet-shooter\""), std::string::npos);
+    EXPECT_NE(json.find("\"appliedPrefixPresetDisplayName\":\"Battle.net Shooter\""),
+              std::string::npos);
+    EXPECT_NE(json.find("\"requiresLauncher\":true"), std::string::npos);
+}
+
+TEST(CompatibilityCatalog, MarkdownIncludesMatrixAndHighlights) {
+    const auto result = buildCheckedInCatalog();
+
+    ASSERT_TRUE(result) << result.errorMessage;
+    const std::string markdown = compatibilityCatalogToMarkdown(result.catalog);
+
+    EXPECT_NE(markdown.find("# Compatibility Catalog"), std::string::npos);
+    EXPECT_NE(markdown.find("| Overwatch 2 (`overwatch-2`)"), std::string::npos);
+    EXPECT_NE(markdown.find("### Competitive Shooter (DXVK Template)"), std::string::npos);
+    EXPECT_NE(markdown.find("- Sync mode: `msync`"), std::string::npos);
+    EXPECT_NE(markdown.find("- Prefix preset: `battlenet-shooter`"), std::string::npos);
+}
+
+TEST(CompatibilityCatalog, RejectsEmptyCatalogInput) {
+    const auto result = buildCompatibilityCatalog({});
+
+    ASSERT_FALSE(result);
+    EXPECT_NE(result.errorMessage.find("No compatibility profiles"), std::string::npos);
+}
+
+}  // namespace
+}  // namespace mvrvb

@@ -19,6 +19,8 @@
 #include <vulkan/vulkan.h>
 
 // VK_EXT_metal_surface: may not be defined on all Vulkan SDK versions.
+#ifndef MVRVB_VK_METAL_SURFACE_CREATE_INFO_EXT_DEFINED
+#define MVRVB_VK_METAL_SURFACE_CREATE_INFO_EXT_DEFINED
 #ifndef VK_EXT_METAL_SURFACE_EXTENSION_NAME
 typedef struct VkMetalSurfaceCreateInfoEXT {
     VkStructureType sType;
@@ -27,9 +29,12 @@ typedef struct VkMetalSurfaceCreateInfoEXT {
     const void*     pLayer; ///< CAMetalLayer*
 } VkMetalSurfaceCreateInfoEXT;
 #endif
+#endif
 
 // VK_KHR_win32_surface: only defined when VK_USE_PLATFORM_WIN32_KHR is set.
 // On macOS under Wine, the HWND is actually an NSView*/NSWindow* via macdrv.
+#ifndef MVRVB_VK_WIN32_SURFACE_CREATE_INFO_KHR_DEFINED
+#define MVRVB_VK_WIN32_SURFACE_CREATE_INFO_KHR_DEFINED
 #ifndef VK_KHR_WIN32_SURFACE_EXTENSION_NAME
 typedef void* HWND;
 typedef void* HINSTANCE;
@@ -40,6 +45,7 @@ typedef struct VkWin32SurfaceCreateInfoKHR {
     HINSTANCE       hinstance;
     HWND            hwnd;
 } VkWin32SurfaceCreateInfoKHR;
+#endif
 #endif
 
 #include "../resources/vk_resources.h"

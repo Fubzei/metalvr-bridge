@@ -60,8 +60,8 @@ struct GeometryEmuResult {
  * @param opts         Emulation options (topology, vertex counts, etc.)
  * @return             Emitted MSL sources + metadata.
  */
-GeometryEmuResult buildGeometryEmulator(const SPIRVModule&     module,
-                                         uint32_t               entryIndex,
-                                         const GeometryEmuOptions& opts);
+GeometryEmuResult buildGeometryEmulator(const spirv::SPIRVModule& module,
+                                        uint32_t                  entryIndex,
+                                        const GeometryEmuOptions& opts);
 
 } // namespace mvrvb

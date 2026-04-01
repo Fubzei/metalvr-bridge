@@ -1,0 +1,22 @@
+schema_version = 1
+preset_id = competitive-shooter
+display_name = Competitive Shooter
+category = competitive
+notes = Shared prefix preset for latency-sensitive DXVK-backed shooter titles.
+
+[install]
+packages = dxvk
+winetricks = corefonts, vcrun2022
+requires_launcher = false
+notes = Shared setup intent for competitive shooters. Add any title-specific launcher steps in the final game profile.
+
+[env]
+DXVK_HUD = 0
+MVRVB_PREFIX_FAMILY = competitive-shooter
+
+[dll_overrides]
+d3d11 = native,builtin
+dxgi = native,builtin
+
+[launch]
+args = --fullscreen

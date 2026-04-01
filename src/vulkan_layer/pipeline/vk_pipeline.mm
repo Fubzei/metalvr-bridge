@@ -163,8 +163,6 @@ using namespace mvrvb;
 
 extern "C" {
 
-#if 0  // Duplicated shader-module entry points kept only as historical reference.
-
 // ── Shader module (kept with vk prefix for backward compatibility) ────────────
 
 VkResult vkCreateShaderModule(VkDevice device,
@@ -203,7 +201,6 @@ void vkDestroyShaderModule(VkDevice, VkShaderModule module, const VkAllocationCa
 //  mvb_CreatePipelineLayout / mvb_DestroyPipelineLayout
 // ─────────────────────────────────────────────────────────────────────────────
 
-#endif
 VkResult mvb_CreatePipelineLayout(VkDevice,
                                    const VkPipelineLayoutCreateInfo* pCI,
                                    const VkAllocationCallbacks*,
@@ -344,12 +341,24 @@ VkResult mvb_CreateGraphicsPipelines(VkDevice device,
             if (mvCache->shaderCache) sc = mvCache->shaderCache;
         }
 
+        MVRVB_LOG_INFO("CreateGraphicsPipelines: count=%u cache=%s device='%s'",
+                       count,
+                       pipelineCache ? "yes" : "no",
+                       [mtlDev.name UTF8String]);
+
         VkResult firstError = VK_SUCCESS;
 
         for (uint32_t ci = 0; ci < count; ++ci) {
             const VkGraphicsPipelineCreateInfo& info = pCIs[ci];
             auto* pipe = new MvPipeline();
             pipe->isCompute = false;
+
+            MVRVB_LOG_DEBUG("Graphics pipeline #%u request: stages=%u subpass=%u layout=%s renderPass=%s",
+                            ci,
+                            info.stageCount,
+                            info.subpass,
+                            info.layout ? "yes" : "no",
+                            info.renderPass ? "yes" : "no");
 
             // Store layout back-pointer for push-constant binding at draw time.
             if (info.layout) {
@@ -376,11 +385,13 @@ VkResult mvb_CreateGraphicsPipelines(VkDevice device,
                     delete pipe;
                     pPipelines[ci] = VK_NULL_HANDLE;
 
-                    if (info.flags & VK_PIPELINE_CREATE_FAIL_ON_PIPELINE_COMPILE_REQUIRED_BIT) {
-                        firstError = VK_PIPELINE_COMPILE_REQUIRED;
-                    } else {
-                        firstError = VK_ERROR_INVALID_SHADER_NV;
+                    firstError = VK_ERROR_INVALID_SHADER_NV;
+#if defined(VK_PIPELINE_CREATE_FAIL_ON_PIPELINE_COMPILE_REQUIRED_BIT_EXT) && \
+    defined(VK_PIPELINE_COMPILE_REQUIRED_EXT)
+                    if (info.flags & VK_PIPELINE_CREATE_FAIL_ON_PIPELINE_COMPILE_REQUIRED_BIT_EXT) {
+                        firstError = VK_PIPELINE_COMPILE_REQUIRED_EXT;
                     }
+#endif
                     continue;  // Try next pipeline (Vulkan allows partial success)
                 }
 
@@ -443,16 +454,14 @@ VkResult mvb_CreateGraphicsPipelines(VkDevice device,
                 const auto& rs = *info.pRasterizationState;
                 pipe->cullMode         = rs.cullMode;
                 pipe->frontFace        = rs.frontFace;
+                pipe->fillMode         = (rs.polygonMode == VK_POLYGON_MODE_LINE)
+                    ? MTLTriangleFillModeLines
+                    : MTLTriangleFillModeFill;
                 pipe->depthClampEnable = rs.depthClampEnable;
                 pipe->depthBiasEnable  = rs.depthBiasEnable;
                 pipe->depthBiasConst   = rs.depthBiasConstantFactor;
                 pipe->depthBiasSlope   = rs.depthBiasSlopeFactor;
                 pipe->depthBiasClamp   = rs.depthBiasClamp;
-
-                desc.triangleFillMode =
-                    (rs.polygonMode == VK_POLYGON_MODE_LINE)
-                        ? MTLTriangleFillModeLines
-                        : MTLTriangleFillModeFill;
             }
 
             // ── Input assembly ───────────────────────────────────────────
@@ -618,6 +627,9 @@ VkResult mvb_CreateGraphicsPipelines(VkDevice device,
                             pipe->hasDynamicScissor  ? "S" : "");
         } // for each pipeline
 
+        if (firstError != VK_SUCCESS) {
+            MVRVB_LOG_WARN("CreateGraphicsPipelines completed with firstError=%d", firstError);
+        }
         return firstError;
     } // @autoreleasepool
 }
@@ -642,12 +654,22 @@ VkResult mvb_CreateComputePipelines(VkDevice device,
             if (mvCache->shaderCache) sc = mvCache->shaderCache;
         }
 
+        MVRVB_LOG_INFO("CreateComputePipelines: count=%u cache=%s device='%s'",
+                       count,
+                       pipelineCache ? "yes" : "no",
+                       [mtlDev.name UTF8String]);
+
         VkResult firstError = VK_SUCCESS;
 
         for (uint32_t ci = 0; ci < count; ++ci) {
             const auto& info = pCIs[ci];
             auto* pipe = new MvPipeline();
             pipe->isCompute = true;
+
+            MVRVB_LOG_DEBUG("Compute pipeline #%u request: entry='%s' layout=%s",
+                            ci,
+                            info.stage.pName ? info.stage.pName : "main",
+                            info.layout ? "yes" : "no");
 
             if (info.layout) {
                 pipe->layout = toMv(info.layout);
@@ -694,6 +716,9 @@ VkResult mvb_CreateComputePipelines(VkDevice device,
                             ci, pipe->localSizeX, pipe->localSizeY, pipe->localSizeZ);
         }
 
+        if (firstError != VK_SUCCESS) {
+            MVRVB_LOG_WARN("CreateComputePipelines completed with firstError=%d", firstError);
+        }
         return firstError;
     } // @autoreleasepool
 }
