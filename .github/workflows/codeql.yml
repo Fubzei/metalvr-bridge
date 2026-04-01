@@ -51,7 +51,7 @@ jobs:
       if: matrix.language == 'swift'
       run: |
         cd launcher
-        swiftc -o MetalVRBridge -framework SwiftUI -framework Metal -framework AppKit -framework CoreGraphics -target arm64-apple-macos13.0 -O MetalVRBridgeApp.swift ContentView.swift BridgeViewModel.swift ProjectStatus.swift CompatibilityCatalog.swift RuntimeLaunchPlan.swift RuntimeBundleManifest.swift RuntimeBundleArtifactPreview.swift RuntimeGuidedActionPlan.swift
+        bash setup.sh
     - name: Perform CodeQL Analysis
       uses: github/codeql-action/analyze@v4
       with:
