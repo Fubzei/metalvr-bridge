@@ -6,6 +6,7 @@ import SwiftUI
 import AppKit
 
 @main
+@MainActor
 struct MetalVRBridgeApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
 
@@ -15,7 +16,6 @@ struct MetalVRBridgeApp: App {
                 .frame(minWidth: 720, minHeight: 560)
         }
         .windowStyle(.hiddenTitleBar)
-        .defaultSize(width: 800, height: 620)
     }
 }
 

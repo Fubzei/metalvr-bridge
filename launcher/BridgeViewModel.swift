@@ -1,4 +1,4 @@
-import Foundation
+@preconcurrency import Foundation
 import Combine
 import Metal
 import AppKit
@@ -421,7 +421,7 @@ class BridgeViewModel: ObservableObject {
         log(.info, "=== TRIANGLE TEST STARTING ===")
         log(.info, "Testing the full Vulkan-to-Metal translation pipeline...")
 
-        Task.detached { [weak self] in
+        Task { [weak self] in
             await self?.executeTriangleTest()
         }
     }
@@ -866,8 +866,13 @@ class BridgeViewModel: ObservableObject {
         let panel = NSSavePanel()
         panel.allowedContentTypes = [.plainText]
         panel.nameFieldStringValue = "metalvr_diagnostic_\(dateStamp()).txt"
-        panel.begin { response in
-            if response == .OK, let url = panel.url {
+        panel.begin { [weak self] response in
+            guard response == .OK, let url = panel.url else {
+                return
+            }
+
+            Task { @MainActor in
+                guard let self else { return }
                 try? text.write(to: url, atomically: true, encoding: .utf8)
                 self.log(.info, "Log saved to \(url.path)")
             }
@@ -976,8 +981,13 @@ class BridgeViewModel: ObservableObject {
         let panel = NSSavePanel()
         panel.allowedContentTypes = [.plainText]
         panel.nameFieldStringValue = "metalvr_runtime_prep_\(dateStamp()).txt"
-        panel.begin { response in
-            if response == .OK, let url = panel.url {
+        panel.begin { [weak self] response in
+            guard response == .OK, let url = panel.url else {
+                return
+            }
+
+            Task { @MainActor in
+                guard let self else { return }
                 do {
                     try prepText.write(to: url, atomically: true, encoding: .utf8)
                     self.log(.info, "Runtime execution prep sheet saved to \(url.path)")
@@ -997,8 +1007,13 @@ class BridgeViewModel: ObservableObject {
         let panel = NSSavePanel()
         panel.allowedContentTypes = [.plainText]
         panel.nameFieldStringValue = "metalvr_runtime_bundle_\(dateStamp()).txt"
-        panel.begin { response in
-            if response == .OK, let url = panel.url {
+        panel.begin { [weak self] response in
+            guard response == .OK, let url = panel.url else {
+                return
+            }
+
+            Task { @MainActor in
+                guard let self else { return }
                 do {
                     try reportText.write(to: url, atomically: true, encoding: .utf8)
                     self.log(.info, "Runtime bundle report saved to \(url.path)")
@@ -1045,12 +1060,14 @@ class BridgeViewModel: ObservableObject {
         if Thread.isMainThread {
             logs.append(entry)
         } else {
-            DispatchQueue.main.async { self.logs.append(entry) }
+            Task { @MainActor in
+                self.logs.append(entry)
+            }
         }
     }
 
     private func finishTest(passed: Bool) {
-        DispatchQueue.main.async {
+        Task { @MainActor in
             self.testStatus = passed ? .passed : .failed
             self.testRunning = false
         }
@@ -1501,7 +1518,7 @@ class BridgeViewModel: ObservableObject {
         executableUrl: URL,
         arguments: [String],
         currentDirectoryUrl: URL?,
-        onSuccess: (() -> Void)? = nil
+        onSuccess: (@MainActor @Sendable () -> Void)? = nil
     ) {
         guard !runtimeAutomationRunning else {
             log(.warn, "Runtime automation is already running - wait for it to finish before starting another action")
@@ -1511,60 +1528,38 @@ class BridgeViewModel: ObservableObject {
         let process = Process()
         let standardOutput = Pipe()
         let standardError = Pipe()
-        var standardOutputData = Data()
-        var standardErrorData = Data()
         process.executableURL = executableUrl
         process.arguments = arguments
         process.currentDirectoryURL = currentDirectoryUrl
         process.standardOutput = standardOutput
         process.standardError = standardError
 
-        standardOutput.fileHandleForReading.readabilityHandler = { handle in
-            let data = handle.availableData
-            guard !data.isEmpty else {
-                handle.readabilityHandler = nil
-                return
-            }
-            standardOutputData.append(data)
-        }
-
-        standardError.fileHandleForReading.readabilityHandler = { handle in
-            let data = handle.availableData
-            guard !data.isEmpty else {
-                handle.readabilityHandler = nil
-                return
-            }
-            standardErrorData.append(data)
-        }
-
+        let outputReader = standardOutput.fileHandleForReading
+        let errorReader = standardError.fileHandleForReading
         process.terminationHandler = { [weak self] finishedProcess in
-            standardOutput.fileHandleForReading.readabilityHandler = nil
-            standardError.fileHandleForReading.readabilityHandler = nil
-            standardOutputData.append(standardOutput.fileHandleForReading.readDataToEndOfFile())
-            standardErrorData.append(standardError.fileHandleForReading.readDataToEndOfFile())
-
-            let outputText = String(data: standardOutputData, encoding: .utf8)
-            let errorText = String(data: standardErrorData, encoding: .utf8)
+            let outputText = String(data: outputReader.readDataToEndOfFile(), encoding: .utf8)
+            let errorText = String(data: errorReader.readDataToEndOfFile(), encoding: .utf8)
 
             Task { @MainActor in
-                self?.activeRuntimeProcess = nil
-                self?.runtimeAutomationRunning = false
-                self?.logScriptOutput(outputText, prefix: "[\(displayName)]", level: .debug)
-                self?.logScriptOutput(errorText, prefix: "[\(displayName)]", level: .warn)
+                guard let self else { return }
+                self.activeRuntimeProcess = nil
+                self.runtimeAutomationRunning = false
+                self.logScriptOutput(outputText, prefix: "[\(displayName)]", level: .debug)
+                self.logScriptOutput(errorText, prefix: "[\(displayName)]", level: .warn)
 
-                if self?.runtimeAutomationCancellationRequested == true {
-                    self?.runtimeAutomationStatus = "Cancelled: \(displayName)"
-                    self?.log(.warn, "Cancelled \(displayName)")
+                if self.runtimeAutomationCancellationRequested {
+                    self.runtimeAutomationStatus = "Cancelled: \(displayName)"
+                    self.log(.warn, "Cancelled \(displayName)")
                 } else if finishedProcess.terminationStatus == 0 {
-                    self?.runtimeAutomationStatus = "Completed: \(displayName)"
-                    self?.log(.pass, "Completed \(displayName)")
+                    self.runtimeAutomationStatus = "Completed: \(displayName)"
+                    self.log(.pass, "Completed \(displayName)")
                     onSuccess?()
                 } else {
-                    self?.runtimeAutomationStatus = "Failed: \(displayName) (exit \(finishedProcess.terminationStatus))"
-                    self?.log(.fail, "Failed \(displayName) with exit code \(finishedProcess.terminationStatus)")
+                    self.runtimeAutomationStatus = "Failed: \(displayName) (exit \(finishedProcess.terminationStatus))"
+                    self.log(.fail, "Failed \(displayName) with exit code \(finishedProcess.terminationStatus)")
                 }
 
-                self?.runtimeAutomationCancellationRequested = false
+                self.runtimeAutomationCancellationRequested = false
             }
         }
 
