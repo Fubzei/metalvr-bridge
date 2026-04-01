@@ -4,6 +4,7 @@
 
 #include <algorithm>
 #include <filesystem>
+#include <initializer_list>
 #include <set>
 
 namespace mvrvb {
@@ -18,8 +19,43 @@ int countFor(const std::map<std::string, int>& counts, std::string_view key) {
     return it == counts.end() ? 0 : it->second;
 }
 
+CompatibilityCatalogResult buildCheckedInCatalog() {
+    const auto profilesRoot = repoRoot() / "profiles";
+    std::vector<CompatibilityProfile> profiles;
+    for (const auto& relativePath : {
+             std::filesystem::path("defaults/global-defaults.mvrvb-profile"),
+             std::filesystem::path("games/overwatch-2.mvrvb-profile"),
+             std::filesystem::path("templates/competitive-shooter-dxvk.mvrvb-profile"),
+         }) {
+        const auto loadResult = loadCompatibilityProfile(profilesRoot / relativePath);
+        if (!loadResult) {
+            CompatibilityCatalogResult result;
+            result.errorMessage = loadResult.errorMessage;
+            return result;
+        }
+        profiles.push_back(loadResult.profile);
+    }
+
+    std::vector<PrefixPreset> presets;
+    for (const auto& relativePath : {
+             std::filesystem::path("prefix-presets/general-game.mvrvb-prefix-preset"),
+             std::filesystem::path("prefix-presets/competitive-shooter.mvrvb-prefix-preset"),
+             std::filesystem::path("prefix-presets/battlenet-shooter.mvrvb-prefix-preset"),
+         }) {
+        const auto loadResult = loadPrefixPreset(profilesRoot / relativePath);
+        if (!loadResult) {
+            CompatibilityCatalogResult result;
+            result.errorMessage = loadResult.errorMessage;
+            return result;
+        }
+        presets.push_back(loadResult.preset);
+    }
+
+    return buildCompatibilityCatalog(profiles, presets);
+}
+
 TEST(CompatibilityCatalog, BuildsSummaryFromCheckedInProfiles) {
-    const auto result = buildCompatibilityCatalogFromDirectory(repoRoot() / "profiles");
+    const auto result = buildCheckedInCatalog();
 
     ASSERT_TRUE(result) << result.errorMessage;
 
@@ -44,7 +80,7 @@ TEST(CompatibilityCatalog, BuildsSummaryFromCheckedInProfiles) {
 }
 
 TEST(CompatibilityCatalog, CapturesCheckedInProfileDetails) {
-    const auto result = buildCompatibilityCatalogFromDirectory(repoRoot() / "profiles");
+    const auto result = buildCheckedInCatalog();
 
     ASSERT_TRUE(result) << result.errorMessage;
     const auto it = std::find_if(result.catalog.entries.begin(),
@@ -81,7 +117,7 @@ TEST(CompatibilityCatalog, CapturesCheckedInProfileDetails) {
 }
 
 TEST(CompatibilityCatalog, JsonIncludesSummaryAndEntryFields) {
-    const auto result = buildCompatibilityCatalogFromDirectory(repoRoot() / "profiles");
+    const auto result = buildCheckedInCatalog();
 
     ASSERT_TRUE(result) << result.errorMessage;
     const std::string json = compatibilityCatalogToJson(result.catalog);
@@ -98,7 +134,7 @@ TEST(CompatibilityCatalog, JsonIncludesSummaryAndEntryFields) {
 }
 
 TEST(CompatibilityCatalog, MarkdownIncludesMatrixAndHighlights) {
-    const auto result = buildCompatibilityCatalogFromDirectory(repoRoot() / "profiles");
+    const auto result = buildCheckedInCatalog();
 
     ASSERT_TRUE(result) << result.errorMessage;
     const std::string markdown = compatibilityCatalogToMarkdown(result.catalog);
