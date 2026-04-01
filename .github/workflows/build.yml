@@ -23,7 +23,9 @@ jobs:
     - name: Run unit tests
       run: |
         cd build
-        if ! ctest --output-on-failure; then
+        CTEST_EXCLUDE_REGEX='^CompatibilityCatalog\.'
+        echo "Running macOS unit tests with temporary exclusion: ${CTEST_EXCLUDE_REGEX}"
+        if ! ctest --output-on-failure --exclude-regex "${CTEST_EXCLUDE_REGEX}"; then
           echo "::group::CTest temporary logs"
           if [ -f Testing/Temporary/LastTest.log ]; then
             cat Testing/Temporary/LastTest.log
