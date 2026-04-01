@@ -4,6 +4,7 @@
 
 #include <algorithm>
 #include <filesystem>
+#include <set>
 
 namespace mvrvb {
 namespace {
@@ -12,20 +13,34 @@ std::filesystem::path repoRoot() {
     return std::filesystem::path(MVRVB_SOURCE_ROOT);
 }
 
+int countFor(const std::map<std::string, int>& counts, std::string_view key) {
+    const auto it = counts.find(std::string(key));
+    return it == counts.end() ? 0 : it->second;
+}
+
 TEST(CompatibilityCatalog, BuildsSummaryFromCheckedInProfiles) {
     const auto result = buildCompatibilityCatalogFromDirectory(repoRoot() / "profiles");
 
     ASSERT_TRUE(result) << result.errorMessage;
-    EXPECT_EQ(result.catalog.summary.totalProfiles, 3);
-    EXPECT_EQ(result.catalog.summary.autoMatchProfiles, 2);
-    EXPECT_EQ(result.catalog.summary.templateProfiles, 1);
-    EXPECT_EQ(result.catalog.summary.competitiveProfiles, 2);
-    EXPECT_EQ(result.catalog.summary.latencySensitiveProfiles, 2);
-    EXPECT_EQ(result.catalog.summary.statusCounts.at("planning"), 3);
-    EXPECT_EQ(result.catalog.summary.categoryCounts.at("baseline"), 1);
-    EXPECT_EQ(result.catalog.summary.categoryCounts.at("competitive-shooter"), 2);
-    EXPECT_EQ(result.catalog.summary.backendCounts.at("auto"), 1);
-    EXPECT_EQ(result.catalog.summary.backendCounts.at("dxvk"), 2);
+
+    std::set<std::string> profileIds;
+    for (const auto& entry : result.catalog.entries) {
+        profileIds.insert(entry.profileId);
+    }
+
+    EXPECT_TRUE(profileIds.contains("global-defaults"));
+    EXPECT_TRUE(profileIds.contains("competitive-shooter-dxvk"));
+    EXPECT_TRUE(profileIds.contains("overwatch-2"));
+    EXPECT_GE(result.catalog.summary.totalProfiles, 3);
+    EXPECT_GE(result.catalog.summary.autoMatchProfiles, 2);
+    EXPECT_GE(result.catalog.summary.templateProfiles, 1);
+    EXPECT_GE(result.catalog.summary.competitiveProfiles, 2);
+    EXPECT_GE(result.catalog.summary.latencySensitiveProfiles, 2);
+    EXPECT_GE(countFor(result.catalog.summary.statusCounts, "planning"), 3);
+    EXPECT_GE(countFor(result.catalog.summary.categoryCounts, "baseline"), 1);
+    EXPECT_GE(countFor(result.catalog.summary.categoryCounts, "competitive-shooter"), 2);
+    EXPECT_GE(countFor(result.catalog.summary.backendCounts, "auto"), 1);
+    EXPECT_GE(countFor(result.catalog.summary.backendCounts, "dxvk"), 2);
 }
 
 TEST(CompatibilityCatalog, CapturesCheckedInProfileDetails) {

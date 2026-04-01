@@ -745,7 +745,7 @@ final class BridgeViewModel: ObservableObject {
         panel.canChooseDirectories = false
         panel.canChooseFiles = true
         panel.allowsMultipleSelection = false
-        panel.allowedFileTypes = ["json"]
+        panel.allowedContentTypes = [.json]
         panel.title = "Import Runtime Plan or Bundle"
         panel.message = "Choose a launch-plan.json or bundle-manifest.json exported by MetalVR Bridge tooling."
 
@@ -1539,27 +1539,29 @@ final class BridgeViewModel: ObservableObject {
         process.terminationHandler = { [weak self] finishedProcess in
             let outputText = String(data: outputReader.readDataToEndOfFile(), encoding: .utf8)
             let errorText = String(data: errorReader.readDataToEndOfFile(), encoding: .utf8)
+            let viewModel = self
 
             Task { @MainActor in
-                guard let self else { return }
-                self.activeRuntimeProcess = nil
-                self.runtimeAutomationRunning = false
-                self.logScriptOutput(outputText, prefix: "[\(displayName)]", level: .debug)
-                self.logScriptOutput(errorText, prefix: "[\(displayName)]", level: .warn)
+                guard let viewModel else { return }
+                viewModel.activeRuntimeProcess = nil
+                viewModel.runtimeAutomationRunning = false
+                viewModel.logScriptOutput(outputText, prefix: "[\(displayName)]", level: .debug)
+                viewModel.logScriptOutput(errorText, prefix: "[\(displayName)]", level: .warn)
 
-                if self.runtimeAutomationCancellationRequested {
-                    self.runtimeAutomationStatus = "Cancelled: \(displayName)"
-                    self.log(.warn, "Cancelled \(displayName)")
+                if viewModel.runtimeAutomationCancellationRequested {
+                    viewModel.runtimeAutomationStatus = "Cancelled: \(displayName)"
+                    viewModel.log(.warn, "Cancelled \(displayName)")
                 } else if finishedProcess.terminationStatus == 0 {
-                    self.runtimeAutomationStatus = "Completed: \(displayName)"
-                    self.log(.pass, "Completed \(displayName)")
-                    self.handleRuntimeAutomationFollowUp(followUp)
+                    viewModel.runtimeAutomationStatus = "Completed: \(displayName)"
+                    viewModel.log(.pass, "Completed \(displayName)")
+                    viewModel.handleRuntimeAutomationFollowUp(followUp)
                 } else {
-                    self.runtimeAutomationStatus = "Failed: \(displayName) (exit \(finishedProcess.terminationStatus))"
-                    self.log(.fail, "Failed \(displayName) with exit code \(finishedProcess.terminationStatus)")
+                    viewModel.runtimeAutomationStatus =
+                        "Failed: \(displayName) (exit \(finishedProcess.terminationStatus))"
+                    viewModel.log(.fail, "Failed \(displayName) with exit code \(finishedProcess.terminationStatus)")
                 }
 
-                self.runtimeAutomationCancellationRequested = false
+                viewModel.runtimeAutomationCancellationRequested = false
             }
         }
 
