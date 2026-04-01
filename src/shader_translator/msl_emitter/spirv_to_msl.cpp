@@ -78,14 +78,14 @@ namespace SpvOp {
     // Comparison (integer)
     constexpr uint32_t IEqual = 170;
     constexpr uint32_t INotEqual = 171;
-    constexpr uint32_t ULessThan = 172;
-    constexpr uint32_t SLessThan = 174;
-    constexpr uint32_t UGreaterThan = 176;
-    constexpr uint32_t SGreaterThan = 178;
-    constexpr uint32_t ULessThanEqual = 173;
-    constexpr uint32_t SLessThanEqual = 175;
-    constexpr uint32_t UGreaterThanEqual = 177;
-    constexpr uint32_t SGreaterThanEqual = 179;
+    constexpr uint32_t UGreaterThan = 172;
+    constexpr uint32_t SGreaterThan = 173;
+    constexpr uint32_t UGreaterThanEqual = 174;
+    constexpr uint32_t SGreaterThanEqual = 175;
+    constexpr uint32_t ULessThan = 176;
+    constexpr uint32_t SLessThan = 177;
+    constexpr uint32_t ULessThanEqual = 178;
+    constexpr uint32_t SLessThanEqual = 179;
     // Logic
     constexpr uint32_t LogicalEqual = 164;
     constexpr uint32_t LogicalNotEqual = 165;

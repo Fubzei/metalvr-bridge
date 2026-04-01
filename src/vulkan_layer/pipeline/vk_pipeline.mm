@@ -385,11 +385,13 @@ VkResult mvb_CreateGraphicsPipelines(VkDevice device,
                     delete pipe;
                     pPipelines[ci] = VK_NULL_HANDLE;
 
-                    if (info.flags & VK_PIPELINE_CREATE_FAIL_ON_PIPELINE_COMPILE_REQUIRED_BIT) {
-                        firstError = VK_PIPELINE_COMPILE_REQUIRED;
-                    } else {
-                        firstError = VK_ERROR_INVALID_SHADER_NV;
+                    firstError = VK_ERROR_INVALID_SHADER_NV;
+#if defined(VK_PIPELINE_CREATE_FAIL_ON_PIPELINE_COMPILE_REQUIRED_BIT_EXT) && \
+    defined(VK_PIPELINE_COMPILE_REQUIRED_EXT)
+                    if (info.flags & VK_PIPELINE_CREATE_FAIL_ON_PIPELINE_COMPILE_REQUIRED_BIT_EXT) {
+                        firstError = VK_PIPELINE_COMPILE_REQUIRED_EXT;
                     }
+#endif
                     continue;  // Try next pipeline (Vulkan allows partial success)
                 }
 

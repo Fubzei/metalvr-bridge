@@ -2,6 +2,7 @@
 
 #include "msl_emitter/spirv_to_msl.h"
 
+#include <array>
 #include <string>
 
 namespace mvrvb::msl {
@@ -12,6 +13,7 @@ using spirv::EntryPoint;
 using spirv::SPIRVModule;
 using spirv::ShaderStage;
 using spirv::SpvBlock;
+using spirv::SpvConstant;
 using spirv::SpvType;
 using spirv::SpvVariable;
 using spirv::StorageClass;
@@ -137,6 +139,72 @@ SPIRVModule makeComputeModuleWithResources() {
     return module;
 }
 
+SPIRVModule makeComputeModuleWithIntegerComparisons() {
+    SPIRVModule module;
+    module.versionMajor = 1u;
+    module.versionMinor = 6u;
+
+    EntryPoint entryPoint;
+    entryPoint.functionId = 42u;
+    entryPoint.name = "main";
+    entryPoint.stage = ShaderStage::Compute;
+    module.entryPoints.push_back(entryPoint);
+
+    SpvType voidType;
+    voidType.id = 1u;
+    voidType.base = BaseType::Void;
+    module.types[voidType.id] = voidType;
+
+    SpvType boolType;
+    boolType.id = 2u;
+    boolType.base = BaseType::Bool;
+    module.types[boolType.id] = boolType;
+
+    SpvType uintType;
+    uintType.id = 3u;
+    uintType.base = BaseType::UInt;
+    uintType.bitWidth = 32u;
+    uintType.isSigned = false;
+    module.types[uintType.id] = uintType;
+
+    SpvType intType;
+    intType.id = 4u;
+    intType.base = BaseType::Int;
+    intType.bitWidth = 32u;
+    intType.isSigned = true;
+    module.types[intType.id] = intType;
+
+    module.constants[5u] = SpvConstant{5u, uintType.id, 1u};
+    module.constants[6u] = SpvConstant{6u, uintType.id, 2u};
+    module.constants[7u] = SpvConstant{7u, intType.id, 1u};
+    module.constants[8u] = SpvConstant{8u, intType.id, 2u};
+
+    spirv::SpvFunction function;
+    function.id = entryPoint.functionId;
+    function.returnTypeId = voidType.id;
+
+    spirv::BasicBlock block;
+    block.labelId = 100u;
+
+    const std::array<spirv::Instruction, 8> comparisons{{
+        {172u, 10u, boolType.id, {6u, 5u}},
+        {173u, 11u, boolType.id, {8u, 7u}},
+        {174u, 12u, boolType.id, {6u, 5u}},
+        {175u, 13u, boolType.id, {8u, 7u}},
+        {176u, 14u, boolType.id, {5u, 6u}},
+        {177u, 15u, boolType.id, {7u, 8u}},
+        {178u, 16u, boolType.id, {5u, 6u}},
+        {179u, 17u, boolType.id, {7u, 8u}},
+    }};
+
+    block.instructions.insert(block.instructions.end(), comparisons.begin(), comparisons.end());
+    block.instructions.push_back(spirv::Instruction{253u});
+    function.blocks.push_back(std::move(block));
+    module.functions[function.id] = std::move(function);
+
+    return module;
+}
+
 TEST(SpirvToMsl, RejectsModulesWithoutEntryPoints) {
     const TranslateResult result = translateToMSL({});
 
@@ -226,6 +294,20 @@ TEST(SpirvToMsl, FallsBackToFirstSamplerWhenNoBindingMatchExists) {
     EXPECT_EQ(result.reflection.samplers.front().metalSamplerSlot, 0u);
     EXPECT_EQ(result.reflection.textures.front().binding, 0u);
     EXPECT_EQ(result.reflection.textures.front().metalSamplerSlot, 0u);
+}
+
+TEST(SpirvToMsl, EmitsCorrectIntegerComparisonOperators) {
+    const TranslateResult result = translateToMSL(makeComputeModuleWithIntegerComparisons());
+
+    ASSERT_TRUE(result) << result.errorMessage;
+    EXPECT_NE(result.mslSource.find("bool v10 = 2u > 1u;"), std::string::npos);
+    EXPECT_NE(result.mslSource.find("bool v11 = 2 > 1;"), std::string::npos);
+    EXPECT_NE(result.mslSource.find("bool v12 = 2u >= 1u;"), std::string::npos);
+    EXPECT_NE(result.mslSource.find("bool v13 = 2 >= 1;"), std::string::npos);
+    EXPECT_NE(result.mslSource.find("bool v14 = 1u < 2u;"), std::string::npos);
+    EXPECT_NE(result.mslSource.find("bool v15 = 1 < 2;"), std::string::npos);
+    EXPECT_NE(result.mslSource.find("bool v16 = 1u <= 2u;"), std::string::npos);
+    EXPECT_NE(result.mslSource.find("bool v17 = 1 <= 2;"), std::string::npos);
 }
 
 }  // namespace
