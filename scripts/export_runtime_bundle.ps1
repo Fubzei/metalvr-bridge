@@ -19,9 +19,10 @@ function Resolve-ToolPath {
         [string]$RelativePath
     )
 
+    $normalizedRelativePath = $RelativePath -replace '[\\/]+', [System.IO.Path]::DirectorySeparatorChar
     $candidates = @(
-        (Join-Path $BuildDir ($RelativePath + ".exe")),
-        (Join-Path $BuildDir $RelativePath)
+        (Join-Path $BuildDir ($normalizedRelativePath + ".exe")),
+        (Join-Path $BuildDir $normalizedRelativePath)
     ) | Select-Object -Unique
 
     foreach ($candidate in $candidates) {
@@ -45,7 +46,7 @@ if ([string]::IsNullOrWhiteSpace($OutputDir)) {
     if ([string]::IsNullOrWhiteSpace($safeName)) {
         $safeName = "runtime-bundle"
     }
-    $OutputDir = Join-Path $BuildDir ("exports\" + $safeName + "-bundle")
+    $OutputDir = Join-Path (Join-Path $BuildDir "exports") ($safeName + "-bundle")
 }
 
 $BuildDir = [System.IO.Path]::GetFullPath($BuildDir)
@@ -53,15 +54,17 @@ $ProfilesDir = [System.IO.Path]::GetFullPath($ProfilesDir)
 $OutputDir = [System.IO.Path]::GetFullPath($OutputDir)
 New-Item -ItemType Directory -Force -Path $OutputDir | Out-Null
 
-$toolPath = Resolve-ToolPath -BuildDir $BuildDir -RelativePath "tools\mvrvb_runtime_bundle_builder"
+$toolRelativePath = Join-Path "tools" "mvrvb_runtime_bundle_builder"
+$toolPath = Resolve-ToolPath -BuildDir $BuildDir -RelativePath $toolRelativePath
 if (-not (Test-Path $toolPath)) {
     Write-Host "Runtime bundle builder not found; building host checks first..."
-    & (Join-Path $repoRoot "scripts\run_host_checks.ps1") -BuildDir $BuildDir
+    $hostChecksScript = Join-Path (Join-Path $repoRoot "scripts") "run_host_checks.ps1"
+    & $hostChecksScript -BuildDir $BuildDir
     if ($LASTEXITCODE -ne 0) {
         throw "Host-check build failed with exit code $LASTEXITCODE"
     }
 
-    $toolPath = Resolve-ToolPath -BuildDir $BuildDir -RelativePath "tools\mvrvb_runtime_bundle_builder"
+    $toolPath = Resolve-ToolPath -BuildDir $BuildDir -RelativePath $toolRelativePath
     if (-not (Test-Path $toolPath)) {
         throw "Runtime bundle builder was still not found after building host checks"
     }

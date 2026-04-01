@@ -1,4 +1,4 @@
-@preconcurrency import Foundation
+import Foundation
 import Combine
 import Metal
 import AppKit
@@ -115,6 +115,10 @@ enum TestStatus: String {
 
 @MainActor
 final class BridgeViewModel: ObservableObject {
+    private enum RuntimeAutomationFollowUp {
+        case importGeneratedBundle(manifestUrl: URL, displayName: String)
+    }
+
     @Published var logs: [LogEntry] = []
     @Published var systemInfo: SystemInfo
     @Published var projectStatus: ProjectStatusSnapshot?
@@ -339,18 +343,12 @@ final class BridgeViewModel: ObservableObject {
             displayName: "starter bundle generation",
             executableUrl: builderUrl,
             arguments: arguments,
-            currentDirectoryUrl: outputDirectoryUrl.deletingLastPathComponent()
-        ) { [weak self, manifestUrl, selectedDisplayName] in
-            guard let self else { return }
-            do {
-                let loadedRuntimeBundle = try RuntimeBundleManifestSnapshot.load(from: manifestUrl)
-                self.applyRuntimeBundleManifest(loadedRuntimeBundle, logSuccess: true)
-                self.log(.pass, "Generated and imported starter runtime bundle for \(selectedDisplayName)")
-            } catch {
-                self.runtimeAutomationStatus = "Generated starter bundle, but importing the manifest failed."
-                self.log(.error, "Starter bundle generation succeeded but the manifest could not be imported: \(error.localizedDescription)")
-            }
-        }
+            currentDirectoryUrl: outputDirectoryUrl.deletingLastPathComponent(),
+            followUp: .importGeneratedBundle(
+                manifestUrl: manifestUrl,
+                displayName: selectedDisplayName
+            )
+        )
     }
 
     // MARK: - Installation Check
@@ -1520,7 +1518,7 @@ final class BridgeViewModel: ObservableObject {
         executableUrl: URL,
         arguments: [String],
         currentDirectoryUrl: URL?,
-        onSuccess: (@MainActor @Sendable () -> Void)? = nil
+        followUp: RuntimeAutomationFollowUp? = nil
     ) {
         guard !runtimeAutomationRunning else {
             log(.warn, "Runtime automation is already running - wait for it to finish before starting another action")
@@ -1555,7 +1553,7 @@ final class BridgeViewModel: ObservableObject {
                 } else if finishedProcess.terminationStatus == 0 {
                     self.runtimeAutomationStatus = "Completed: \(displayName)"
                     self.log(.pass, "Completed \(displayName)")
-                    onSuccess?()
+                    self.handleRuntimeAutomationFollowUp(followUp)
                 } else {
                     self.runtimeAutomationStatus = "Failed: \(displayName) (exit \(finishedProcess.terminationStatus))"
                     self.log(.fail, "Failed \(displayName) with exit code \(finishedProcess.terminationStatus)")
@@ -1583,6 +1581,24 @@ final class BridgeViewModel: ObservableObject {
             runtimeAutomationStatus = "Failed to start: \(displayName)"
             runtimeAutomationCancellationRequested = false
             log(.error, "Failed to start \(displayName): \(error.localizedDescription)")
+        }
+    }
+
+    private func handleRuntimeAutomationFollowUp(_ followUp: RuntimeAutomationFollowUp?) {
+        guard let followUp else {
+            return
+        }
+
+        switch followUp {
+        case let .importGeneratedBundle(manifestUrl, displayName):
+            do {
+                let loadedRuntimeBundle = try RuntimeBundleManifestSnapshot.load(from: manifestUrl)
+                applyRuntimeBundleManifest(loadedRuntimeBundle, logSuccess: true)
+                log(.pass, "Generated and imported starter runtime bundle for \(displayName)")
+            } catch {
+                runtimeAutomationStatus = "Generated starter bundle, but importing the manifest failed."
+                log(.error, "Starter bundle generation succeeded but the manifest could not be imported: \(error.localizedDescription)")
+            }
         }
     }
 

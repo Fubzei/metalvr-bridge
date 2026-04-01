@@ -4,7 +4,6 @@ import AppKit
 
 // MARK: - Main Content View
 
-@MainActor
 struct ContentView: View {
     @StateObject private var vm = BridgeViewModel()
     @State private var showingPreview = false

@@ -69,11 +69,13 @@ swiftc \
     -o MetalVRBridge \
     -framework SwiftUI \
     -framework Combine \
+    -framework Foundation \
     -framework Metal \
     -framework AppKit \
     -framework CoreGraphics \
     -framework UniformTypeIdentifiers \
     -target "$TARGET" \
+    -swift-version 5 \
     -O \
     -whole-module-optimization \
     MetalVRBridgeApp.swift \

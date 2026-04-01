@@ -6,7 +6,6 @@ import SwiftUI
 import AppKit
 
 @main
-@MainActor
 struct MetalVRBridgeApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
 
@@ -19,7 +18,6 @@ struct MetalVRBridgeApp: App {
     }
 }
 
-@MainActor
 class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool {
         return true
