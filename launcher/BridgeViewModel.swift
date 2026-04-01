@@ -114,7 +114,7 @@ enum TestStatus: String {
 // MARK: - ViewModel
 
 @MainActor
-class BridgeViewModel: ObservableObject {
+final class BridgeViewModel: ObservableObject {
     @Published var logs: [LogEntry] = []
     @Published var systemInfo: SystemInfo
     @Published var projectStatus: ProjectStatusSnapshot?
@@ -332,18 +332,20 @@ class BridgeViewModel: ObservableObject {
             arguments.append(contentsOf: ["--store", store])
         }
 
+        let manifestUrl = outputDirectoryUrl.appendingPathComponent("bundle-manifest.json")
+        let selectedDisplayName = selectedCatalogEntry.displayName
+
         runRuntimeAutomationProcess(
             displayName: "starter bundle generation",
             executableUrl: builderUrl,
             arguments: arguments,
             currentDirectoryUrl: outputDirectoryUrl.deletingLastPathComponent()
-        ) { [weak self] in
+        ) { [weak self, manifestUrl, selectedDisplayName] in
             guard let self else { return }
-            let manifestUrl = outputDirectoryUrl.appendingPathComponent("bundle-manifest.json")
             do {
                 let loadedRuntimeBundle = try RuntimeBundleManifestSnapshot.load(from: manifestUrl)
                 self.applyRuntimeBundleManifest(loadedRuntimeBundle, logSuccess: true)
-                self.log(.pass, "Generated and imported starter runtime bundle for \(selectedCatalogEntry.displayName)")
+                self.log(.pass, "Generated and imported starter runtime bundle for \(selectedDisplayName)")
             } catch {
                 self.runtimeAutomationStatus = "Generated starter bundle, but importing the manifest failed."
                 self.log(.error, "Starter bundle generation succeeded but the manifest could not be imported: \(error.localizedDescription)")
@@ -421,8 +423,8 @@ class BridgeViewModel: ObservableObject {
         log(.info, "=== TRIANGLE TEST STARTING ===")
         log(.info, "Testing the full Vulkan-to-Metal translation pipeline...")
 
-        Task { [weak self] in
-            await self?.executeTriangleTest()
+        Task { @MainActor in
+            await executeTriangleTest()
         }
     }
 
