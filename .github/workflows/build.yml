@@ -11,7 +11,7 @@ jobs:
     name: Build ICD (macOS)
     runs-on: macos-14
     steps:
-    - uses: actions/checkout@v5
+    - uses: actions/checkout@v6
       with:
         persist-credentials: false
     - name: Install deps
@@ -77,7 +77,7 @@ jobs:
     name: Build Launcher App (macOS)
     runs-on: macos-14
     steps:
-    - uses: actions/checkout@v5
+    - uses: actions/checkout@v6
       with:
         persist-credentials: false
     - name: Install launcher deps
