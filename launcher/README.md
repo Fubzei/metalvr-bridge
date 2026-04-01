@@ -33,6 +33,12 @@ Then:
    - MetalVRBridgeApp.swift
    - ContentView.swift
    - BridgeViewModel.swift
+   - ProjectStatus.swift
+   - CompatibilityCatalog.swift
+   - RuntimeLaunchPlan.swift
+   - RuntimeBundleManifest.swift
+   - RuntimeBundleArtifactPreview.swift
+   - RuntimeGuidedActionPlan.swift
 
 2. Open Terminal, cd to that folder
 
@@ -41,4 +47,33 @@ Then:
 4. Send the resulting "MetalVR-Bridge-Installer.zip" to your buddy
 
 The script automatically finds and bundles the MetalVR Bridge ICD if it
-has been built. If not, the app still works for the Metal hardware test.
+has been built. If `PROJECT_STATUS.json`, `../PROJECT_STATUS.json`, or
+`../docs/PROJECT_STATUS.json` is present, it also bundles the current repo
+phase snapshot so the launcher can display the next gate and project readiness
+status. If `GAME_COMPATIBILITY_CATALOG.json`, `../GAME_COMPATIBILITY_CATALOG.json`,
+or `../docs/GAME_COMPATIBILITY_CATALOG.json` is present, it also bundles the
+checked-in compatibility snapshot so the launcher can summarize known profiles.
+If `launch-plan.json`, `RUNTIME_PLAN_PREVIEW.json`, or their repo-root variants
+are present, it also bundles a runtime-plan preview so the launcher can inspect
+an exported launch policy without rerunning tools. At runtime, the launcher can
+also import either a direct `launch-plan.json` file or a `bundle-manifest.json`
+file exported by `scripts/export_runtime_bundle.ps1`. Imported runtime bundles
+now also surface their checklist, setup-script, launch-script, lint, and
+compatibility-catalog previews in the app, and the launcher can reveal the
+bundle folder, open the imported bundle assets directly, run imported bash
+setup/launch scripts from the app, or export a combined runtime-bundle report.
+The launcher also builds a guided action list from the shared runtime-plan
+contract and can copy the imported environment block or launch command snippets
+to the clipboard, plus save a concise execution-prep sheet and preview that
+same execution-prep surface inline, so the tester sees ordered next steps and
+can move into Terminal prep faster. Those exported bundles can now be generated
+through the cross-platform `mvrvb_runtime_bundle_builder` tool, and when no
+explicit prefix path is supplied they default to a portable self-contained
+`prefix/` directory inside the bundle. The launcher also turns the bundled
+compatibility catalog into a known-title onboarding card, so a tester can pick
+a checked-in title, paste an executable path, and copy a starter bundle-builder
+command without leaving the app. When the launcher bundle also includes the
+runtime-bundle helper and the checked-in `profiles/` tree, that same onboarding
+card can generate and immediately import a starter runtime bundle from inside
+the app. If those files are missing, the app still works for the Metal
+hardware test.

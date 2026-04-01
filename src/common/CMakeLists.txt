@@ -1,5 +1,12 @@
 add_library(mvrvb_common STATIC
+    compatibility_catalog.cpp
+    compatibility_profile.cpp
     logging.cpp
+    prefix_preset.cpp
+    profile_lint.cpp
+    runtime_launch_command.cpp
+    runtime_launch_plan.cpp
+    runtime_setup_command.cpp
     threading.cpp
 )
 

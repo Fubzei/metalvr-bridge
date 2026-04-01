@@ -1,68 +1,128 @@
 # Contributing to MetalVR Bridge
 
+## Working Agreement
+
+This project prioritizes structure, clear ownership, and information consistency.
+If a change affects how the repo is built, organized, tested, or handed off, update
+the matching source-of-truth document in the same pull request.
+
+## Source-of-Truth Files
+
+Use and maintain these files as the canonical references:
+
+- `README.md`
+  - Stable project overview and quick-start information
+- `docs/REPO_MAP.md`
+  - Checked-in layout and active-build surface
+- `docs/MILESTONES.md`
+  - Milestone and runtime-validation status
+- `docs/EXECUTION_PLAN.md`
+  - The current short-term execution plan and ordering
+- `docs/PHASE4_CROSSOVER_COMPETITOR_ROADMAP.md`
+  - Productization roadmap for the CrossOver-competitor path
+- `docs/AI_HANDOFF.md`
+  - Fast resume brief for future AI coding sessions
+- `docs/PROJECT_STATUS.json`
+  - Machine-readable project status snapshot for tooling and AI handoff
+- `docs/GAME_COMPATIBILITY_CATALOG.json`
+  - Machine-readable compatibility catalog snapshot derived from checked-in profiles
+- `docs/MAC_RUNTIME_SMOKE_TEST.md`
+  - The canonical Mac smoke-test procedure and reporting bundle
+- `SECURITY.md`
+  - Security policy and reporting
+- `profiles/README.md`
+  - Compatibility profile vocabulary and file-format notes
+- `host-tests/CMakeLists.txt`
+  - Local Apple-free test entrypoint expectations
+- `launcher/README.md`
+  - Launcher packaging and handoff flow
+
 ## Development Workflow
 
-1. **Pull latest** before starting work: `git pull origin main`
-2. **Create a branch** for your work: `git checkout -b milestone-10-wine`
-3. **Make changes**, commit often with clear messages
-4. **Push your branch**: `git push origin milestone-10-wine`
-5. **Open a Pull Request** on GitHub
-6. **CI runs automatically** — checks if it compiles on macOS
-7. **Merge** after CI passes and code is reviewed
+1. Start from the latest `main`.
+2. Create a focused branch.
+3. Keep changes scoped to one problem or milestone step.
+4. Open a pull request.
+5. Wait for the required macOS checks to pass.
+6. Merge through the protected `main` flow.
 
-## Commit Message Format
+## Commit Style
 
-```
-[Milestone N] Short description
-
-Longer explanation if needed.
-```
+Prefer short imperative subjects with a clear area prefix.
 
 Examples:
-```
-[Milestone 7] Add VkFence implementation with MTLCommandBuffer completion handler
-[Milestone 8] Fix swapchain present mode FIFO vsync mapping
-[Bugfix] Fix D24_UNORM_S8_UINT format mapping on Apple Silicon
-```
 
-## Code Standards
+- `Fix: resolve ICD linker symbols`
+- `Docs: align README with repo structure`
+- `Security: add policy, Dependabot, and harden CI permissions`
+- `Milestone 10: start Wine integration scaffolding`
 
-- **Language:** C++20 with Objective-C++ (.mm) for Metal/Cocoa API calls
-- **Naming:** `MvBuffer`, `MvImage` for structs. `mvb_CreateBuffer` for Vulkan implementations.
-- **Memory:** No raw `new`/`delete`. Use `std::unique_ptr` or pool allocators. ARC for ObjC.
-- **Threading:** `MTLDevice` and `MTLCommandQueue` are thread-safe. Encoders are NOT.
-- **Errors:** Return accurate `VkResult` codes. Never silently succeed on failure.
-- **Logging:** Use `MVB_LOG_DEBUG/INFO/WARN/ERROR` macros.
-- **Line length:** Max 120 characters.
-- **Dispatch table:** Every new Vulkan function MUST be wired into `vulkan_icd.cpp`.
+## Code and File Conventions
 
-## File Organization
+- Use `.cpp` and `.h` for pure C++.
+- Use `.mm` when the file talks to Metal, AppKit, CoreFoundation, or other Apple APIs.
+- Keep Swift confined to `launcher/`.
+- Keep Metal shader sources in `shaders/`.
+- Keep compatibility profiles in `profiles/`.
+- Keep smoke-test and support scripts in `scripts/`.
+- Follow the current logging macros in `src/common/logging.h`:
+  - `MVRVB_LOG_TRACE`
+  - `MVRVB_LOG_DEBUG`
+  - `MVRVB_LOG_INFO`
+  - `MVRVB_LOG_WARN`
+  - `MVRVB_LOG_ERROR`
+  - `MVRVB_LOG_FATAL`
 
-| File type | Extension | When to use |
-|-----------|-----------|-------------|
-| Pure C++ | `.cpp` / `.h` | No Apple framework calls |
-| Objective-C++ | `.mm` / `.h` | Calls Metal, AppKit, CoreFoundation |
-| Metal shaders | `.metal` | GPU shader code |
-| Swift | `.swift` | Launcher app only |
+## Documentation Update Rules
 
-## Testing Checklist
+Update docs when the matching area changes:
 
-Before submitting a PR, verify:
+- Update `README.md` when the high-level project story, quick start, or repo reality changes.
+- Update `docs/REPO_MAP.md` when directories, active targets, or ownership boundaries change.
+- Update `docs/MILESTONES.md` when milestone status or runtime-validation status changes.
+- Update `docs/EXECUTION_PLAN.md` when the near-term execution order changes.
+- Update `docs/PHASE4_CROSSOVER_COMPETITOR_ROADMAP.md` when productization scope or ordering changes.
+- Update `docs/AI_HANDOFF.md` when the current phase, proven surface, or next-step order changes.
+- Update `docs/PROJECT_STATUS.json` when the current phase, proven surface, or next-step order changes.
+- Update `docs/GAME_COMPATIBILITY_CATALOG.json` when checked-in profiles or prefix presets change.
+- Update `docs/MAC_RUNTIME_SMOKE_TEST.md` when the Mac validation procedure or required logs change.
+- Update `SECURITY.md` when reporting or security posture changes.
+- Update `profiles/README.md` when the compatibility profile format or vocabulary changes.
+- Update `host-tests/CMakeLists.txt` or `scripts/run_host_checks.ps1` when the
+  Apple-free local-check flow changes.
+- Update `scripts/run_profile_lint.ps1` when the direct profile-governance flow changes.
+- Update `scripts/update_ai_handoff_doc.ps1` or `scripts/export_ai_handoff_bundle.ps1`
+  when the AI handoff flow changes.
+- Update `scripts/update_project_status_json.ps1` when the machine-readable status flow changes.
+- Update `scripts/update_profile_catalog_json.ps1` when the checked-in compatibility JSON flow changes.
+- Update `launcher/README.md` when the launcher packaging flow changes.
 
-- [ ] No duplicate symbols with `vulkan_icd.cpp` stubs
-- [ ] All new functions added to ICD dispatch table
-- [ ] All `toMv()`/`toVk()` handle casts declared in header
-- [ ] No compiler warnings with `-Wall -Wextra`
-- [ ] Existing tests still pass (when CI is set up)
+## Pull Request Checklist
 
-## Milestone Workflow
+Before submitting a PR:
 
-Work on one milestone at a time. Each milestone builds on the previous:
+- [ ] The change is scoped and clearly named.
+- [ ] Any new Vulkan entry point is wired into the ICD dispatch table if required.
+- [ ] Any duplicate stub or symbol situation has been checked.
+- [ ] Any structure or status change is reflected in the source-of-truth docs.
+- [ ] The PR summary explains what changed, what was verified, and what still remains.
 
-```
-Format Table → Shader Translator → Resources → Memory → Commands
-→ Pipelines → Descriptors → Sync → Swapchain → Transfers
-→ [Triangle Test] → Wine → Utilities → Game Testing
-```
+## Notes on Repo Reality
 
-Do not skip ahead. Verify each milestone before starting the next.
+- `src/vr_runtime/` is checked in but not part of the active root build today.
+- Transfer replay still lives inside `src/vulkan_layer/commands/vk_commands.mm`,
+  with portable helper logic extracted into `src/vulkan_layer/commands/transfer_utils.*`.
+- `tests/` is now checked in and is intended for host-side unit coverage before
+  Mac runtime validation.
+- `profiles/` is now checked in as the first product/runtime policy layer for
+  future backend selection and per-game tuning.
+- `scripts/run_profile_lint.ps1` is the direct local entry point for profile
+  and prefix-preset governance checks when you do not need the full host suite.
+- `docs/AI_HANDOFF.md` plus `scripts/export_ai_handoff_bundle.ps1` are the
+  preferred carry-forward surface for future AI coding sessions.
+- `src/common/runtime_launch_plan.*` is now the host-safe bridge from checked-in
+  profiles to concrete launch decisions; keep it aligned with profile schema changes.
+- `host-tests/` is now checked in as the local non-Apple entrypoint for the
+  Apple-free unit surface.
+- `scripts/mac_runtime_smoke_test.sh` is the canonical runnable entry point for
+  the first dedicated Mac smoke-test pass.

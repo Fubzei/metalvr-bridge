@@ -1,6 +1,6 @@
 #!/bin/bash
 # =============================================================================
-# MetalVR Bridge — One-Command Build
+# MetalVR Bridge - One-Command Build
 # =============================================================================
 #
 # WHAT THIS DOES:
@@ -23,10 +23,10 @@
 set -e
 
 echo ""
-echo "  ╔══════════════════════════════════════════╗"
-echo "  ║        MetalVR Bridge — Builder          ║"
-echo "  ║   Building your app... sit tight.        ║"
-echo "  ╚══════════════════════════════════════════╝"
+echo "  ============================================"
+echo "          MetalVR Bridge - Builder"
+echo "     Building your app... sit tight."
+echo "  ============================================"
 echo ""
 
 # Check for Xcode tools
@@ -38,15 +38,24 @@ fi
 
 # Check for required source files
 MISSING=0
-for f in MetalVRBridgeApp.swift ContentView.swift BridgeViewModel.swift; do
+for f in MetalVRBridgeApp.swift ContentView.swift BridgeViewModel.swift ProjectStatus.swift CompatibilityCatalog.swift RuntimeLaunchPlan.swift RuntimeBundleManifest.swift RuntimeBundleArtifactPreview.swift RuntimeGuidedActionPlan.swift; do
     if [ ! -f "$f" ]; then
-        echo "ERROR: Missing $f — make sure all .swift files are in this folder."
+        echo "ERROR: Missing $f - make sure all .swift files are in this folder."
         MISSING=1
     fi
 done
 if [ $MISSING -eq 1 ]; then exit 1; fi
 
-echo "[1/6] Compiling app..."
+REPO_ROOT="$(cd .. && pwd)"
+HOST_HELPER_BUILD_DIR="$REPO_ROOT/build-launcher-host"
+RUNTIME_BUNDLE_TOOL=""
+PROFILES_SOURCE=""
+
+if [ -d "$REPO_ROOT/profiles" ]; then
+    PROFILES_SOURCE="$REPO_ROOT/profiles"
+fi
+
+echo "[1/7] Compiling app..."
 
 # Detect architecture
 ARCH=$(uname -m)
@@ -56,21 +65,60 @@ else
     TARGET="x86_64-apple-macos13.0"
 fi
 
-swiftc \
+SWIFTC_LOG="$(mktemp)"
+if ! swiftc \
     -o MetalVRBridge \
     -framework SwiftUI \
+    -framework Combine \
+    -framework Foundation \
     -framework Metal \
     -framework AppKit \
     -framework CoreGraphics \
+    -framework UniformTypeIdentifiers \
     -target "$TARGET" \
+    -swift-version 5 \
     -O \
     -whole-module-optimization \
     MetalVRBridgeApp.swift \
     ContentView.swift \
     BridgeViewModel.swift \
-    2>&1
+    ProjectStatus.swift \
+    CompatibilityCatalog.swift \
+    RuntimeLaunchPlan.swift \
+    RuntimeBundleManifest.swift \
+    RuntimeBundleArtifactPreview.swift \
+    RuntimeGuidedActionPlan.swift \
+    >"$SWIFTC_LOG" 2>&1; then
+    cat "$SWIFTC_LOG"
+    while IFS= read -r line; do
+        if [ -n "$line" ]; then
+            echo "::error::$line"
+        fi
+    done < <(tail -n 80 "$SWIFTC_LOG")
+    rm -f "$SWIFTC_LOG"
+    exit 1
+fi
+rm -f "$SWIFTC_LOG"
 
-echo "[2/6] Creating app bundle..."
+echo "[2/7] Building runtime helper..."
+
+if command -v cmake &> /dev/null && [ -f "$REPO_ROOT/host-tests/CMakeLists.txt" ]; then
+    if cmake -S "$REPO_ROOT/host-tests" -B "$HOST_HELPER_BUILD_DIR" -DMVRVB_REPO_ROOT="$REPO_ROOT" >/dev/null && \
+       cmake --build "$HOST_HELPER_BUILD_DIR" --target mvrvb_runtime_bundle_builder >/dev/null; then
+        if [ -f "$HOST_HELPER_BUILD_DIR/tools/mvrvb_runtime_bundle_builder" ]; then
+            RUNTIME_BUNDLE_TOOL="$HOST_HELPER_BUILD_DIR/tools/mvrvb_runtime_bundle_builder"
+            echo "  Built runtime bundle helper: $RUNTIME_BUNDLE_TOOL"
+        else
+            echo "  Runtime bundle helper was not produced (launcher will fall back to copy-only onboarding)"
+        fi
+    else
+        echo "  Runtime bundle helper build failed (launcher will fall back to copy-only onboarding)"
+    fi
+else
+    echo "  CMake or host-tests entrypoint not available (launcher will fall back to copy-only onboarding)"
+fi
+
+echo "[3/7] Creating app bundle..."
 
 APP="MetalVR Bridge.app"
 rm -rf "$APP"
@@ -81,7 +129,7 @@ mkdir -p "$APP/Contents/Frameworks"
 
 mv MetalVRBridge "$APP/Contents/MacOS/"
 
-echo "[3/6] Writing app metadata..."
+echo "[4/7] Writing app metadata..."
 
 cat > "$APP/Contents/Info.plist" << 'PLIST'
 <?xml version="1.0" encoding="UTF-8"?>
@@ -116,7 +164,7 @@ cat > "$APP/Contents/Info.plist" << 'PLIST'
 </plist>
 PLIST
 
-echo "[4/6] Bundling ICD (if available)..."
+echo "[5/7] Bundling resources..."
 
 # Auto-detect ICD files in common locations
 ICD_DYLIB=""
@@ -167,37 +215,93 @@ else
     echo "  ICD manifest not found (app will still work for the Metal test)"
 fi
 
-echo "[5/6] Creating distributable zip..."
+PROJECT_STATUS_SOURCE=""
+for path in "./PROJECT_STATUS.json" "../PROJECT_STATUS.json" "../docs/PROJECT_STATUS.json"; do
+    if [ -z "$PROJECT_STATUS_SOURCE" ] && [ -f "$path" ]; then
+        PROJECT_STATUS_SOURCE="$path"
+    fi
+done
+
+if [ -n "$PROJECT_STATUS_SOURCE" ]; then
+    cp "$PROJECT_STATUS_SOURCE" "$APP/Contents/Resources/PROJECT_STATUS.json"
+    echo "  Bundled project status snapshot from: $PROJECT_STATUS_SOURCE"
+else
+    echo "  Project status snapshot not found (launcher status card will be limited)"
+fi
+
+CATALOG_SOURCE=""
+for path in "./GAME_COMPATIBILITY_CATALOG.json" "../GAME_COMPATIBILITY_CATALOG.json" "../docs/GAME_COMPATIBILITY_CATALOG.json"; do
+    if [ -z "$CATALOG_SOURCE" ] && [ -f "$path" ]; then
+        CATALOG_SOURCE="$path"
+    fi
+done
+
+if [ -n "$CATALOG_SOURCE" ]; then
+    cp "$CATALOG_SOURCE" "$APP/Contents/Resources/GAME_COMPATIBILITY_CATALOG.json"
+    echo "  Bundled compatibility catalog snapshot from: $CATALOG_SOURCE"
+else
+    echo "  Compatibility catalog snapshot not found (launcher catalog summary will be limited)"
+fi
+
+RUNTIME_PLAN_SOURCE=""
+for path in "./launch-plan.json" "./RUNTIME_PLAN_PREVIEW.json" "../launch-plan.json" "../RUNTIME_PLAN_PREVIEW.json"; do
+    if [ -z "$RUNTIME_PLAN_SOURCE" ] && [ -f "$path" ]; then
+        RUNTIME_PLAN_SOURCE="$path"
+    fi
+done
+
+if [ -n "$RUNTIME_PLAN_SOURCE" ]; then
+    cp "$RUNTIME_PLAN_SOURCE" "$APP/Contents/Resources/launch-plan.json"
+    echo "  Bundled runtime plan preview from: $RUNTIME_PLAN_SOURCE"
+else
+    echo "  Runtime plan preview not found (launcher plan card can still import JSON at runtime)"
+fi
+
+if [ -n "$RUNTIME_BUNDLE_TOOL" ]; then
+    cp "$RUNTIME_BUNDLE_TOOL" "$APP/Contents/Resources/"
+    chmod +x "$APP/Contents/Resources/$(basename "$RUNTIME_BUNDLE_TOOL")"
+    echo "  Bundled runtime bundle helper from: $RUNTIME_BUNDLE_TOOL"
+else
+    echo "  Runtime bundle helper not found (starter bundle generation button will be unavailable)"
+fi
+
+if [ -n "$PROFILES_SOURCE" ]; then
+    cp -R "$PROFILES_SOURCE" "$APP/Contents/Resources/"
+    echo "  Bundled compatibility profiles from: $PROFILES_SOURCE"
+else
+    echo "  Compatibility profiles directory not found (starter bundle generation button will be unavailable)"
+fi
+
+echo "[6/7] Creating distributable zip..."
 
 ZIP_NAME="MetalVR-Bridge-Installer.zip"
 rm -f "$ZIP_NAME"
 ditto -c -k --keepParent "$APP" "$ZIP_NAME"
 
-echo "[6/6] Cleaning up..."
+echo "[7/7] Cleaning up..."
 # Keep the .app around for local testing
 
 SIZE=$(du -sh "$ZIP_NAME" | cut -f1)
 APP_SIZE=$(du -sh "$APP" | cut -f1)
 
 echo ""
-echo "  ╔══════════════════════════════════════════╗"
-echo "  ║            BUILD COMPLETE!               ║"
-echo "  ╚══════════════════════════════════════════╝"
+echo "  ============================================"
+echo "             BUILD COMPLETE!"
+echo "  ============================================"
 echo ""
 echo "  App:  $APP ($APP_SIZE)"
 echo "  Zip:  $ZIP_NAME ($SIZE)"
 echo ""
-echo "  ┌─────────────────────────────────────────┐"
-echo "  │  SEND THIS TO YOUR BUDDY:               │"
-echo "  │                                          │"
-echo "  │  $ZIP_NAME"
-echo "  │                                          │"
-echo "  │  THEIR STEPS:                            │"
-echo "  │  1. Unzip the file                       │"
-echo "  │  2. Drag 'MetalVR Bridge' to             │"
-echo "  │     Applications                         │"
-echo "  │  3. Right-click -> Open (first time)     │"
-echo "  │  4. Click 'Run Triangle Test'            │"
-echo "  │  5. Click 'Launch Steam' to play games   │"
-echo "  └─────────────────────────────────────────┘"
+echo "  --------------------------------------------"
+echo "    SEND THIS TO YOUR BUDDY:"
+echo ""
+echo "    $ZIP_NAME"
+echo ""
+echo "    THEIR STEPS:"
+echo "    1. Unzip the file"
+echo "    2. Drag 'MetalVR Bridge' to Applications"
+echo "    3. Right-click -> Open (first time)"
+echo "    4. Click 'Run Triangle Test'"
+echo "    5. Click 'Launch Steam' to play games"
+echo "  --------------------------------------------"
 echo ""

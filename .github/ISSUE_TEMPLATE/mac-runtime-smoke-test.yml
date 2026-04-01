@@ -1,0 +1,100 @@
+name: Mac runtime smoke test
+description: Record the first-hardware launcher, vulkaninfo, and vkcube results.
+title: "[Mac Smoke Test]: "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use `scripts/mac_runtime_smoke_test.sh` when possible, then attach the generated bundle and paste the summary here.
+
+  - type: input
+    id: commit_sha
+    attributes:
+      label: Tested commit SHA
+      description: Paste the exact commit that was tested on the Mac.
+      placeholder: 4e08190
+    validations:
+      required: true
+
+  - type: input
+    id: mac_model
+    attributes:
+      label: Mac model
+      description: Example: Mac mini (M1, 2020) or MacBook Pro (M5 Pro, 2026)
+      placeholder: Mac mini (M1, 2020)
+    validations:
+      required: true
+
+  - type: input
+    id: macos_version
+    attributes:
+      label: macOS version
+      description: Include the exact macOS version from `sw_vers`.
+      placeholder: macOS 14.7
+    validations:
+      required: true
+
+  - type: dropdown
+    id: launcher_triangle
+    attributes:
+      label: Launcher triangle
+      options:
+        - pass
+        - fail
+        - skip
+    validations:
+      required: true
+
+  - type: dropdown
+    id: vulkaninfo
+    attributes:
+      label: vulkaninfo
+      options:
+        - pass
+        - fail
+        - not run
+    validations:
+      required: true
+
+  - type: dropdown
+    id: vkcube
+    attributes:
+      label: vkcube
+      options:
+        - pass
+        - fail
+        - not run
+    validations:
+      required: true
+
+  - type: textarea
+    id: first_failure_boundary
+    attributes:
+      label: First failure boundary
+      description: Name the first checkpoint that failed and the closest logged boundary.
+      placeholder: vulkaninfo failed after vkCreateInstance request but before vkCreateDevice OK
+    validations:
+      required: true
+
+  - type: textarea
+    id: bundle_contents
+    attributes:
+      label: Attached bundle contents
+      description: List the files you attached from the generated smoke-test bundle.
+      placeholder: |
+        summary.md
+        icd.log
+        vulkaninfo.txt
+        vulkaninfo.exit.txt
+        vkcube.txt
+        vkcube.exit.txt
+        vkcube_failure.png
+    validations:
+      required: true
+
+  - type: textarea
+    id: notes
+    attributes:
+      label: Notes
+      description: Any extra observations, screenshots, or repro details.
+      placeholder: The launcher triangle passed, but vkcube opened a blank window before exiting 0.

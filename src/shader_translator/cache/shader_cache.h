@@ -30,6 +30,9 @@
 // Forward-declare Objective-C types to avoid pulling in Metal.h here.
 #ifdef __OBJC__
 #import <Metal/Metal.h>
+using MTLLibraryRef   = id<MTLLibrary>;
+using MTLFunctionRef  = id<MTLFunction>;
+using MTLDeviceRef    = id<MTLDevice>;
 #else
 // Opaque type shims for pure-C++ headers.
 using MTLLibraryRef   = void*;

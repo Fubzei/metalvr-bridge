@@ -1,0 +1,23 @@
+schema_version = 1
+preset_id = battlenet-shooter
+display_name = Battle.net Shooter
+category = launcher
+notes = Shared prefix preset for Battle.net-managed shooter titles.
+
+[install]
+packages = dxvk, battle.net
+winetricks = corefonts, vcrun2022
+requires_launcher = true
+notes = Bootstrap Battle.net in the target prefix before game launch attempts.
+
+[env]
+DXVK_HUD = 0
+MVRVB_PREFIX_FAMILY = battlenet-shooter
+MVRVB_LAUNCHER_FAMILY = battlenet
+
+[dll_overrides]
+d3d11 = native,builtin
+dxgi = native,builtin
+
+[launch]
+args = --fullscreen

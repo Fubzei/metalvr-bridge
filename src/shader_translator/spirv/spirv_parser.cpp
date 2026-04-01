@@ -19,6 +19,7 @@
 #include "../../common/logging.h"
 #include <algorithm>
 #include <cstring>
+#include <functional>
 
 namespace mvrvb::spirv {
 
@@ -550,6 +551,19 @@ ParseResult parseSPIRV(const uint32_t* words, size_t wordCount) {
         return ((v & 0xFF) << 24) | (((v >> 8) & 0xFF) << 16) |
                (((v >> 16) & 0xFF) << 8) | ((v >> 24) & 0xFF);
     };
+    auto readSpirvString = [&](size_t startWord, size_t maxWords) -> std::string {
+        std::string value;
+        value.reserve(maxWords * 4u);
+        for (size_t wordOffset = 0; wordOffset < maxWords; ++wordOffset) {
+            const uint32_t packed = w(startWord + wordOffset);
+            for (uint32_t byteOffset = 0; byteOffset < 4u; ++byteOffset) {
+                const char ch = static_cast<char>((packed >> (byteOffset * 8u)) & 0xFFu);
+                if (ch == '\0') return value;
+                value.push_back(ch);
+            }
+        }
+        return value;
+    };
 
     uint32_t version = w(1);
     mod.versionMajor = (version >> 16) & 0xFF;
@@ -622,16 +636,14 @@ ParseResult parseSPIRV(const uint32_t* words, size_t wordCount) {
             break;
 
         case OpExtension: {
-            const char* raw = reinterpret_cast<const char*>(&words[pc + 1]);
-            mod.extensions.emplace_back(raw, strnlen(raw, (wordLen - 1) * 4));
+            mod.extensions.push_back(readSpirvString(pc + 1, wordLen - 1));
             break;
         }
 
         case OpExtInstImport: {
             ExtInstSet ext;
             ext.id = w(pc + 1);
-            const char* raw = reinterpret_cast<const char*>(&words[pc + 2]);
-            ext.name = std::string(raw, strnlen(raw, (wordLen - 2) * 4));
+            ext.name = readSpirvString(pc + 2, wordLen - 2);
             mod.extInstSets.push_back(std::move(ext));
             break;
         }
@@ -644,18 +656,16 @@ ParseResult parseSPIRV(const uint32_t* words, size_t wordCount) {
         // ── Names ────────────────────────────────────────────────────────────
         case OpName: {
             SpvId id = w(pc + 1);
-            const char* s = reinterpret_cast<const char*>(&words[pc + 2]);
-            mod.names[id] = std::string(s, strnlen(s, (wordLen - 2) * 4));
+            mod.names[id] = readSpirvString(pc + 2, wordLen - 2);
             break;
         }
 
         case OpMemberName: {
             SpvId structId = w(pc + 1);
             uint32_t member = w(pc + 2);
-            const char* s = reinterpret_cast<const char*>(&words[pc + 3]);
             auto& blk = mod.blocks[structId];
             if (blk.members.size() <= member) blk.members.resize(member + 1);
-            blk.members[member].name = std::string(s, strnlen(s, (wordLen - 3) * 4));
+            blk.members[member].name = readSpirvString(pc + 3, wordLen - 3);
             break;
         }
 
@@ -664,8 +674,7 @@ ParseResult parseSPIRV(const uint32_t* words, size_t wordCount) {
             EntryPoint ep;
             ep.stage = execModelToStage(w(pc + 1));
             ep.functionId = w(pc + 2);
-            const char* rawName = reinterpret_cast<const char*>(&words[pc + 3]);
-            ep.name = std::string(rawName, strnlen(rawName, (wordLen - 3) * 4));
+            ep.name = readSpirvString(pc + 3, wordLen - 3);
             // Interface variables follow the name string.
             size_t strWords = (ep.name.size() + 4) / 4;
             for (uint32_t iv = 3 + (uint32_t)strWords; iv < wordLen; ++iv) {

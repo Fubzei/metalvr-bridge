@@ -1,0 +1,14 @@
+schema_version = 1
+preset_id = general-game
+display_name = General Game
+category = baseline
+notes = Baseline shared prefix preset for broad game compatibility while per-title flows mature.
+
+[install]
+packages = dxvk
+winetricks = corefonts
+requires_launcher = false
+notes = Baseline setup intent for shared game prefixes while title-specific presets are still maturing.
+
+[env]
+MVRVB_PREFIX_FAMILY = general-game

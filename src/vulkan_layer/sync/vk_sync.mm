@@ -360,26 +360,45 @@ VkResult mvb_QueueSubmit(VkQueue queue, uint32_t submitCount,
                          const VkSubmitInfo* pSubmits, VkFence fence) {
     @autoreleasepool {
         auto* q = toMv(queue);
-        if (!q || !q->queue) return VK_ERROR_DEVICE_LOST;
+        if (!q || !q->queue) {
+            MVRVB_LOG_ERROR("QueueSubmit failed: queue=%p", (void*)q);
+            return VK_ERROR_DEVICE_LOST;
+        }
 
         id<MTLCommandQueue> mtlQueue = (__bridge id<MTLCommandQueue>)q->queue;
         auto* submitFence = toMv(fence);
+
+        MVRVB_LOG_INFO("QueueSubmit: submitCount=%u fence=%s",
+                       submitCount,
+                       submitFence ? "yes" : "no");
 
         for (uint32_t s = 0; s < submitCount; ++s) {
             const auto& submit = pSubmits[s];
             const bool isLastSubmit = (s == submitCount - 1);
             uint32_t firstReplayableCB = UINT32_MAX;
             uint32_t lastReplayableCB = UINT32_MAX;
+            uint32_t replayableCount = 0;
+            size_t recordedCommands = 0;
 
             for (uint32_t c = 0; c < submit.commandBufferCount; ++c) {
                 auto* cb = toMv(submit.pCommandBuffers[c]);
                 if (!cb || cb->commands.empty()) continue;
 
+                replayableCount++;
+                recordedCommands += cb->commands.size();
                 if (firstReplayableCB == UINT32_MAX) {
                     firstReplayableCB = c;
                 }
                 lastReplayableCB = c;
             }
+
+            MVRVB_LOG_DEBUG("QueueSubmit[%u]: cmdBuffers=%u replayable=%u commands=%zu waitSemaphores=%u signalSemaphores=%u",
+                            s,
+                            submit.commandBufferCount,
+                            replayableCount,
+                            recordedCommands,
+                            submit.waitSemaphoreCount,
+                            submit.signalSemaphoreCount);
 
             if (firstReplayableCB == UINT32_MAX) {
                 const bool needsCarrierCB =
@@ -388,6 +407,8 @@ VkResult mvb_QueueSubmit(VkQueue queue, uint32_t submitCount,
                     (isLastSubmit && submitFence != nullptr);
 
                 if (needsCarrierCB) {
+                    MVRVB_LOG_DEBUG("QueueSubmit[%u]: using carrier command buffer for synchronization-only submit",
+                                    s);
                     id<MTLCommandBuffer> mtlCB = [mtlQueue commandBuffer];
                     [mtlCB setLabel:@"MVB-Submit"];
 
@@ -451,6 +472,7 @@ VkResult mvb_QueueSubmit(VkQueue queue, uint32_t submitCount,
 
         // Handle empty submits with just a fence signal.
         if (submitCount == 0 && submitFence) {
+            MVRVB_LOG_DEBUG("QueueSubmit: issuing fence-only submit");
             id<MTLCommandBuffer> mtlCB = [mtlQueue commandBuffer];
             [mtlCB setLabel:@"MVB-Submit"];
             encodeFenceSignal(mtlCB, submitFence);
@@ -464,26 +486,45 @@ VkResult mvb_QueueSubmit2(VkQueue queue, uint32_t submitCount,
                           const VkSubmitInfo2* pSubmits, VkFence fence) {
     @autoreleasepool {
         auto* q = toMv(queue);
-        if (!q || !q->queue) return VK_ERROR_DEVICE_LOST;
+        if (!q || !q->queue) {
+            MVRVB_LOG_ERROR("QueueSubmit2 failed: queue=%p", (void*)q);
+            return VK_ERROR_DEVICE_LOST;
+        }
 
         id<MTLCommandQueue> mtlQueue = (__bridge id<MTLCommandQueue>)q->queue;
         auto* submitFence = toMv(fence);
+
+        MVRVB_LOG_INFO("QueueSubmit2: submitCount=%u fence=%s",
+                       submitCount,
+                       submitFence ? "yes" : "no");
 
         for (uint32_t s = 0; s < submitCount; ++s) {
             const auto& submit = pSubmits[s];
             const bool isLastSubmit = (s == submitCount - 1);
             uint32_t firstReplayableCB = UINT32_MAX;
             uint32_t lastReplayableCB = UINT32_MAX;
+            uint32_t replayableCount = 0;
+            size_t recordedCommands = 0;
 
             for (uint32_t c = 0; c < submit.commandBufferInfoCount; ++c) {
                 auto* cb = toMv(submit.pCommandBufferInfos[c].commandBuffer);
                 if (!cb || cb->commands.empty()) continue;
 
+                replayableCount++;
+                recordedCommands += cb->commands.size();
                 if (firstReplayableCB == UINT32_MAX) {
                     firstReplayableCB = c;
                 }
                 lastReplayableCB = c;
             }
+
+            MVRVB_LOG_DEBUG("QueueSubmit2[%u]: cmdBuffers=%u replayable=%u commands=%zu waitSemaphores=%u signalSemaphores=%u",
+                            s,
+                            submit.commandBufferInfoCount,
+                            replayableCount,
+                            recordedCommands,
+                            submit.waitSemaphoreInfoCount,
+                            submit.signalSemaphoreInfoCount);
 
             if (firstReplayableCB == UINT32_MAX) {
                 const bool needsCarrierCB =
@@ -492,6 +533,8 @@ VkResult mvb_QueueSubmit2(VkQueue queue, uint32_t submitCount,
                     (isLastSubmit && submitFence != nullptr);
 
                 if (needsCarrierCB) {
+                    MVRVB_LOG_DEBUG("QueueSubmit2[%u]: using carrier command buffer for synchronization-only submit",
+                                    s);
                     id<MTLCommandBuffer> mtlCB = [mtlQueue commandBuffer];
                     [mtlCB setLabel:@"MVB-Submit2"];
 
@@ -600,6 +643,7 @@ VkResult mvb_QueueSubmit2(VkQueue queue, uint32_t submitCount,
 
         // Handle empty submits with just a fence signal.
         if (submitCount == 0 && submitFence) {
+            MVRVB_LOG_DEBUG("QueueSubmit2: issuing fence-only submit");
             id<MTLCommandBuffer> mtlCB = [mtlQueue commandBuffer];
             [mtlCB setLabel:@"MVB-Submit2"];
             encodeFenceSignal(mtlCB, submitFence);
@@ -619,12 +663,15 @@ VkResult mvb_QueueWaitIdle(VkQueue queue) {
         if (!q || !q->queue) return VK_SUCCESS;
         id<MTLCommandQueue> mtlQueue = (__bridge id<MTLCommandQueue>)q->queue;
 
+        MVRVB_LOG_DEBUG("QueueWaitIdle: waiting for queue=%p", (void*)q);
+
         // Submit an empty command buffer and wait for it to complete.
         // This guarantees all previously submitted work is done.
         id<MTLCommandBuffer> mtlCB = [mtlQueue commandBuffer];
         [mtlCB setLabel:@"MVB-WaitIdle"];
         [mtlCB commit];
         [mtlCB waitUntilCompleted];
+        MVRVB_LOG_DEBUG("QueueWaitIdle complete: queue=%p", (void*)q);
     }
     return VK_SUCCESS;
 }
@@ -632,6 +679,7 @@ VkResult mvb_QueueWaitIdle(VkQueue queue) {
 VkResult mvb_DeviceWaitIdle(VkDevice device) {
     auto* dev = toMv(device);
     if (!dev) return VK_SUCCESS;
+    MVRVB_LOG_DEBUG("DeviceWaitIdle: queueCount=%zu", dev->queues.size());
     for (auto* q : dev->queues) {
         mvb_QueueWaitIdle(toVk(q));
     }

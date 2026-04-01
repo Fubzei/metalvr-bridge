@@ -383,8 +383,8 @@ const CachedShader* ShaderCache::getOrCompile(const uint32_t* words, size_t word
     entry.mslSource     = translated.mslSource;
     entry.reflection    = translated.reflection;
     entry.stage         = translated.stage;
-    entry.library       = (__bridge_retained void*)lib;
-    entry.function      = fn ? (__bridge_retained void*)fn : nullptr;
+    entry.library       = lib;
+    entry.function      = fn;
     entry.compiledOK    = true;
     entry.lastUsedFrame = frame;
 

@@ -1,0 +1,29 @@
+schema_version = 1
+profile_id = competitive-shooter-dxvk
+display_name = Competitive Shooter (DXVK Template)
+status = planning
+allow_auto_match = false
+category = competitive-shooter
+default_renderer = dxvk
+fallback_renderers = d3dmetal, wined3d
+latency_sensitive = true
+competitive = true
+anti_cheat_risk = high
+notes = Planning template for latency-sensitive DXVK-backed titles. This is not a validated compatibility claim.
+
+[runtime]
+windows_version = win11
+sync_mode = msync
+high_resolution_mode = true
+metalfx_upscaling = false
+
+[install]
+prefix_preset = competitive-shooter
+notes = Template install intent only. Add any title-specific launcher or redistributable requirements in the final game profile.
+
+[match]
+stores = battlenet, steam
+executables = Game.exe, Game-Win64-Shipping.exe
+
+[env]
+MVRVB_PROFILE = competitive-shooter-dxvk

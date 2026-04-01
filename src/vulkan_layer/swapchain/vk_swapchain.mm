@@ -319,9 +319,28 @@ VkResult mvb_CreateSwapchainKHR(VkDevice device,
                                 VkSwapchainKHR* pSwapchain) {
     @autoreleasepool {
         auto* dev = toMv(device);
-        (void)dev;
+        if (!dev || !pCI || !pSwapchain) {
+            MVRVB_LOG_ERROR("CreateSwapchainKHR failed: dev=%p pCI=%p pSwapchain=%p",
+                            (void*)dev, (const void*)pCI, (void*)pSwapchain);
+            return VK_ERROR_INITIALIZATION_FAILED;
+        }
+
+        id<MTLDevice> mtlDev = (__bridge id<MTLDevice>)dev->mtlDevice;
         auto* surface = toMv(pCI->surface);
-        if (!surface) return VK_ERROR_INITIALIZATION_FAILED;
+        if (!surface) {
+            MVRVB_LOG_ERROR("CreateSwapchainKHR failed: surface is null");
+            return VK_ERROR_INITIALIZATION_FAILED;
+        }
+
+        MVRVB_LOG_INFO("CreateSwapchainKHR request: gpu='%s' extent=%ux%u minImages=%u format=%u usage=0x%x mode=%u oldSwapchain=%s",
+                       mtlDev ? [mtlDev.name UTF8String] : "<null>",
+                       pCI->imageExtent.width,
+                       pCI->imageExtent.height,
+                       pCI->minImageCount,
+                       pCI->imageFormat,
+                       pCI->imageUsage,
+                       pCI->presentMode,
+                       pCI->oldSwapchain != VK_NULL_HANDLE ? "yes" : "no");
 
         CAMetalLayer* layer = (__bridge CAMetalLayer*)surface->metalLayer;
 
@@ -360,9 +379,10 @@ VkResult mvb_CreateSwapchainKHR(VkDevice device,
         }
 
         *pSwapchain = reinterpret_cast<VkSwapchainKHR>(sc);
-        MVRVB_LOG_INFO("Swapchain created: %ux%u fmt=%u images=%u mode=%u",
+        MVRVB_LOG_INFO("CreateSwapchainKHR OK: %ux%u fmt=%u images=%u mode=%u framebufferOnly=%s",
                        pCI->imageExtent.width, pCI->imageExtent.height,
-                       pCI->imageFormat, imgCount, pCI->presentMode);
+                       pCI->imageFormat, imgCount, pCI->presentMode,
+                       layer.framebufferOnly ? "yes" : "no");
         return VK_SUCCESS;
     }
 }
@@ -370,6 +390,11 @@ VkResult mvb_CreateSwapchainKHR(VkDevice device,
 void mvb_DestroySwapchainKHR(VkDevice, VkSwapchainKHR swapchain, const VkAllocationCallbacks*) {
     auto* sc = toMv(swapchain);
     if (!sc) return;
+    MVRVB_LOG_DEBUG("DestroySwapchainKHR: extent=%ux%u images=%zu presentMode=%u",
+                    sc->extent.width,
+                    sc->extent.height,
+                    sc->images.size(),
+                    sc->presentMode);
     for (auto& img : sc->images) {
         if (img.image.mtlTexture)     CFRelease((__bridge CFTypeRef)img.image.mtlTexture);
         if (img.imageView.mtlTexture) CFRelease((__bridge CFTypeRef)img.imageView.mtlTexture);
@@ -401,8 +426,14 @@ VkResult mvb_AcquireNextImageKHR(VkDevice device, VkSwapchainKHR swapchain,
                                  VkFence fence, uint32_t* pImageIndex) {
     @autoreleasepool {
         auto* sc = toMv(swapchain);
-        if (!sc || !sc->surface || !sc->surface->metalLayer)
+        if (!pImageIndex) {
+            MVRVB_LOG_ERROR("AcquireNextImageKHR failed: pImageIndex is null");
+            return VK_ERROR_INITIALIZATION_FAILED;
+        }
+        if (!sc || !sc->surface || !sc->surface->metalLayer) {
+            MVRVB_LOG_ERROR("AcquireNextImageKHR failed: swapchain or metalLayer is missing");
             return VK_ERROR_SURFACE_LOST_KHR;
+        }
 
         CAMetalLayer* layer = (__bridge CAMetalLayer*)sc->surface->metalLayer;
 
@@ -439,6 +470,13 @@ VkResult mvb_AcquireNextImageKHR(VkDevice device, VkSwapchainKHR swapchain,
         id<MTLDevice> mtlDev = getMTLDeviceFromDevice(device);
         signalAcquireSyncObjects(semaphore, fence, mtlDev, mtlQueue);
 
+        MVRVB_LOG_DEBUG("AcquireNextImageKHR OK: imageIndex=%u extent=%ux%u semaphore=%s fence=%s",
+                        idx,
+                        sc->extent.width,
+                        sc->extent.height,
+                        semaphore != VK_NULL_HANDLE ? "yes" : "no",
+                        fence != VK_NULL_HANDLE ? "yes" : "no");
+
         return VK_SUCCESS;
     }
 }
@@ -454,6 +492,16 @@ VkResult mvb_AcquireNextImage2KHR(VkDevice device,
 VkResult mvb_QueuePresentKHR(VkQueue queue, const VkPresentInfoKHR* pPI) {
     @autoreleasepool {
         auto* q = toMv(queue);
+        if (!q || !q->queue || !pPI) {
+            MVRVB_LOG_ERROR("QueuePresentKHR failed: queue=%p pPI=%p",
+                            (void*)q, (const void*)pPI);
+            return VK_ERROR_DEVICE_LOST;
+        }
+
+        MVRVB_LOG_INFO("QueuePresentKHR: swapchains=%u waitSemaphores=%u",
+                       pPI->swapchainCount,
+                       pPI->waitSemaphoreCount);
+
         id<MTLCommandQueue> mtlQ = (__bridge id<MTLCommandQueue>)q->queue;
 
         // Wait on all wait semaphores before presenting.
@@ -462,12 +510,16 @@ VkResult mvb_QueuePresentKHR(VkQueue queue, const VkPresentInfoKHR* pPI) {
             auto* sc = toMv(pPI->pSwapchains[si]);
             uint32_t idx = pPI->pImageIndices[si];
             if (!sc || idx >= (uint32_t)sc->images.size()) {
+                MVRVB_LOG_ERROR("QueuePresentKHR failed: invalid swapchain/image pair at slot=%u imageIndex=%u",
+                                si, idx);
                 if (pPI->pResults) pPI->pResults[si] = VK_ERROR_DEVICE_LOST;
                 continue;
             }
 
             auto& slot = sc->images[idx];
             if (!slot.drawable) {
+                MVRVB_LOG_ERROR("QueuePresentKHR failed: swapchain slot=%u imageIndex=%u has no drawable",
+                                si, idx);
                 if (pPI->pResults) pPI->pResults[si] = VK_ERROR_DEVICE_LOST;
                 continue;
             }
@@ -499,6 +551,8 @@ VkResult mvb_QueuePresentKHR(VkQueue queue, const VkPresentInfoKHR* pPI) {
             slot.drawable = nullptr;
             slot.acquired = false;
 
+            MVRVB_LOG_DEBUG("QueuePresentKHR OK: swapchainSlot=%u imageIndex=%u waitSemaphores=%u",
+                            si, idx, pPI->waitSemaphoreCount);
             if (pPI->pResults) pPI->pResults[si] = VK_SUCCESS;
         }
     }

@@ -233,8 +233,8 @@ void     vkDestroyDebugUtilsMessengerEXT(VkInstance, VkDebugUtilsMessengerEXT, c
 void     vkCmdBeginDebugUtilsLabelEXT(VkCommandBuffer, const VkDebugUtilsLabelEXT*);
 void     vkCmdEndDebugUtilsLabelEXT(VkCommandBuffer);
 void     vkCmdInsertDebugUtilsLabelEXT(VkCommandBuffer, const VkDebugUtilsLabelEXT*);
-void     vkSetDebugUtilsObjectNameEXT(VkDevice, const VkDebugUtilsObjectNameInfoEXT*);
-void     vkSetDebugUtilsObjectTagEXT(VkDevice, const VkDebugUtilsObjectTagInfoEXT*);
+VkResult vkSetDebugUtilsObjectNameEXT(VkDevice, const VkDebugUtilsObjectNameInfoEXT*);
+VkResult vkSetDebugUtilsObjectTagEXT(VkDevice, const VkDebugUtilsObjectTagInfoEXT*);
 void     vkQueueBeginDebugUtilsLabelEXT(VkQueue, const VkDebugUtilsLabelEXT*);
 void     vkQueueEndDebugUtilsLabelEXT(VkQueue);
 void     vkQueueInsertDebugUtilsLabelEXT(VkQueue, const VkDebugUtilsLabelEXT*);
@@ -276,6 +276,48 @@ VkResult vkCreateDescriptorUpdateTemplate(VkDevice, const VkDescriptorUpdateTemp
 void vkDestroyDescriptorUpdateTemplate(VkDevice, VkDescriptorUpdateTemplate, const VkAllocationCallbacks*) {}
 void vkUpdateDescriptorSetWithTemplate(VkDevice, VkDescriptorSet, VkDescriptorUpdateTemplate, const void*) {}
 
+void vkGetPhysicalDeviceFormatProperties2(VkPhysicalDevice physicalDevice,
+                                          VkFormat format,
+                                          VkFormatProperties2* pProps) {
+    if (!pProps) return;
+    const void* pNext = pProps->pNext;
+    pProps->sType = VK_STRUCTURE_TYPE_FORMAT_PROPERTIES_2;
+    pProps->pNext = const_cast<void*>(pNext);
+    vkGetPhysicalDeviceFormatProperties(physicalDevice, format, &pProps->formatProperties);
+}
+
+VkResult vkGetPhysicalDeviceImageFormatProperties(VkPhysicalDevice physicalDevice,
+                                                  VkFormat format,
+                                                  VkImageType type,
+                                                  VkImageTiling tiling,
+                                                  VkImageUsageFlags usage,
+                                                  VkImageCreateFlags flags,
+                                                  VkImageFormatProperties* pProps) {
+    if (!pProps) return VK_ERROR_INITIALIZATION_FAILED;
+
+    VkFormatProperties props{};
+    vkGetPhysicalDeviceFormatProperties(physicalDevice, format, &props);
+    const VkFormatFeatureFlags features =
+        (tiling == VK_IMAGE_TILING_LINEAR) ? props.linearTilingFeatures : props.optimalTilingFeatures;
+    if (features == 0) return VK_ERROR_FORMAT_NOT_SUPPORTED;
+
+    (void)usage;
+    (void)flags;
+
+    pProps->maxExtent = {
+        16384u,
+        (type == VK_IMAGE_TYPE_1D) ? 1u : 16384u,
+        (type == VK_IMAGE_TYPE_3D) ? 2048u : 1u,
+    };
+    pProps->maxMipLevels = 15;
+    pProps->maxArrayLayers = (type == VK_IMAGE_TYPE_3D) ? 1u : 2048u;
+    pProps->sampleCounts = VK_SAMPLE_COUNT_1_BIT |
+                           VK_SAMPLE_COUNT_2_BIT |
+                           VK_SAMPLE_COUNT_4_BIT;
+    pProps->maxResourceSize = 1ull << 30;
+    return VK_SUCCESS;
+}
+
 // NOTE: vkCreateRenderPass, vkCreateRenderPass2, vkDestroyRenderPass,
 // vkGetRenderAreaGranularity, vkCreateFramebuffer, vkDestroyFramebuffer,
 // vkResetCommandPool, vkTrimCommandPool, vkResetCommandBuffer,
@@ -295,6 +337,38 @@ void vkUpdateDescriptorSetWithTemplate(VkDevice, VkDescriptorSet, VkDescriptorUp
 // vkQueueSubmit2
 // → replaced by real implementations in vk_commands.mm / sync/vk_sync.mm.
 
+VkResult vkCreateRenderPass(VkDevice, const VkRenderPassCreateInfo*, const VkAllocationCallbacks*, VkRenderPass* p) {
+    if (p) *p = reinterpret_cast<VkRenderPass>(new char[8]());
+    return VK_SUCCESS;
+}
+VkResult vkCreateRenderPass2(VkDevice, const VkRenderPassCreateInfo2*, const VkAllocationCallbacks*, VkRenderPass* p) {
+    if (p) *p = reinterpret_cast<VkRenderPass>(new char[8]());
+    return VK_SUCCESS;
+}
+void vkDestroyRenderPass(VkDevice, VkRenderPass h, const VkAllocationCallbacks*) {
+    delete[] reinterpret_cast<char*>(h);
+}
+void vkGetRenderAreaGranularity(VkDevice, VkRenderPass, VkExtent2D* pGranularity) {
+    if (pGranularity) *pGranularity = {1, 1};
+}
+VkResult vkCreateFramebuffer(VkDevice, const VkFramebufferCreateInfo*, const VkAllocationCallbacks*, VkFramebuffer* p) {
+    if (p) *p = reinterpret_cast<VkFramebuffer>(new char[8]());
+    return VK_SUCCESS;
+}
+void vkDestroyFramebuffer(VkDevice, VkFramebuffer h, const VkAllocationCallbacks*) {
+    delete[] reinterpret_cast<char*>(h);
+}
+void vkTrimCommandPool(VkDevice, VkCommandPool, VkCommandPoolTrimFlags) {}
+void vkCmdDispatchBase(VkCommandBuffer commandBuffer,
+                       uint32_t,
+                       uint32_t,
+                       uint32_t,
+                       uint32_t groupCountX,
+                       uint32_t groupCountY,
+                       uint32_t groupCountZ) {
+    vkCmdDispatch(commandBuffer, groupCountX, groupCountY, groupCountZ);
+}
+
 VkResult vkCreateQueryPool(VkDevice, const VkQueryPoolCreateInfo*, const VkAllocationCallbacks*, VkQueryPool* p) {
     if (p) *p = reinterpret_cast<VkQueryPool>(new char[8]());
     return VK_SUCCESS;
@@ -313,9 +387,11 @@ VkResult vkCreateDebugUtilsMessengerEXT(VkInstance, const VkDebugUtilsMessengerC
     return VK_SUCCESS;
 }
 void vkDestroyDebugUtilsMessengerEXT(VkInstance, VkDebugUtilsMessengerEXT h, const VkAllocationCallbacks*) { delete[] reinterpret_cast<char*>(h); }
-// NOTE: vkCmdInsertDebugUtilsLabelEXT → vk_commands.mm
-void vkSetDebugUtilsObjectNameEXT(VkDevice, const VkDebugUtilsObjectNameInfoEXT*) {}
-void vkSetDebugUtilsObjectTagEXT(VkDevice, const VkDebugUtilsObjectTagInfoEXT*) {}
+void vkCmdBeginDebugUtilsLabelEXT(VkCommandBuffer, const VkDebugUtilsLabelEXT*) {}
+void vkCmdEndDebugUtilsLabelEXT(VkCommandBuffer) {}
+void vkCmdInsertDebugUtilsLabelEXT(VkCommandBuffer, const VkDebugUtilsLabelEXT*) {}
+VkResult vkSetDebugUtilsObjectNameEXT(VkDevice, const VkDebugUtilsObjectNameInfoEXT*) { return VK_SUCCESS; }
+VkResult vkSetDebugUtilsObjectTagEXT(VkDevice, const VkDebugUtilsObjectTagInfoEXT*) { return VK_SUCCESS; }
 void vkQueueBeginDebugUtilsLabelEXT(VkQueue, const VkDebugUtilsLabelEXT*) {}
 void vkQueueEndDebugUtilsLabelEXT(VkQueue) {}
 void vkQueueInsertDebugUtilsLabelEXT(VkQueue, const VkDebugUtilsLabelEXT*) {}
@@ -671,4 +747,11 @@ MVVK_EXPORT PFN_vkVoidFunction vk_icdGetPhysicalDeviceProcAddr(VkInstance /*inst
  * vkGetDeviceProcAddr
  *
  * Device-level proc addr lookup (called by the application directly or via
- * the loader).  Same table — device-level 
+ * the loader). Same table is used for device-level dispatch.
+ */
+MVVK_EXPORT PFN_vkVoidFunction vkGetDeviceProcAddr(VkDevice /*device*/,
+                                                   const char* pName) {
+    return mvrvb::getICDProcAddr(pName);
+}
+
+} // extern "C"

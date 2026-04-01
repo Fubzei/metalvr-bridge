@@ -3,6 +3,7 @@
 // Has a triangle test toggle, live error log, system info, and Steam launcher
 
 import SwiftUI
+import AppKit
 
 @main
 struct MetalVRBridgeApp: App {
@@ -14,7 +15,6 @@ struct MetalVRBridgeApp: App {
                 .frame(minWidth: 720, minHeight: 560)
         }
         .windowStyle(.hiddenTitleBar)
-        .defaultSize(width: 800, height: 620)
     }
 }
 
