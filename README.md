@@ -32,7 +32,8 @@ Windows game
   CI-backed parsing, auto-selection, and validation in
   `src/common/compatibility_profile.*` and
   `tests/unit/compatibility_profile_tests.cpp`, including install/setup policy
-  alongside runtime policy.
+  alongside runtime policy, now including Wine 11+/Mono intent and explicit
+  DX11/DX12/Vulkan route selection.
 - A checked-in prefix preset system now lives under `profiles/prefix-presets/`,
   with CI-backed parsing and validation in `src/common/prefix_preset.*` and
   `tests/unit/prefix_preset_tests.cpp`, so game profiles can point at named
@@ -48,28 +49,33 @@ Windows game
 - A checked-in runtime launch-plan builder now lives in
   `src/common/runtime_launch_plan.*`, turning those profiles into backend,
   fallback, install/setup, env, DLL-override, and launch-argument decisions
-  that a launcher can consume, including resolved checked-in prefix presets.
+  that a launcher can consume, including resolved checked-in prefix presets plus
+  Wine-version, API-route policy, and a managed-prefix decision with explicit
+  prefix override support.
 - A checked-in runtime launch-command materializer now lives in
   `src/common/runtime_launch_command.*`, turning those plans into concrete
   Wine-style command, environment, and wrapper-script output for future runtime
-  or launcher glue.
+  or launcher glue, now carrying resolved prefix-source and managed-prefix
+  metadata through the generated environment surface.
 - A checked-in runtime setup-command materializer now lives in
   `src/common/runtime_setup_command.*`, turning install/setup policy into
   bootstrap actions, manual follow-up notes, and generated bash/PowerShell
-  setup scripts for future prefix orchestration.
+  setup scripts for future prefix orchestration, now using the resolved managed
+  prefix when no explicit override is provided.
 - A checked-in developer preview tool now lives in `tools/` so those runtime
   plans can be resolved and inspected locally before the launcher wiring is
   complete, including machine-readable JSON export, Markdown setup-checklist
   export, launch-script generation, and setup-script generation for future
-  runtime or launcher integration.
+  runtime or launcher integration without requiring a manual prefix argument.
 - A checked-in compatibility catalog tool now lives in `tools/` so the repo can
   export a consistent compatibility matrix from the same checked-in profiles the
   runtime layer consumes, including JSON and Markdown views for docs/wiki reuse.
 - A checked-in export helper now lives in `scripts/export_runtime_plan.ps1` so
   persisted JSON, human-readable reports, Markdown setup checklists, and wrapper
   scripts can be generated from the same shared contract without Mac hardware.
-  When a prefix path is supplied, the same helper now also emits setup/bootstrap
-  bash and PowerShell scripts from the install policy in the resolved plan.
+  The same helper now also emits setup/bootstrap bash and PowerShell scripts
+  from the install policy in the resolved plan, defaulting to an app-managed
+  prefix when no explicit prefix path is supplied.
 - A companion export helper now lives in `scripts/export_profile_catalog.ps1` so
   JSON, report, and Markdown versions of the compatibility catalog can be generated
   without Mac hardware.
@@ -81,7 +87,8 @@ Windows game
   now wraps that builder so launch plans, setup scripts, compatibility catalog,
   and lint output can be packaged into one handoff directory for tester or
   future launcher/runtime flows. When no prefix path is supplied, the exported
-  bundle now defaults to a portable self-contained `prefix/` directory.
+  bundle now records a resolved consumer-style managed prefix root/path so the
+  launcher and generated scripts agree on where the title should live.
 - A dedicated AI handoff bundle helper now lives in
   `scripts/export_ai_handoff_bundle.ps1`, packaging the canonical repo docs,
   lint output, and compatibility catalog into one carry-forward bundle for the
@@ -108,7 +115,9 @@ Windows game
   sheet export from the launcher, in-app execution-prep preview, a known-title
   onboarding card sourced from the compatibility catalog, starter runtime-bundle
   command generation for selected titles, in-app starter-bundle generation and
-  import when the helper/resources are bundled, and diagnostic log export.
+  import when the helper/resources are bundled, app-managed prefix summaries for
+  selected titles, a primary `Prepare Title` action that runs generated setup
+  before the separate launch action, and diagnostic log export.
 - `scripts/mac_runtime_smoke_test.sh` now automates the first hardware smoke-test
   bundle so Mac-side validation is easier to execute and report.
 - Green macOS CI runs now publish downloadable ICD and launcher installer artifacts.

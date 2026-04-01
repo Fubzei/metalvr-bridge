@@ -18,6 +18,7 @@ void printUsage(std::ostream& out) {
         << "  --launcher <name>      Launcher name, for example Steam or Battle.net\n"
         << "  --store <name>         Store identifier, for example steam or battlenet\n"
         << "  --profiles-dir <path>  Profile directory (defaults to the checked-in profiles tree)\n"
+        << "  --managed-prefix-root <path> Managed prefix root override for exported plans/scripts\n"
         << "  --wine-binary <path>   Wine executable to use for script materialization (default: wine)\n"
         << "  --wineboot-binary <path> Wineboot executable to use for setup script materialization (default: wineboot)\n"
         << "  --winetricks-binary <path> Winetricks executable to use for setup script materialization (default: winetricks)\n"
@@ -42,6 +43,7 @@ int main(int argc, char** argv) {
     mvrvb::RuntimeLaunchRequest launchRequest;
     mvrvb::RuntimeSetupRequest setupRequest;
     std::filesystem::path outputPath;
+    std::string managedPrefixRoot;
     enum class OutputMode {
         Report,
         Json,
@@ -109,6 +111,13 @@ int main(int argc, char** argv) {
         if (arg == "--wine-binary") {
             if (const char* value = requireValue("--wine-binary")) {
                 launchRequest.wineBinary = value;
+                continue;
+            }
+            return 1;
+        }
+        if (arg == "--managed-prefix-root") {
+            if (const char* value = requireValue("--managed-prefix-root")) {
+                managedPrefixRoot = value;
                 continue;
             }
             return 1;
@@ -193,15 +202,16 @@ int main(int argc, char** argv) {
         std::cerr << "Failed to build runtime launch plan: " << result.errorMessage << "\n";
         return 1;
     }
+    result.plan = mvrvb::resolveRuntimeLaunchPlanPrefix(
+        result.plan,
+        launchRequest.prefixPath,
+        managedPrefixRoot);
+    launchRequest.managedPrefixRoot = managedPrefixRoot;
+    setupRequest.managedPrefixRoot = managedPrefixRoot;
 
     if ((outputMode == OutputMode::Bash || outputMode == OutputMode::PowerShell) &&
         launchRequest.executablePath.empty()) {
         std::cerr << "--exe is required when rendering launch scripts\n";
-        return 1;
-    }
-    if ((outputMode == OutputMode::SetupBash || outputMode == OutputMode::SetupPowerShell) &&
-        setupRequest.prefixPath.empty()) {
-        std::cerr << "--prefix is required when rendering setup scripts\n";
         return 1;
     }
 

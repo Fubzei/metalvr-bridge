@@ -178,6 +178,40 @@ bool parseSyncMode(std::string_view value, SyncMode* out) {
     return false;
 }
 
+bool rendererBackendSupportsDirect3D11(RendererBackend backend) {
+    switch (backend) {
+        case RendererBackend::Auto:
+        case RendererBackend::DXVK:
+        case RendererBackend::DXMT:
+        case RendererBackend::D3DMetal:
+        case RendererBackend::WineD3D:
+            return true;
+        default:
+            return false;
+    }
+}
+
+bool rendererBackendSupportsDirect3D12(RendererBackend backend) {
+    switch (backend) {
+        case RendererBackend::Auto:
+        case RendererBackend::VKD3DProton:
+        case RendererBackend::D3DMetal:
+            return true;
+        default:
+            return false;
+    }
+}
+
+bool rendererBackendSupportsVulkan(RendererBackend backend) {
+    switch (backend) {
+        case RendererBackend::Auto:
+        case RendererBackend::NativeVulkan:
+            return true;
+        default:
+            return false;
+    }
+}
+
 int profileStatusRank(ProfileStatus status) noexcept {
     switch (status) {
         case ProfileStatus::Planning: return 0;
@@ -406,6 +440,67 @@ CompatibilityProfileParseResult parseCompatibilityProfile(std::string_view text)
                 result.errorMessage = "Invalid boolean for runtime.metalfx-upscaling";
                 return result;
             }
+        }
+    }
+
+    if (const auto sectionIt = sections.find("wine"); sectionIt != sections.end()) {
+        if (const auto it = sectionIt->second.find("minimum-version"); it != sectionIt->second.end()) {
+            result.profile.runtime.wine.minimumVersion = trim(it->second);
+        }
+        if (const auto it = sectionIt->second.find("preferred-version");
+            it != sectionIt->second.end()) {
+            result.profile.runtime.wine.preferredVersion = trim(it->second);
+        }
+        if (const auto it = sectionIt->second.find("requires-mono");
+            it != sectionIt->second.end()) {
+            bool requiresMono = false;
+            if (!parseBoolValue(it->second, &requiresMono)) {
+                result.errorMessage = "Invalid boolean for wine.requires-mono";
+                return result;
+            }
+            result.profile.runtime.wine.requiresMono = requiresMono;
+        }
+    }
+
+    if (const auto sectionIt = sections.find("backends"); sectionIt != sections.end()) {
+        if (const auto it = sectionIt->second.find("dx11"); it != sectionIt->second.end()) {
+            RendererBackend backend{};
+            if (!parseRendererBackend(it->second, &backend)) {
+                result.errorMessage = "Invalid renderer backend '" + it->second + "'";
+                return result;
+            }
+            if (!rendererBackendSupportsDirect3D11(backend)) {
+                result.errorMessage = "Renderer backend '" + it->second +
+                                      "' is not valid for backends.dx11";
+                return result;
+            }
+            result.profile.runtime.backends.direct3D11 = backend;
+        }
+        if (const auto it = sectionIt->second.find("dx12"); it != sectionIt->second.end()) {
+            RendererBackend backend{};
+            if (!parseRendererBackend(it->second, &backend)) {
+                result.errorMessage = "Invalid renderer backend '" + it->second + "'";
+                return result;
+            }
+            if (!rendererBackendSupportsDirect3D12(backend)) {
+                result.errorMessage = "Renderer backend '" + it->second +
+                                      "' is not valid for backends.dx12";
+                return result;
+            }
+            result.profile.runtime.backends.direct3D12 = backend;
+        }
+        if (const auto it = sectionIt->second.find("vulkan"); it != sectionIt->second.end()) {
+            RendererBackend backend{};
+            if (!parseRendererBackend(it->second, &backend)) {
+                result.errorMessage = "Invalid renderer backend '" + it->second + "'";
+                return result;
+            }
+            if (!rendererBackendSupportsVulkan(backend)) {
+                result.errorMessage = "Renderer backend '" + it->second +
+                                      "' is not valid for backends.vulkan";
+                return result;
+            }
+            result.profile.runtime.backends.vulkan = backend;
         }
     }
 

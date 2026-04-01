@@ -10,6 +10,7 @@ struct RuntimeGuidedActionPlan {
 
     enum Action {
         case importJson
+        case prepareKnownTitle
         case generateStarterBundle
         case copyStarterCommand
         case openChecklist
@@ -61,13 +62,13 @@ struct RuntimeGuidedActionPlan {
                 steps.append(
                     Step(
                         id: canGenerateStarterBundleInApp ? "generate-starter-bundle" : "copy-starter-command",
-                        title: canGenerateStarterBundleInApp ? "Generate A Starter Bundle" : "Copy The Starter Bundle Command",
+                        title: canGenerateStarterBundleInApp ? "Prepare The Selected Title" : "Copy The Starter Bundle Command",
                         detail: canGenerateStarterBundleInApp
-                            ? "Use the bundled runtime-bundle builder to generate and import a portable starter bundle for the selected title directly from the app."
+                            ? "Use the bundled runtime-bundle builder to generate, import, and run the setup flow for the selected title directly from the app."
                             : "Use the launcher-generated starter command to build a portable runtime bundle for the selected title before importing anything back into the app.",
                         tone: .ready,
-                        action: canGenerateStarterBundleInApp ? .generateStarterBundle : .copyStarterCommand,
-                        actionLabel: canGenerateStarterBundleInApp ? "Generate Bundle" : "Copy Starter Cmd"
+                        action: canGenerateStarterBundleInApp ? .prepareKnownTitle : .copyStarterCommand,
+                        actionLabel: canGenerateStarterBundleInApp ? "Prepare Title" : "Copy Starter Cmd"
                     )
                 )
                 steps.append(
@@ -109,7 +110,7 @@ struct RuntimeGuidedActionPlan {
             return RuntimeGuidedActionPlan(
                 headline: selectedCatalogEntry == nil
                     ? "Import runtime policy first so the launcher can generate a guided path."
-                    : "Start from the selected known title, build a starter bundle, then import it back into the launcher.",
+                    : "Start from the selected known title, then let the launcher generate, import, and prepare the runtime bundle for you.",
                 steps: steps
             )
         }
@@ -187,7 +188,7 @@ struct RuntimeGuidedActionPlan {
                 steps.append(
                     Step(
                         id: "run-setup-script",
-                        title: "Prepare The Prefix",
+                        title: "Prepare The Title",
                         detail: runtimeBundleArtifactPreview?.setupScriptSummary
                             ?? "Run the generated setup script to automate prefix/bootstrap work before launching the game.",
                         tone: .ready,

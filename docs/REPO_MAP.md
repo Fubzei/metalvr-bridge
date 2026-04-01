@@ -55,6 +55,8 @@ That subtree exists in the repo, but it is not currently added by the root
   - non-Apple CMake entrypoint for running the Apple-free test surface locally
 - `profiles/`
   - checked-in compatibility profiles and prefix presets for future runtime and launcher policy
+  - now includes Wine 11+/Mono requirement intent plus explicit DX11/DX12/Vulkan
+    route policy in addition to install/setup metadata
 - `tools/`
   - checked-in host-safe preview tool for resolving runtime launch plans from
     profile inputs and writing launch/setup artifacts to disk
@@ -66,10 +68,12 @@ That subtree exists in the repo, but it is not currently added by the root
 - logging
 - threading
 - compatibility-profile parser, loader, and selector
+  - including Wine-policy and API-route parsing for future backend breadth
 - prefix-preset parser and loader for bottle-style setup defaults
 - compatibility-catalog builder for machine-readable and report-style profile indexing
 - compatibility-policy lint layer for profile and prefix-preset governance
 - runtime launch-plan builder for launcher/runtime consumption
+  - including managed-prefix root/path resolution with explicit override support
 - runtime launch-command materializer for wrapper-script generation
 - runtime setup-command materializer for bootstrap/setup script generation
 - shared utility headers
@@ -105,8 +109,10 @@ That subtree exists in the repo, but it is not currently added by the root
   actions, one-click imported setup/launch actions, imported launch-command and
   environment clipboard helpers, concise execution-prep export, inline
   execution-prep preview, known-title onboarding sourced from the bundled
-  compatibility catalog, starter runtime-bundle command generation, in-app
-  starter-bundle generation/import when helper resources are bundled, and log export
+  compatibility catalog, managed-prefix summaries for selected titles, starter
+  runtime-bundle command generation, in-app starter-bundle generation/import
+  when helper resources are bundled, guided `Prepare Title` actions for known
+  titles, and log export
 - packaging script
 
 ### `docs`
@@ -125,8 +131,9 @@ That subtree exists in the repo, but it is not currently added by the root
 - prefix-preset files for reusable package, launcher-bootstrap, env, DLL-override,
   and launch-argument defaults
 - intended to drive future runtime backend selection, launch args, env vars,
-  DLL override policy, install/setup policy, sync mode, high-resolution mode,
-  and MetalFX-upscaling intent
+  DLL override policy, install/setup policy, Wine version and Mono policy,
+  DX11/DX12/Vulkan route intent, sync mode, high-resolution mode, and
+  MetalFX-upscaling intent
 - validated in CI through `src/common/compatibility_profile.*` and
   `src/common/prefix_preset.*`
 
@@ -138,7 +145,8 @@ That subtree exists in the repo, but it is not currently added by the root
 - profile-catalog doc sync helper for the generated Markdown compatibility matrix
 - direct profile-lint helper for policy governance without a full test run
 - launch-plan export helper for JSON, human-readable reports, launch scripts,
-  and setup/bootstrap scripts
+  and setup/bootstrap scripts, now with managed-prefix defaults when no explicit
+  prefix path is supplied
 - runtime bundle export helper for one-directory tester handoff packages
 - AI handoff doc update and bundle export helpers for coding-agent continuity
 - machine-readable project-status update helper for tooling continuity
@@ -160,11 +168,12 @@ That subtree exists in the repo, but it is not currently added by the root
 - `mvrvb_profile_lint` validates checked-in profiles and prefix presets for
   missing references, duplicate IDs, and ambiguous auto-match rules
 - `mvrvb_runtime_plan_preview` resolves a checked-in compatibility profile
-  selection into backend, env, DLL override, and launch-argument output
+  selection into backend, env, DLL override, launch-argument output, and
+  managed-prefix decisions
 - `mvrvb_runtime_bundle_builder` packages launch-plan, setup-script,
   compatibility-catalog, lint, and manifest output directly from the host-safe
-  C++ tooling layer, with a portable default `prefix/` directory for
-  self-contained runtime bundles
+  C++ tooling layer, with managed-prefix root/path metadata when no explicit
+  prefix path is supplied
 - supports human-readable summaries, machine-readable JSON output, Markdown setup
   checklists, bash/PowerShell launch-script generation, and bash/PowerShell
   setup-script generation for future launcher/runtime consumption

@@ -31,6 +31,16 @@ sync_mode = msync
 high_resolution_mode = true
 metalfx_upscaling = true
 
+[wine]
+minimum_version = 11.0
+preferred_version = 11.1
+requires_mono = true
+
+[backends]
+dx11 = dxvk
+dx12 = vkd3d-proton
+vulkan = native-vulkan
+
 [install]
 prefix_preset = shooter-prefix
 packages = dxvk, battle.net
@@ -75,6 +85,16 @@ args = --fullscreen, --novid
     EXPECT_EQ(result.profile.runtime.syncMode, SyncMode::MSync);
     EXPECT_TRUE(result.profile.runtime.highResolutionMode);
     EXPECT_TRUE(result.profile.runtime.metalFxUpscaling);
+    EXPECT_EQ(result.profile.runtime.wine.minimumVersion, "11.0");
+    EXPECT_EQ(result.profile.runtime.wine.preferredVersion, "11.1");
+    ASSERT_TRUE(result.profile.runtime.wine.requiresMono.has_value());
+    EXPECT_TRUE(*result.profile.runtime.wine.requiresMono);
+    ASSERT_TRUE(result.profile.runtime.backends.direct3D11.has_value());
+    EXPECT_EQ(*result.profile.runtime.backends.direct3D11, RendererBackend::DXVK);
+    ASSERT_TRUE(result.profile.runtime.backends.direct3D12.has_value());
+    EXPECT_EQ(*result.profile.runtime.backends.direct3D12, RendererBackend::VKD3DProton);
+    ASSERT_TRUE(result.profile.runtime.backends.vulkan.has_value());
+    EXPECT_EQ(*result.profile.runtime.backends.vulkan, RendererBackend::NativeVulkan);
     EXPECT_EQ(result.profile.install.prefixPreset, "shooter-prefix");
     ASSERT_EQ(result.profile.install.packages.size(), 2u);
     EXPECT_EQ(result.profile.install.packages[0], "dxvk");
@@ -130,6 +150,16 @@ sync_mode = impossible
 )");
     EXPECT_FALSE(syncResult);
     EXPECT_EQ(syncResult.errorMessage, "Invalid sync mode 'impossible'");
+
+    auto routeResult = parseCompatibilityProfile(R"(
+profile_id = bad-route
+display_name = Bad Route
+
+[backends]
+dx12 = dxvk
+)");
+    EXPECT_FALSE(routeResult);
+    EXPECT_EQ(routeResult.errorMessage, "Renderer backend 'dxvk' is not valid for backends.dx12");
 }
 
 TEST(CompatibilityProfile, LoadsCheckedInProfiles) {
@@ -155,6 +185,10 @@ TEST(CompatibilityProfile, CheckedInOverwatchProfileIsPlanningOnly) {
     EXPECT_EQ(result.profile.antiCheatRisk, AntiCheatRisk::Blocking);
     EXPECT_EQ(result.profile.runtime.syncMode, SyncMode::MSync);
     EXPECT_TRUE(result.profile.runtime.highResolutionMode);
+    EXPECT_EQ(result.profile.runtime.wine.minimumVersion, "11.0");
+    EXPECT_EQ(result.profile.runtime.wine.preferredVersion, "11.0");
+    ASSERT_TRUE(result.profile.runtime.backends.direct3D11.has_value());
+    EXPECT_EQ(*result.profile.runtime.backends.direct3D11, RendererBackend::DXVK);
     EXPECT_EQ(result.profile.install.prefixPreset, "battlenet-shooter");
     EXPECT_FALSE(result.profile.install.requiresLauncher);
     EXPECT_TRUE(result.profile.install.packages.empty());

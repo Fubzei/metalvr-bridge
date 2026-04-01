@@ -17,6 +17,16 @@ sync_mode = msync
 high_resolution_mode = true
 metalfx_upscaling = false
 
+[wine]
+minimum_version = 11.0
+preferred_version = 11.0
+requires_mono = false
+
+[backends]
+dx11 = dxvk
+dx12 = vkd3d-proton
+vulkan = native-vulkan
+
 [install]
 prefix_preset = competitive-shooter
 notes = Template install intent only. Add any title-specific launcher or redistributable requirements in the final game profile.

@@ -60,7 +60,7 @@ Exit criteria:
 
 ### 4.1 Backend Breadth
 
-Status: `PLANNED`
+Status: `STARTED`
 
 Scope:
 
@@ -69,9 +69,25 @@ Scope:
 - design backend fallback behavior per profile
 - keep room for direct or alternate D3D-to-Metal paths when they are the better fit
 
+Progress checked in so far:
+
+- checked-in profiles can now express:
+  - a Wine version floor and preferred Wine version
+  - whether Wine Mono is required for the title or template
+  - explicit DX11, DX12, and Vulkan route intent
+- resolved runtime launch plans now carry those Wine/backend routes through to:
+  - machine-readable JSON
+  - human-readable reports
+  - Markdown setup checklists
+  - generated setup and launch environment blocks
+- checked-in defaults now target a Wine 11+ baseline and express:
+  - `DXVK` for DX11
+  - `VKD3D-Proton` for DX12
+  - `native-vulkan` for native Vulkan titles
+
 ### 4.2 Compatibility Database and Installer Orchestration
 
-Status: `PLANNED`
+Status: `STARTED`
 
 Scope:
 
@@ -89,6 +105,16 @@ Progress checked in so far:
   - export path for JSON, report, or Markdown compatibility outputs
 - `scripts/export_profile_catalog.ps1`
   - host-safe helper for generating compatibility-catalog bundles on disk
+- `src/common/runtime_launch_plan.*`
+  - launch plans now resolve managed prefix root/path/source decisions so
+    bundle exports and future launcher/runtime glue agree on where a title lives
+- `tools/mvrvb_runtime_bundle_builder` and `scripts/export_runtime_bundle.ps1`
+  - bundle manifests now carry resolved managed-prefix metadata, even when no
+    explicit prefix override is supplied
+- `launcher/BridgeViewModel.swift`, `launcher/ContentView.swift`, and
+  `launcher/RuntimeGuidedActionPlan.swift`
+  - known-title onboarding now auto-resolves an app-managed prefix and surfaces
+    a guided `Prepare Title` flow before explicit launch
 
 ### 4.3 Performance and Latency Engineering
 
@@ -133,7 +159,8 @@ The first checked-in Phase 4 deliverables are:
 
 - `src/common/compatibility_profile.*`
   - CI-validated parser plus auto-selection helpers for runtime compatibility profiles
-  - now includes install/setup policy fields for future bottle or prefix orchestration
+  - now includes install/setup policy fields plus Wine 11+/Mono/API-route policy
+    for future bottle or prefix orchestration
 - `src/common/prefix_preset.*`
   - CI-validated parser and loader for named bottle-style prefix presets that
     carry shared package, launcher-bootstrap, environment, DLL-override, and
@@ -148,28 +175,40 @@ The first checked-in Phase 4 deliverables are:
   - host-safe launch-plan builder that resolves backend/install/env/args/runtime policy
     from profiles plus named prefix presets
   - now also emits a Markdown setup checklist for tester-facing install/bootstrap guidance
+  - now carries resolved Wine floor/preference, Mono requirement intent, and
+    DX11/DX12/Vulkan backend-route policy
+  - now carries managed-prefix root/path/source decisions with explicit prefix
+    override support
 - `src/common/runtime_launch_command.*`
   - host-safe launch-command materializer that turns a resolved plan into runnable
     command, environment, and wrapper-script output
+  - now exports resolved Wine/API-route policy into the generated launch environment
 - `src/common/runtime_setup_command.*`
   - host-safe setup/bootstrap materializer that turns install policy into
     automated prefix actions, manual follow-up notes, and generated setup scripts
+  - now exports resolved Wine/API-route policy into the generated setup environment
+  - now defaults to the resolved managed prefix when no explicit prefix is provided
 - `tools/mvrvb_runtime_plan_preview`
   - host-safe preview entry point for inspecting merged launch decisions without Mac hardware,
     with JSON output, checklist output, launch/setup script generation, and
     persisted file export that future launcher/runtime code can reuse
+  - now accepts a managed-prefix root override and resolves app-managed prefixes
+    automatically when no explicit prefix is supplied
 - `scripts/export_runtime_plan.ps1`
   - host-safe helper for generating JSON, report, checklist, launch-script, and
     setup-script bundles on disk from the shared contract
+  - now defaults setup-script generation to the resolved managed prefix path
 - `scripts/run_profile_lint.ps1`
   - direct helper for validating profile and prefix-preset policy without a full host test run
 - `scripts/export_runtime_bundle.ps1`
   - one-command tester handoff bundle containing the launch plan, setup scripts,
   compatibility catalog, lint report, and manifest
+  - now records managed-prefix metadata in the exported manifest when no
+    explicit prefix override is supplied
 - `tools/mvrvb_runtime_bundle_builder`
   - cross-platform runtime-bundle builder that generates the same bundle
-    directly from the host-safe tooling layer and defaults to a portable
-    self-contained `prefix/` path when none is supplied
+    directly from the host-safe tooling layer and defaults to an app-managed
+    prefix contract when no explicit prefix path is supplied
 - `docs/AI_HANDOFF.md`
   - canonical checked-in resume brief for any AI coding helper
 - `docs/PROJECT_STATUS.json`
@@ -217,13 +256,17 @@ The first checked-in Phase 4 deliverables are:
 - `launcher/CompatibilityCatalog.swift`, `launcher/BridgeViewModel.swift`, and
   `launcher/ContentView.swift`
   - launcher-side known-title onboarding card that browses checked-in
-    compatibility entries and stages starter runtime-bundle commands for a
+  compatibility entries and stages starter runtime-bundle commands for a
     selected title without leaving the app
+  - now surfaces the managed prefix location and setup readiness for the
+    selected title
 - `launcher/BridgeViewModel.swift`, `launcher/ContentView.swift`,
   `launcher/setup.sh`, and `.github/workflows/build.yml`
   - launcher-side starter-bundle generation/import path that bundles the
-    runtime-bundle helper plus checked-in `profiles/` tree so the app can build
+  runtime-bundle helper plus checked-in `profiles/` tree so the app can build
     and immediately load starter runtime bundles when those resources are present
+  - now drives a primary `Prepare Title` action that runs the generated setup
+    flow before the separate launch step
 - `scripts/update_ai_handoff_doc.ps1` and `scripts/export_ai_handoff_bundle.ps1`
   - direct update and export path for a carry-forward AI handoff package
 - `scripts/export_runtime_bundle.ps1`

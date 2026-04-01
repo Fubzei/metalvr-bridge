@@ -11,6 +11,7 @@ param(
     [string]$WineBootBinary = "wineboot",
     [string]$WinetricksBinary = "winetricks",
     [string]$PrefixPath = "",
+    [string]$ManagedPrefixRoot = "",
     [string]$WorkingDirectory = ""
 )
 
@@ -80,6 +81,9 @@ if (-not [string]::IsNullOrWhiteSpace($Launcher)) {
 if (-not [string]::IsNullOrWhiteSpace($Store)) {
     $commonArgs += @("--store", $Store)
 }
+if (-not [string]::IsNullOrWhiteSpace($ManagedPrefixRoot)) {
+    $commonArgs += @("--managed-prefix-root", $ManagedPrefixRoot)
+}
 
 & $toolPath @commonArgs "--json" "--out" $OutputPath | Out-Null
 if ($LASTEXITCODE -ne 0) {
@@ -118,26 +122,29 @@ if (-not [string]::IsNullOrWhiteSpace($WorkingDirectory)) {
     $scriptArgs += @("--working-dir", $WorkingDirectory)
 }
 
+$setupArgs = @(
+    "--input", $OutputPath,
+    "--wineboot-binary", $WineBootBinary,
+    "--winetricks-binary", $WinetricksBinary
+)
 if (-not [string]::IsNullOrWhiteSpace($PrefixPath)) {
-    $setupArgs = @(
-        "--input", $OutputPath,
-        "--prefix", $PrefixPath,
-        "--wineboot-binary", $WineBootBinary,
-        "--winetricks-binary", $WinetricksBinary
-    )
-    if (-not [string]::IsNullOrWhiteSpace($WorkingDirectory)) {
-        $setupArgs += @("--working-dir", $WorkingDirectory)
-    }
+    $setupArgs += @("--prefix", $PrefixPath)
+}
+if (-not [string]::IsNullOrWhiteSpace($ManagedPrefixRoot)) {
+    $setupArgs += @("--managed-prefix-root", $ManagedPrefixRoot)
+}
+if (-not [string]::IsNullOrWhiteSpace($WorkingDirectory)) {
+    $setupArgs += @("--working-dir", $WorkingDirectory)
+}
 
-    & $toolPath @setupArgs "--setup-bash" "--out" $setupBashPath | Out-Null
-    if ($LASTEXITCODE -ne 0) {
-        throw "Bash setup-script export failed with exit code $LASTEXITCODE"
-    }
+& $toolPath @setupArgs "--setup-bash" "--out" $setupBashPath | Out-Null
+if ($LASTEXITCODE -ne 0) {
+    throw "Bash setup-script export failed with exit code $LASTEXITCODE"
+}
 
-    & $toolPath @setupArgs "--setup-powershell" "--out" $setupPowerShellPath | Out-Null
-    if ($LASTEXITCODE -ne 0) {
-        throw "PowerShell setup-script export failed with exit code $LASTEXITCODE"
-    }
+& $toolPath @setupArgs "--setup-powershell" "--out" $setupPowerShellPath | Out-Null
+if ($LASTEXITCODE -ne 0) {
+    throw "PowerShell setup-script export failed with exit code $LASTEXITCODE"
 }
 
 & $toolPath @scriptArgs "--bash" "--out" $bashPath | Out-Null
@@ -153,9 +160,7 @@ if ($LASTEXITCODE -ne 0) {
 Write-Host "JSON launch plan:  $OutputPath"
 Write-Host "Report launch plan: $reportPath"
 Write-Host "Setup checklist:   $checklistPath"
-if (-not [string]::IsNullOrWhiteSpace($PrefixPath)) {
-    Write-Host "Bash setup script: $setupBashPath"
-    Write-Host "PowerShell setup:  $setupPowerShellPath"
-}
+Write-Host "Bash setup script: $setupBashPath"
+Write-Host "PowerShell setup:  $setupPowerShellPath"
 Write-Host "Bash launch script: $bashPath"
 Write-Host "PowerShell script:  $powerShellPath"

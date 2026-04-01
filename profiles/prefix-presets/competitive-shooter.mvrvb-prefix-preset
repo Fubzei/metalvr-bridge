@@ -5,7 +5,7 @@ category = competitive
 notes = Shared prefix preset for latency-sensitive DXVK-backed shooter titles.
 
 [install]
-packages = dxvk
+packages = dxvk, vkd3d-proton
 winetricks = corefonts, vcrun2022
 requires_launcher = false
 notes = Shared setup intent for competitive shooters. Add any title-specific launcher steps in the final game profile.

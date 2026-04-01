@@ -24,6 +24,11 @@ struct RuntimeLaunchPlanSnapshot: Decodable {
     let schemaVersion: String
     let appliedPrefixPresetId: String
     let appliedPrefixPresetDisplayName: String
+    let managedPrefixSlug: String?
+    let managedPrefixRoot: String?
+    let managedPrefixPath: String?
+    let resolvedPrefixSource: String?
+    let resolvedPrefixPath: String?
     let selectedProfileId: String
     let selectedDisplayName: String
     let appliedProfileIds: [String]
@@ -60,6 +65,31 @@ struct RuntimeLaunchPlanSnapshot: Decodable {
             parts.append("Launcher required")
         }
 
+        return parts.joined(separator: " | ")
+    }
+
+    var managedPrefixSummary: String {
+        var parts: [String] = []
+        if let resolvedPrefixSource, !resolvedPrefixSource.isEmpty {
+            parts.append("Source: \(resolvedPrefixSource)")
+        }
+        if let resolvedPrefixPath, !resolvedPrefixPath.isEmpty {
+            parts.append("Path: \(resolvedPrefixPath)")
+        }
+        if let managedPrefixRoot, !managedPrefixRoot.isEmpty {
+            parts.append("Root: \(managedPrefixRoot)")
+        }
+        return parts.isEmpty ? "Managed prefix decision not available in this launch plan." : parts.joined(separator: " | ")
+    }
+
+    var setupReadinessSummary: String {
+        var parts: [String] = [installSummary]
+        if let resolvedPrefixPath, !resolvedPrefixPath.isEmpty {
+            parts.append("Resolved prefix: \(resolvedPrefixPath)")
+        }
+        if let resolvedPrefixSource, !resolvedPrefixSource.isEmpty {
+            parts.append("Source: \(resolvedPrefixSource)")
+        }
         return parts.joined(separator: " | ")
     }
 

@@ -81,6 +81,31 @@ if(DEFINED EXPECTED_PREFIX)
   endif()
 endif()
 
+if(DEFINED EXPECTED_PREFIX_SOURCE)
+  string(
+    REGEX MATCH
+    "\"prefixSource\"[ \t\r\n]*:[ \t\r\n]*\"${EXPECTED_PREFIX_SOURCE}\""
+    matched_prefix_source
+    "${manifest_contents}"
+  )
+  if(NOT matched_prefix_source)
+    message(FATAL_ERROR
+      "Manifest did not contain the expected prefixSource value ${EXPECTED_PREFIX_SOURCE}\n"
+      "Manifest contents:\n${manifest_contents}"
+    )
+  endif()
+endif()
+
+if(DEFINED EXPECTED_PREFIX_CONTAINS)
+  string(FIND "${manifest_contents}" "${EXPECTED_PREFIX_CONTAINS}" matched_prefix_contains)
+  if(matched_prefix_contains EQUAL -1)
+    message(FATAL_ERROR
+      "Manifest did not contain expected prefix substring ${EXPECTED_PREFIX_CONTAINS}\n"
+      "Manifest contents:\n${manifest_contents}"
+    )
+  endif()
+endif()
+
 set(expected_pairs
   "launchPlanJson|launch-plan.json"
   "launchPlanReport|launch-plan.txt"
